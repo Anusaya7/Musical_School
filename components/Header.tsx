@@ -4,7 +4,9 @@ import Link from 'next/link'
 import { useCart } from '@/contexts/CartContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useState, useEffect } from 'react'
-import { Sun, Moon } from 'lucide-react'
+import { Sun, Moon } from 'lucide-react';
+import Image from "next/image";
+import logo from "@/public/images/logo3.png"; // Update with your logo path
 
 export default function Header() {
   const { itemCount } = useCart()
@@ -35,7 +37,7 @@ export default function Header() {
         <div className="h-20 flex items-center justify-between">
 
           {/* Logo */}
-          <Link
+          {/* <Link
             href="/"
             className={`flex flex-col leading-tight font-bold shrink-0 ${
               theme === 'dark' ? 'text-white' : 'text-primary'
@@ -47,7 +49,20 @@ export default function Header() {
             <span className="text-[10px] sm:text-xs lg:text-sm opacity-80 whitespace-nowrap">
               Musical School
             </span>
-          </Link>
+          </Link> */}
+
+           <div className="w-[250px] flex items-center">
+            <Link href="/">
+              <Image
+                src={logo}
+                alt="2nd Inversion Music School"
+                priority
+                width={250}
+                height={60}
+                className="object-contain w-full h-auto"
+              />
+            </Link>
+          </div>
 
           {/* Nav */}
           <nav className="hidden xl:flex items-center gap-3 flex-nowrap">
