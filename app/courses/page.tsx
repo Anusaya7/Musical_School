@@ -1,48 +1,47 @@
 'use client'
 
 import Header from '@/components/Header'
-import Link from 'next/link'
-import { useCart } from '@/contexts/CartContext'
-import { useSearchParams } from 'next/navigation'
-import { useState, useEffect } from 'react'
-import { useTheme } from '@/contexts/ThemeContext'
+import CourseCard from '@/components/CourseCard'
 import CourseBooking from '@/components/CourseBooking'
-import { getAllCourses, getCoursesByCategory, getCategoryDisplayName, COURSE_COUNTS } from '@/data/coursesData'
+import { useCart } from '@/contexts/CartContext'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { useState, useEffect, useMemo } from 'react'
+import {
+  getAllCourses,
+  getCoursesByCategory,
+  getCategoryDisplayName,
+  Course,
+  CourseLevel,
+} from '@/data/coursesData'
 import { addBooking } from '@/data/bookingData'
-import { Star, ShoppingCart, Check } from 'lucide-react'
+import { Music2, Filter, X } from 'lucide-react'
+
+const LEVELS: CourseLevel[] = ['Beginner', 'Intermediate', 'Advanced']
 
 export default function CoursesPage() {
   const { addItem, isInCart } = useCart()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const category = searchParams.get('category')
-  const [filteredCourses, setFilteredCourses] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const { theme } = useTheme()
+  const [levelFilter, setLevelFilter] = useState<CourseLevel | 'All'>('All')
+  const [filteredCourses, setFilteredCourses] = useState<Course[]>([])
 
-  // Load courses from data
-  const courses = getAllCourses()
-
-  useEffect(() => {
-    setIsLoading(true)
-    
-    if (category) {
-      // Filter courses by category and limit to exact count
-      const categoryCourses = getCoursesByCategory(category)
-      const maxCount = COURSE_COUNTS[category as keyof typeof COURSE_COUNTS] || categoryCourses.length
-      const limitedCourses = categoryCourses.slice(0, maxCount)
-      setFilteredCourses(limitedCourses)
-    } else {
-      setFilteredCourses(courses)
-    }
-    
-    setIsLoading(false)
+  const baseCourses = useMemo(() => {
+    if (category) return getCoursesByCategory(category)
+    return getAllCourses()
   }, [category])
 
-  const clearFilter = () => {
-    window.location.href = '/courses'
-  }
+  useEffect(() => {
+    const result =
+      levelFilter === 'All'
+        ? baseCourses
+        : baseCourses.filter((c) => c.level === levelFilter)
+    setFilteredCourses(result)
+  }, [baseCourses, levelFilter])
 
-  const handleAddToCart = (course: any) => {
+  const clearFilter = () => router.push('/courses')
+
+  const handleAddToCart = (course: Course) => {
     addItem({
       id: course.id,
       title: course.title,
@@ -50,160 +49,116 @@ export default function CoursesPage() {
       instructor: course.instructor,
       image: course.image,
       level: course.level,
-      duration: course.duration
+      duration: course.duration,
+      category: course.category,
+      rating: course.rating,
+      students: course.students,
+      description: course.description,
     })
   }
 
-  if (isLoading) {
-    return (
-      <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
-        <Header />
-        <main className="container mx-auto px-4 py-8 pt-32">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            <p className={`mt-4 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>Loading courses...</p>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
       <Header />
-      
-      <main className="container mx-auto px-4 py-8 pt-32">
-        <div className="text-center mb-16">
-          {category && (
-            <div className="mb-6">
-              <div className="inline-flex items-center gap-3 bg-blue-50 border-2 border-blue-200 rounded-full px-6 py-3">
-                <span className="text-blue-700 font-semibold">
-                  Showing {getCategoryDisplayName(category)} Courses ({filteredCourses.length})
-                </span>
-                <button
-                  onClick={clearFilter}
-                  className="text-blue-600 hover:text-blue-800 font-medium underline"
-                >
-                  Clear Filter
-                </button>
-              </div>
+
+      <main className="container mx-auto px-4 pb-20 pt-32">
+        {/* Hero */}
+        <section className="relative mb-14 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-purple-900/40 via-slate-900 to-indigo-900/40 px-8 py-14 text-center shadow-2xl">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(168,85,247,0.15),transparent_60%)]" />
+          <div className="relative">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-1.5 text-sm text-purple-300">
+              <Music2 className="h-4 w-4" />
+              Premium Music Academy
             </div>
+            <h1 className="mb-4 text-4xl font-bold tracking-tight text-white md:text-5xl">
+              {category ? `${getCategoryDisplayName(category)} Courses` : 'Our Courses'}
+            </h1>
+            <p className="mx-auto max-w-2xl text-lg text-slate-300">
+              {category
+                ? `Master ${getCategoryDisplayName(category)} with Ajinkya Amrule — Beginner, Intermediate, and Advanced pathways.`
+                : 'Explore every instrument with structured learning paths taught by Ajinkya Amrule.'}
+            </p>
+            <p className="mt-3 text-sm text-purple-300/80">
+              All courses · Same expert instructor · Three levels per instrument
+            </p>
+          </div>
+        </section>
+
+        {/* Filters */}
+        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <Filter className="h-4 w-4 text-slate-400" />
+            <span className="text-sm font-medium text-slate-400">Level:</span>
+            {(['All', ...LEVELS] as const).map((level) => (
+              <button
+                key={level}
+                onClick={() => setLevelFilter(level)}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
+                  levelFilter === level
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25'
+                    : 'border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                }`}
+              >
+                {level}
+              </button>
+            ))}
+          </div>
+
+          {category && (
+            <button
+              onClick={clearFilter}
+              className="inline-flex items-center gap-2 self-start rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300 transition-colors hover:bg-white/10 sm:self-auto"
+            >
+              <X className="h-4 w-4" />
+              Clear category filter
+            </button>
           )}
-          <h1 className="text-4xl font-bold text-primary mb-4">
-            {category ? `${getCategoryDisplayName(category)} Courses` : 'Our Courses'}
-          </h1>
-          <p className="text-xl text-gray-600">
-            {category 
-              ? `Choose from our ${filteredCourses.length} ${getCategoryDisplayName(category)} courses taught by expert instructors`
-              : 'Choose from our wide range of music courses taught by expert instructors'
-            }
-          </p>
         </div>
 
-        {/* Validation Message */}
-        {category && filteredCourses.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500">No courses found for this category.</p>
-          </div>
+        {category && (
+          <p className="mb-6 text-center text-sm text-slate-400">
+            Showing {filteredCourses.length} {getCategoryDisplayName(category)} course
+            {filteredCourses.length !== 1 ? 's' : ''}
+            {levelFilter !== 'All' ? ` · ${levelFilter} level` : ''}
+          </p>
         )}
 
-        {/* Courses Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredCourses.map((course) => (
-            <div key={course.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-              <div className="h-48 bg-gradient-to-br from-indigo-500 to-purple-600"></div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-2">{course.title}</h3>
-                <p className="text-gray-600 mb-4">{course.description}</p>
-                
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <img src="/api/placeholder/24/24" alt={course.instructor} className="w-6 h-6 rounded-full" />
-                    <span className="text-sm text-gray-600">{course.instructor}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                    <span className="text-sm font-semibold">{course.rating}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
-                  <div>
-                    <p className="text-gray-500">Level</p>
-                    <p className="font-semibold">{course.level}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Duration</p>
-                    <p className="font-semibold">{course.duration}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Students</p>
-                    <p className="font-semibold">{course.students}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Price</p>
-                    <p className="font-semibold">Rs.{course.price.toLocaleString('en-IN')}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <CourseBooking 
+        {filteredCourses.length === 0 ? (
+          <div className="rounded-2xl border border-white/10 bg-slate-900/50 py-20 text-center">
+            <p className="text-lg text-slate-400">No courses match your filters.</p>
+            <button
+              onClick={() => setLevelFilter('All')}
+              className="mt-4 text-purple-400 underline hover:text-purple-300"
+            >
+              Reset level filter
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredCourses.map((course) => (
+              <CourseCard
+                key={course.id}
+                course={course}
+                isInCart={isInCart(course.id)}
+                onAddToCart={handleAddToCart}
+                showBooking
+                bookingSlot={
+                  <CourseBooking
                     course={{
                       id: course.id,
                       title: course.title,
                       instructor: course.instructor,
                       price: course.price,
-                      category: course.category
+                      category: course.category,
                     }}
-                    onBookingComplete={(booking) => {
-                      addBooking(booking)
-                    }}
+                    onBookingComplete={(booking) => addBooking(booking)}
                   />
-                  <div className="flex gap-2">
-                    <Link 
-                      href={`/courses/${course.id}`}
-                      className="flex-1 py-2 px-4 rounded-lg font-semibold text-center bg-purple-600 text-white hover:bg-purple-700 transition-colors"
-                    >
-                      View Details
-                    </Link>
-                    <button 
-                      onClick={() => handleAddToCart(course)}
-                      disabled={isInCart(course.id)}
-                      className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-colors ${
-                        isInCart(course.id)
-                          ? 'bg-green-100 text-green-600 cursor-not-allowed'
-                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                      }`}
-                    >
-                      {isInCart(course.id) ? (
-                        <>
-                          <Check className="w-4 h-4 inline mr-1" />
-                          In Cart
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingCart className="w-4 h-4 inline mr-1" />
-                          Add to Cart
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Load More Button (if applicable) */}
-        {category && filteredCourses.length < getCoursesByCategory(category).length && (
-          <div className="text-center mt-8">
-            <button className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">
-              Load More Courses
-            </button>
+                }
+              />
+            ))}
           </div>
         )}
       </main>
     </div>
   )
 }
-

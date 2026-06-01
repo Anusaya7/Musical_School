@@ -147,13 +147,13 @@ export default function CartPage() {
                 </div>
 
                 <div className="flex flex-col gap-4">
-                  <Link href="/checkout" classname="block mb-4">
+                  <Link href="/checkout" className="block mb-4">
                     <button className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
                       Proceed to Checkout
                     </button>
                   </Link>
                   
-                  <Link href="/courses" classname="block">
+                  <Link href="/courses" className="block">
                     <button className="w-full border border-primary text-primary py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
                       Continue Shopping
                     </button>
