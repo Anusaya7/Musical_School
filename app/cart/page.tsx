@@ -21,7 +21,7 @@ export default function CartPage() {
       <div className="min-h-screen bg-gray-50">
         <Header />
         
-        <main className="container mx-auto px-4 py-8 pt-24">
+        <main className="container mx-auto px-4 py-8 pt-16 sm:pt-16 lg:pt-24">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
               <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -35,17 +35,20 @@ export default function CartPage() {
                 Looks like you haven't added any courses to your cart yet. Start exploring our amazing courses!
               </p>
               
-              <div className="space-x-4">
-                <Link href="/courses">
-                  <button className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                    Browse Courses
-                  </button>
-                </Link>
-                <Link href="/">
-                  <button className="border border-primary text-primary px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
-                    Continue Shopping
-                  </button>
-                </Link>
+              <div className="flex justify-center">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link href="/courses" className="w-full sm:w-auto">
+                    <button className="w-full bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                      Browse Courses
+                    </button>
+                  </Link>
+
+                  <Link href="/" className="w-full sm:w-auto">
+                    <button className="w-full border border-primary text-primary px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
+                      Continue Shopping
+                    </button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -55,10 +58,10 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="container mx-auto px-4 py-8 pt-24 bg-gray-50">
       <Header />
       
-      <main className="container mx-auto px-4 py-8 pt-24">
+      <main className="container mx-auto px-4 py-8 pt-16 sm:pt-16 lg:pt-24">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-primary mb-2">Shopping Cart</h1>
@@ -67,12 +70,13 @@ export default function CartPage() {
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Cart Items */}
-            <div className="lg:col-span-2 space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-4 w-full">
               {items.map((item) => (
-                <div key={item.id} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-                  <div className="flex gap-4">
+              <div
+                key={item.id}
+                className="bg-white w-full rounded-2xl shadow-lg p-4 sm:p-6 hover:shadow-xl transition-shadow">
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                     {/* Course Image */}
                     <div className="w-24 h-24 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center flex-shrink-0">
                       <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -142,14 +146,14 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <Link href="/checkout">
+                <div className="flex flex-col gap-4">
+                  <Link href="/checkout" classname="block mb-4">
                     <button className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
                       Proceed to Checkout
                     </button>
                   </Link>
                   
-                  <Link href="/courses">
+                  <Link href="/courses" classname="block">
                     <button className="w-full border border-primary text-primary py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
                       Continue Shopping
                     </button>
@@ -166,13 +170,14 @@ export default function CartPage() {
                 {/* Promo Code */}
                 <div className="mt-6 pt-6 border-t">
                   <p className="text-sm text-gray-600 mb-2">Have a promo code?</p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2 w-full">
                     <input
                       type="text"
                       placeholder="Enter promo code"
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     />
-                    <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
+
+                    <button className="w-full sm:w-auto bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 active:bg-gray-300 transition-colors min-h-[42px]">
                       Apply
                     </button>
                   </div>

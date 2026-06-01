@@ -4,7 +4,9 @@ import Link from 'next/link'
 import { useCart } from '@/contexts/CartContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useState, useEffect } from 'react'
-import { Sun, Moon } from 'lucide-react'
+import { Sun, Moon } from 'lucide-react';
+import Image from "next/image";
+import logo from "@/public/images/logo3.png"; // Update with your logo path
 
 export default function Header() {
   const { itemCount } = useCart()
@@ -22,7 +24,7 @@ export default function Header() {
   }, [])
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
+    <header className={`fixed top-0 left-0 right-0 z-50 h-20 transition-all duration-300 ease-in-out ${
       isScrolled 
         ? theme === 'dark' 
           ? 'bg-gray-900/95 backdrop-blur-md shadow-lg border-b border-gray-800'
@@ -31,37 +33,63 @@ export default function Header() {
           ? 'bg-gradient-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-sm border-b border-gray-700'
           : 'bg-gradient-to-r from-gray-50/90 to-gray-100/90 backdrop-blur-sm'
     }`}>
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex justify-between items-center">
-          <Link href="/" className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-primary'}`}>
-            2nd Inversion Musical School
-          </Link>
-          
-          <nav className="hidden lg:flex items-center space-x-8">
+     <div className="container mx-auto px-4 h-full">
+        <div className="h-20 flex items-center justify-between">
+
+          {/* Logo */}
+          {/* <Link
+            href="/"
+            className={`flex flex-col leading-tight font-bold shrink-0 ${
+              theme === 'dark' ? 'text-white' : 'text-primary'
+            }`}
+          >
+            <span className="text-base sm:text-lg lg:text-xl whitespace-nowrap">
+              2nd Inversion
+            </span>
+            <span className="text-[10px] sm:text-xs lg:text-sm opacity-80 whitespace-nowrap">
+              Musical School
+            </span>
+          </Link> */}
+
+           <div className="w-[250px] flex items-center">
+            <Link href="/">
+              <Image
+                src={logo}
+                alt="2nd Inversion Music School"
+                priority
+                width={250}
+                height={60}
+                className="object-contain w-full h-auto"
+              />
+            </Link>
+          </div>
+
+          {/* Nav */}
+          <nav className="hidden xl:flex items-center gap-3 flex-nowrap">
             {/* Main Navigation Links */}
-            <div className="flex space-x-6">
-              <Link href="/" className={`inline-flex items-center px-4 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+            <div className="flex gap-1">
+              <Link href="/" className={`inline-flex items-center px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
                 theme === 'dark' 
                   ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
                   : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
               }`}>
                 Home
               </Link>
-              <Link href="/courses" className={`inline-flex items-center px-4 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+              <Link href="/courses" className={`inline-flex items-center px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
                 theme === 'dark' 
                   ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
                   : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
               }`}>
                 Courses
               </Link>
-              <Link href="/about" className={`inline-flex items-center px-4 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+              <Link href="/about" className={`inline-flex items-center px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
                 theme === 'dark' 
                   ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
                   : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
               }`}>
                 About
               </Link>
-              <Link href="/contact" className={`inline-flex items-center px-4 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+              <Link href="/contact" className={`inline-flex items-center px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
                 theme === 'dark' 
                   ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
                   : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
@@ -151,19 +179,24 @@ export default function Header() {
             </div>
             
             {/* Auth Buttons */}
-            <div className={`flex items-center space-x-3 border-l pl-6 ${
-              theme === 'dark' ? 'border-gray-600' : 'border-gray-300'
-            }`}>
-              <Link href="/login" className={`inline-flex items-center px-6 py-3 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px] ${
-                theme === 'dark' 
-                  ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
-                  : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
-              }`}>
-                Log In
-              </Link>
-              <Link href="/signup" className="inline-flex items-center px-6 py-3 font-medium rounded-xl transition-all duration-200 ease-in-out bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px]">
-                Sign Up
-              </Link>
+            <div className="flex items-center gap-3 whitespace-nowrap">
+              <Link
+                  href="/login"
+                  className={`inline-flex items-center px-5 py-2 font-medium rounded-xl whitespace-nowrap transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px] ${
+                    theme === 'dark'
+                      ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
+                      : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
+                  }`}
+                >
+                  Log In
+                </Link>
+
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center px-5 py-2 font-medium rounded-xl whitespace-nowrap transition-all duration-200 ease-in-out bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px]"
+                >
+                  Sign Up
+                </Link>
             </div>
           </nav>
           
@@ -192,28 +225,28 @@ export default function Header() {
         {isMobileMenuOpen && (
           <div className={`lg:hidden border-t ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'} mt-4`}>
             <div className="py-4 space-y-2">
-              <Link href="/" className={`block px-4 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+              <Link href="/" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
                 theme === 'dark' 
                   ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
                   : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
               }`}>
                 Home
               </Link>
-              <Link href="/courses" className={`block px-4 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+              <Link href="/courses" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
                 theme === 'dark' 
                   ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
                   : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
               }`}>
                 Courses
               </Link>
-              <Link href="/about" className={`block px-4 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+              <Link href="/about" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
                 theme === 'dark' 
                   ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
                   : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
               }`}>
                 About
               </Link>
-              <Link href="/contact" className={`block px-4 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+              <Link href="/contact" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
                 theme === 'dark' 
                   ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
                   : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
@@ -222,28 +255,28 @@ export default function Header() {
               </Link>
               
               <div className={`border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} my-2 pt-2`}>
-                <Link href="/admin" className={`block px-4 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+                <Link href="/admin" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
                   theme === 'dark' 
                     ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
                     : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
                 }`}>
                   Admin
                 </Link>
-                <Link href="/instructor" className={`block px-4 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+                <Link href="/instructor" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
                   theme === 'dark' 
                     ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
                     : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
                 }`}>
                   Instructor
                 </Link>
-                <Link href="/student" className={`block px-4 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+                <Link href="/student" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
                   theme === 'dark' 
                     ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
                     : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
                 }`}>
                   Student
                 </Link>
-                <Link href="/cart" className={`block px-4 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+                <Link href="/cart" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
                   theme === 'dark' 
                     ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
                     : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
@@ -253,14 +286,14 @@ export default function Header() {
               </div>
               
               <div className={`border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} my-2 pt-2`}>
-                <Link href="/login" className={`block px-4 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+                <Link href="/login" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
                   theme === 'dark' 
                     ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
                     : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
                 }`}>
                   Log In
                 </Link>
-                <Link href="/signup" className="block px-4 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px]">
+                <Link href="/signup" className="block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px]">
                   Sign Up
                 </Link>
               </div>
