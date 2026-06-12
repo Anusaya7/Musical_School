@@ -1,10 +1,30 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation';
+import { useState } from 'react'
 
 export default function Hero() {
-  const router = useRouter()
+  const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState('')
 
+  const handleSearch = () => {
+    const query = searchTerm.trim()
+
+    if (!query) {
+      router.push('/courses')
+      return
+    }
+
+    router.push(`/courses?search=${encodeURIComponent(query)}`)
+  }
+
+  const handleKeyDown = (
+      e: React.KeyboardEvent<HTMLInputElement>
+    ) => {
+      if (e.key === 'Enter') {
+        handleSearch()
+      }
+  }
   const handleExploreCourses = () => {
     router.push('/courses')
   }
@@ -97,12 +117,18 @@ export default function Hero() {
             <div className="relative">
               <input
                 type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="Search courses, instruments, or instructors..."
                 className="w-full px-6 py-4 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 text-lg"
               />
-              <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-white text-indigo-700 px-6 py-2 rounded-full font-semibold hover:bg-yellow-100 transition-colors">
-                Search
-              </button>
+              <button
+                onClick={handleSearch}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white text-indigo-700 px-6 py-2 rounded-full font-semibold hover:bg-yellow-100 transition-colors"
+                >
+              Search
+            </button>
             </div>
           </div>
 
