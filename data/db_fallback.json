@@ -1,0 +1,178 @@
+{
+  "courses": [
+    {
+      "id": "piano-beginner",
+      "title": "Piano Beginner",
+      "category": "piano",
+      "level": "Beginner",
+      "price": 4999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "3 Months",
+      "rating": 4.8,
+      "students": 1240,
+      "image": "/courses/piano-beginner.jpg",
+      "description": "Build a strong piano foundation with posture, note reading, scales, and your first performance pieces.",
+      "aboutCourse": "Develop basic piano habits and start reading notes.",
+      "curriculum": [
+        "Intro to Keys",
+        "Posture",
+        "Reading Sheets"
+      ],
+      "learningOutcomes": [
+        "Play simple tunes",
+        "Correct posture"
+      ],
+      "prerequisites": [
+        "None"
+      ],
+      "topicsCovered": [
+        "Scales",
+        "Chords"
+      ],
+      "highlights": [
+        "Practical exercises"
+      ]
+    },
+    {
+      "id": "guitar-beginner",
+      "title": "Guitar Beginner",
+      "category": "guitar",
+      "level": "Beginner",
+      "price": 4999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "3 Months",
+      "rating": 4.7,
+      "students": 1100,
+      "image": "/courses/guitar-beginner.jpg",
+      "description": "Learn fundamental chords, tuning, basic strumming, and play your first songs.",
+      "aboutCourse": "Develop guitar playing skills from scratch.",
+      "curriculum": [
+        "Tuning and Posture",
+        "Open Chords",
+        "Strumming Patterns"
+      ],
+      "learningOutcomes": [
+        "Play basic chord progressions",
+        "Tune your guitar"
+      ],
+      "prerequisites": [
+        "None"
+      ],
+      "topicsCovered": [
+        "Open Chords",
+        "Strumming"
+      ],
+      "highlights": [
+        "Fun practice tracks"
+      ]
+    }
+  ],
+  "instructors": [
+    {
+      "id": "inst-1",
+      "name": "Sarah Johnson",
+      "email": "sarah@example.com",
+      "expertise": "Piano",
+      "rating": 4.8,
+      "students": 45,
+      "avatar": "SJ"
+    },
+    {
+      "id": "inst-2",
+      "name": "Alex Brown",
+      "email": "alex@example.com",
+      "expertise": "Guitar",
+      "rating": 4.9,
+      "students": 62,
+      "avatar": "AB"
+    },
+    {
+      "id": "inst-3",
+      "name": "Ajinkya Amrule",
+      "email": "ajinkya@2ndinversionmusic.com",
+      "expertise": "Piano, Guitar, Vocals",
+      "rating": 5,
+      "students": 120,
+      "avatar": "AA"
+    }
+  ],
+  "schedules": [
+    {
+      "id": "morning",
+      "name": "Morning Batch",
+      "startTime": "04:00 AM",
+      "endTime": "12:00 PM",
+      "timeSlots": [
+        "04:00 AM",
+        "05:00 AM",
+        "06:00 AM",
+        "07:00 AM",
+        "08:00 AM",
+        "09:00 AM",
+        "10:00 AM",
+        "11:00 AM",
+        "12:00 PM"
+      ]
+    },
+    {
+      "id": "evening",
+      "name": "Evening Batch",
+      "startTime": "03:00 PM",
+      "endTime": "09:00 PM",
+      "timeSlots": [
+        "03:00 PM",
+        "04:00 PM",
+        "05:00 PM",
+        "06:00 PM",
+        "07:00 PM",
+        "08:00 PM",
+        "09:00 PM"
+      ]
+    }
+  ],
+  "holidays": [
+    {
+      "id": "h-monday",
+      "date": "",
+      "reason": "Weekly Holiday",
+      "isRecurringWeekly": true,
+      "dayOfWeek": 1
+    }
+  ],
+  "bookings": [
+    {
+      "id": "BK-1781685911432-ahw7q857r",
+      "courseId": "piano-beginner",
+      "courseName": "Piano Beginner",
+      "instructor": "Ajinkya Amrule",
+      "date": "2026-07-07",
+      "timeSlot": "03:00 PM",
+      "batchTiming": "evening",
+      "studentName": "Kritika",
+      "studentEmail": "kritika123@gmail.com",
+      "status": "Booked",
+      "createdAt": "2026-06-17T08:45:11.432Z",
+      "amount": 4999
+    }
+  ],
+  "workshops": [
+    {
+      "id": "w1",
+      "title": "Classical Piano Masterclass",
+      "instructor": "Ajinkya Amrule",
+      "date": "2026-06-25",
+      "time": "10:00 AM - 12:00 PM",
+      "price": 499,
+      "description": "Master the art of classical piano performance."
+    }
+  ],
+  "recordedSessions": [
+    {
+      "id": "v1",
+      "title": "Piano Posture and Hand Alignment",
+      "description": "An essential guide to correct physical approach to piano keys.",
+      "url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+      "instrument": "piano"
+    }
+  ]
+}

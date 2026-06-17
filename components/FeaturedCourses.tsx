@@ -1,313 +1,433 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
 import { useCart } from '@/contexts/CartContext'
 import Link from 'next/link'
-import SearchFilterBar from '@/components/SearchFilterBar'
-import { Sun, Moon, Sparkles, TrendingUp, Clock, Users, Award } from 'lucide-react'
+import { Clock, Star, User, ShoppingCart } from 'lucide-react'
+import BookingModal from '@/components/BookingModal'
+import BookingSuccess from '@/components/BookingSuccess'
 
-const featuredCourses = [
+// Custom SVG Note Components
+const SingleNote = memo(({ className, color }: { className?: string; color: string }) => (
+  <svg className={`${className} w-3 h-4`} viewBox="0 0 12 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M8 12.5c0 1.38-1.12 2.5-2.5 2.5S3 13.88 3 12.5s1.12-2.5 2.5-2.5c.34 0 .66.07.96.19V2h5v3H8v7.5z"
+      fill={color}
+    />
+  </svg>
+))
+SingleNote.displayName = 'SingleNote'
+
+const DoubleNote = memo(({ className, color }: { className?: string; color: string }) => (
+  <svg className={`${className} w-4 h-4`} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M3 11.5c0 1.1.9 2 2 2s2-.9 2-2v-8l7-1.75V9.5c0 1.1.9 2 2 2s2-.9 2-2v-9L5 2.5v9z"
+      fill={color}
+    />
+  </svg>
+))
+DoubleNote.displayName = 'DoubleNote'
+
+// Custom 3D Glossy Grand Piano Vector SVG
+const PianoSVG = memo(({ color }: { color: 'pink' | 'blue' | 'purple' }) => {
+  const themes = {
+    pink: {
+      baseGrad: ['#FFD6E8', '#FF6FAF'],
+      highlight: '#FFF0F6',
+      shadow: '#FF3B8E',
+      noteColor: '#FF6FAF'
+    },
+    blue: {
+      baseGrad: ['#DCEEFF', '#5EA8FF'],
+      highlight: '#F0F7FF',
+      shadow: '#2B8CFF',
+      noteColor: '#5EA8FF'
+    },
+    purple: {
+      baseGrad: ['#F4D9FF', '#DFA7FF'],
+      highlight: '#FAF0FF',
+      shadow: '#C37DFF',
+      noteColor: '#DFA7FF'
+    }
+  }
+
+  const active = themes[color]
+  const gradId = `piano-grad-${color}`
+  const glossyId = `glossy-grad-${color}`
+
+  return (
+    <div className="relative w-32 h-24 flex-shrink-0 select-none">
+      <svg width="100%" height="100%" viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          {/* Main 3D Gradient */}
+          <linearGradient id={gradId} x1="20" y1="15" x2="100" y2="75" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor={active.baseGrad[0]} />
+            <stop offset="50%" stopColor={active.baseGrad[1]} />
+            <stop offset="100%" stopColor={active.shadow} />
+          </linearGradient>
+          {/* Glossy Overlay Gradient */}
+          <linearGradient id={glossyId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.6" />
+            <stop offset="40%" stopColor="#FFFFFF" stopOpacity="0.1" />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        {/* 3D Drop Shadow under the Piano */}
+        <ellipse cx="60" cy="72" rx="42" ry="7" fill="black" fillOpacity="0.08" />
+
+        {/* Piano Back/Main Body */}
+        <path
+          d="M15 48 C15 28, 40 28, 55 18 C68 8, 100 8, 108 18 C115 26, 115 56, 108 60 C98 65, 35 65, 15 58 Z"
+          fill={`url(#${gradId})`}
+          stroke={active.baseGrad[1]}
+          strokeWidth="0.5"
+        />
+
+        {/* Glossy Specular Reflection Layer */}
+        <path
+          d="M16 45 C20 28, 42 28, 55 19 C66 10, 98 10, 106 19 C111 25, 111 50, 106 54 Z"
+          fill={`url(#${glossyId})`}
+        />
+
+        {/* Piano Open Lid */}
+        <path d="M48 15 L92 5 L102 18 L58 22 Z" fill={active.highlight} opacity="0.95" stroke={active.baseGrad[1]} strokeWidth="0.5" />
+        {/* Support Stick */}
+        <line x1="88" y1="5" x2="88" y2="20" stroke="#555" strokeWidth="2" />
+
+        {/* Keyboard Bed */}
+        <rect x="20" y="48" width="70" height="12" rx="2" fill="white" stroke={active.baseGrad[1]} strokeWidth="1.2" />
+        {/* Key Dividers */}
+        <line x1="26" y1="48" x2="26" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
+        <line x1="32" y1="48" x2="32" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
+        <line x1="38" y1="48" x2="38" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
+        <line x1="44" y1="48" x2="44" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
+        <line x1="50" y1="48" x2="50" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
+        <line x1="56" y1="48" x2="56" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
+        <line x1="62" y1="48" x2="62" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
+        <line x1="68" y1="48" x2="68" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
+        <line x1="74" y1="48" x2="74" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
+        <line x1="80" y1="48" x2="80" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
+        <line x1="86" y1="48" x2="86" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
+
+        {/* Black keys */}
+        <rect x="24" y="48" width="2" height="7" fill="#0F172A" />
+        <rect x="30" y="48" width="2" height="7" fill="#0F172A" />
+        <rect x="42" y="48" width="2" height="7" fill="#0F172A" />
+        <rect x="48" y="48" width="2" height="7" fill="#0F172A" />
+        <rect x="54" y="48" width="2" height="7" fill="#0F172A" />
+        <rect x="66" y="48" width="2" height="7" fill="#0F172A" />
+        <rect x="72" y="48" width="2" height="7" fill="#0F172A" />
+        <rect x="78" y="48" width="2" height="7" fill="#0F172A" />
+
+        {/* Legs */}
+        <rect x="22" y="60" width="3.5" height="13" fill={active.baseGrad[1]} />
+        <rect x="84.5" y="60" width="3.5" height="13" fill={active.baseGrad[1]} />
+        <rect x="53" y="61" width="3.5" height="11" fill={active.shadow} />
+      </svg>
+      
+      {/* Floating vector music notes */}
+      <DoubleNote className="absolute -top-1 -right-3 opacity-60 animate-bounce" color={active.noteColor} />
+      <SingleNote className="absolute top-8 -left-4 opacity-50 animate-pulse" color={active.noteColor} />
+      <SingleNote className="absolute -top-4 left-12 opacity-40 animate-bounce" color={active.noteColor} />
+    </div>
+  )
+})
+PianoSVG.displayName = 'PianoSVG'
+
+// Static piano courses array placed outside component to guarantee stable references
+const pianoCourses = [
   {
-    id: '1',
-    title: 'Piano Fundamentals',
-    instructor: 'instructor all in one',
+    id: 'piano-beginner',
+    title: 'Piano Beginner',
+    category: 'PIANO',
     level: 'Beginner',
-    duration: '8 weeks',
-    price: 199,
+    price: 4999,
+    instructor: 'Ajinkya Amrule',
+    duration: '3 Months',
     rating: 4.8,
-    students: 1250,
-    image: '/piano-course.jpg',
-    description: 'Learn the fundamentals of piano playing including basic chords, scales, and simple melodies.',
-    highlights: ['Basic Music Theory', 'Hand Positioning', 'Simple Songs', 'Practice Routines'],
-    category: 'Piano'
+    description: 'Build a strong piano foundation with posture, note reading, scales, and your first performance pieces.',
+    themeColor: 'pink',
+    badgeText: 'BEGINNER',
+    cardStyle: {
+      bg: 'bg-white',
+      border: 'border-[#FFD6E8] hover:border-[#FF6FAF]/50',
+      shadow: 'shadow-sm hover:shadow-xl hover:shadow-[#FFD6E8]/30',
+      badge: 'bg-[#FFD6E8]/30 text-[#FF6FAF] border-[#FFD6E8]/60',
+      label: 'text-[#FF6FAF]',
+      instructorIcon: 'text-[#FF6FAF]',
+      pillBg: 'bg-[#FFD6E8]/20',
+      iconColor: '#FF6FAF',
+      price: 'text-[#FF6FAF]',
+      primaryBtn: 'bg-gradient-to-r from-[#FF6FAF] to-[#FF8EBF] hover:from-[#FF8EBF] hover:to-[#FF6FAF] shadow-[#FFD6E8]/60',
+      secondaryBtn: 'border-[#FF6FAF]/40 text-[#FF6FAF] hover:bg-[#FFD6E8]/20',
+      cartBtn: 'border-gray-200 text-gray-400 hover:border-[#FF6FAF] hover:text-[#FF6FAF] hover:bg-[#FFD6E8]/10'
+    }
   },
   {
-    id: '2',
-    title: 'Guitar Mastery',
-    instructor: 'instructor all in one',
+    id: 'piano-intermediate',
+    title: 'Piano Intermediate',
+    category: 'PIANO',
     level: 'Intermediate',
-    duration: '12 weeks',
-    price: 299,
+    price: 6999,
+    instructor: 'Ajinkya Amrule',
+    duration: '4 Months',
+    rating: 4.85,
+    description: 'Develop expressive playing, chord voicings, sight-reading fluency, and stylistic versatility.',
+    themeColor: 'blue',
+    badgeText: 'INTERMEDIATE',
+    cardStyle: {
+      bg: 'bg-white',
+      border: 'border-[#DCEEFF] hover:border-[#5EA8FF]/50',
+      shadow: 'shadow-sm hover:shadow-xl hover:shadow-[#DCEEFF]/30',
+      badge: 'bg-[#DCEEFF]/30 text-[#5EA8FF] border-[#DCEEFF]/60',
+      label: 'text-[#5EA8FF]',
+      instructorIcon: 'text-[#5EA8FF]',
+      pillBg: 'bg-[#DCEEFF]/20',
+      iconColor: '#5EA8FF',
+      price: 'text-[#5EA8FF]',
+      primaryBtn: 'bg-gradient-to-r from-[#5EA8FF] to-[#7EB8FF] hover:from-[#7EB8FF] hover:to-[#5EA8FF] shadow-[#DCEEFF]/60',
+      secondaryBtn: 'border-[#5EA8FF]/40 text-[#5EA8FF] hover:bg-[#DCEEFF]/20',
+      cartBtn: 'border-gray-200 text-gray-400 hover:border-[#5EA8FF] hover:text-[#5EA8FF] hover:bg-[#DCEEFF]/10'
+    }
+  },
+  {
+    id: 'piano-advanced',
+    title: 'Piano Advanced',
+    category: 'PIANO',
+    level: 'Advanced',
+    price: 9999,
+    instructor: 'Ajinkya Amrule',
+    duration: '6 Months',
     rating: 4.9,
-    students: 890,
-    image: '/guitar-course.jpg',
-    description: 'Master advanced guitar techniques including complex chords, solos, and music theory.',
-    highlights: ['Advanced Chords', 'Solo Techniques', 'Music Theory', 'Performance Skills'],
-    category: 'Guitar'
-  },
-  {
-    id: '3',
-    title: 'Vocal Training Pro',
-    instructor: 'instructor all in one',
-    level: 'All Levels',
-    duration: '10 weeks',
-    price: 249,
-    rating: 4.7,
-    students: 1567,
-    image: '/vocal-course.jpg',
-    description: 'Develop your singing voice with proper breathing techniques, pitch control, and performance skills.',
-    highlights: ['Breathing Techniques', 'Pitch Control', 'Performance Skills', 'Voice Care'],
-    category: 'Vocals'
-  },
-  {
-    id: '4',
-    title: 'Drumming Essentials',
-    instructor: 'instructor all in one',
-    level: 'Beginner',
-    duration: '6 weeks',
-    price: 179,
-    rating: 4.6,
-    students: 432,
-    image: '/drums-course.jpg',
-    description: 'Learn essential drumming techniques, rhythms, and patterns for various music genres.',
-    highlights: ['Basic Rhythms', 'Drum Techniques', 'Genre Styles', 'Practice Methods'],
-    category: 'Drums'
-  },
-  {
-    id: '5',
-    title: 'Music Theory Complete',
-    instructor: 'instructor all in one',
-    level: 'All Levels',
-    duration: '8 weeks',
-    price: 149,
-    rating: 4.8,
-    students: 2103,
-    image: '/theory-course.jpg',
-    description: 'Comprehensive music theory course covering notation, harmony, composition, and analysis.',
-    highlights: ['Music Notation', 'Harmony & Chords', 'Composition', 'Music Analysis'],
-    category: 'Music Theory'
-  },
-  {
-    id: '6',
-    title: 'Violin Basics',
-    instructor: 'instructor all in one',
-    level: 'Beginner',
-    duration: '10 weeks',
-    price: 279,
-    rating: 4.7,
-    students: 678,
-    image: '/violin-course.jpg',
-    description: 'Learn violin fundamentals including proper posture, bowing techniques, and basic repertoire.',
-    highlights: ['Posture & Holding', 'Bowing Techniques', 'Basic Repertoire', 'Music Reading'],
-    category: 'Violin'
+    description: 'Master advanced repertoire, improvisation, performance technique, and professional-level...',
+    themeColor: 'purple',
+    badgeText: 'ADVANCED',
+    cardStyle: {
+      bg: 'bg-white',
+      border: 'border-[#F4D9FF] hover:border-[#DFA7FF]/50',
+      shadow: 'shadow-sm hover:shadow-xl hover:shadow-[#F4D9FF]/30',
+      badge: 'bg-[#F4D9FF]/30 text-[#DFA7FF] border-[#F4D9FF]/60',
+      label: 'text-[#DFA7FF]',
+      instructorIcon: 'text-[#DFA7FF]',
+      pillBg: 'bg-[#F4D9FF]/20',
+      iconColor: '#DFA7FF',
+      price: 'text-[#DFA7FF]',
+      primaryBtn: 'bg-gradient-to-r from-[#FF6FAF] to-[#DFA7FF] hover:from-[#DFA7FF] hover:to-[#FF6FAF] shadow-[#F4D9FF]/60',
+      secondaryBtn: 'border-[#DFA7FF]/40 text-[#DFA7FF] hover:bg-[#F4D9FF]/20',
+      cartBtn: 'border-gray-200 text-gray-400 hover:border-[#DFA7FF] hover:text-[#DFA7FF] hover:bg-[#F4D9FF]/10'
+    }
   }
 ]
 
-export default function FeaturedCourses() {
-  const { addItem, isInCart } = useCart()
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [filteredCourses, setFilteredCourses] = useState(featuredCourses)
+interface CourseCardProps {
+  course: any
+  isInCartAlready: boolean
+  onBookClick: (course: any) => void
+  onAddToCart: (course: any) => void
+}
 
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [isDarkMode])
-
-  const renderStars = (rating: number) => {
-    return <div className="text-yellow-400">{'\u2605'.repeat(Math.floor(rating))}</div>
-  }
+const CourseCard = memo(({ course, isInCartAlready, onBookClick, onAddToCart }: CourseCardProps) => {
+  const style = course.cardStyle
 
   return (
-    <section className={`py-20 transition-all duration-500 relative ${isDarkMode ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900' : 'bg-gradient-to-br from-purple-50 via-white to-blue-50'}`}>
-      {/* Yellow Corner Accents */}
-      <div className="absolute top-0 left-0 w-8 h-8 bg-yellow-400 rounded-br-full opacity-80"></div>
-      <div className="absolute top-0 right-0 w-8 h-8 bg-yellow-400 rounded-bl-full opacity-80"></div>
-      <div className="absolute bottom-0 left-0 w-8 h-8 bg-yellow-400 rounded-tr-full opacity-80"></div>
-      <div className="absolute bottom-0 right-0 w-8 h-8 bg-yellow-400 rounded-tl-full opacity-80"></div>
-      <div className="container mx-auto px-4">
-        {/* Header Section with Mode Toggle */}
-        <div className="flex justify-between items-center mb-16">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`p-3 rounded-2xl ${isDarkMode ? 'bg-purple-800' : 'bg-purple-100'}`}>
-                <Sparkles className={`w-6 h-6 ${isDarkMode ? 'text-purple-300' : 'text-purple-600'}`} />
-              </div>
-              <h2 className={`text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                Featured Courses
-              </h2>
-            </div>
-            <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} max-w-2xl`}>
-              Discover our handpicked selection of premium music courses designed to transform your musical journey
+    <div
+      className={`group rounded-[24px] border-[1.5px] p-7 flex flex-col justify-between transition-transform transition-shadow duration-300 transform translate-z-0 will-change-transform hover:-translate-y-1.5 ${style.bg} ${style.border} ${style.shadow} hover:shadow-2xl`}
+      style={{ transform: 'translateZ(0)' }}
+    >
+      <div>
+        {/* Card Header: Badge & Glossy Piano Illustration */}
+        <div className="flex justify-between items-start mb-6">
+          <span className={`px-4 py-1.5 rounded-full border text-[11px] font-bold tracking-wider uppercase ${style.badge}`}>
+            {course.badgeText}
+          </span>
+          <PianoSVG color={course.themeColor as any} />
+        </div>
+
+        {/* Course Info */}
+        <div className="space-y-3 mb-6">
+          <p className={`text-[11px] font-extrabold tracking-widest uppercase ${style.label}`}>
+            {course.category}
+          </p>
+          <h3 className="text-[22px] font-bold text-[#0F1E4A] leading-tight">
+            {course.title}
+          </h3>
+          
+          {/* Instructor Info */}
+          <div className="flex items-center gap-2 text-sm pt-1">
+            <User className={`w-4 h-4 ${style.instructorIcon}`} />
+            <span className="text-[#0F1E4A] font-semibold opacity-90">{course.instructor}</span>
+          </div>
+
+          <p className="text-sm text-slate-500 leading-relaxed font-normal line-clamp-2">
+            {course.description}
+          </p>
+        </div>
+
+        {/* Duration & Rating Pills */}
+        <div className="flex gap-3 mb-6">
+          {/* Duration Box */}
+          <div className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-semibold text-xs ${style.pillBg}`}>
+            <Clock className="w-3.5 h-3.5" style={{ color: style.iconColor }} />
+            <span className="text-[#0F1E4A]">{course.duration}</span>
+          </div>
+          {/* Rating Box */}
+          <div className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-semibold text-xs ${style.pillBg}`}>
+            <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+            <span className="text-[#0F1E4A]">{course.rating}</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        {/* Course Fee Section */}
+        <div className="border-t border-gray-100 pt-5 mb-6 flex justify-between items-center">
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+              Course Fee
+            </p>
+            <p className={`text-2xl font-black ${style.price}`}>
+              ₹{course.price.toLocaleString('en-IN')}
             </p>
           </div>
           
-          {/* Dark Mode Toggle */}
+          {/* Fee Tag Badge */}
+          <span className={`px-3 py-1 rounded-full border text-[11px] font-bold tracking-wider ${style.badge}`}>
+            {course.level}
+          </span>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="space-y-3">
+          {/* Primary button: Book Time Slot */}
           <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`p-3 rounded-2xl transition-all duration-200 ${isDarkMode ? 'bg-purple-800 hover:bg-purple-700' : 'bg-white hover:bg-gray-100'} shadow-lg hover:shadow-xl`}
+            onClick={() => onBookClick(course)}
+            className={`w-full h-12 text-white text-sm font-bold rounded-[20px] transition-all duration-300 transform active:scale-[0.98] shadow-md hover:shadow-lg flex items-center justify-center ${style.primaryBtn}`}
           >
-            {isDarkMode ? (
-              <Sun className="w-6 h-6 text-yellow-400" />
-            ) : (
-              <Moon className="w-6 h-6 text-gray-700" />
-            )}
+            Book Time Slot
           </button>
-        </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className={`p-6 rounded-2xl ${isDarkMode ? 'bg-gray-800 border border-purple-700' : 'bg-white border border-gray-200'} shadow-lg`}>
-            <div className="flex items-center gap-4">
-              <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-purple-700' : 'bg-purple-100'}`}>
-                <TrendingUp className={`w-6 h-6 ${isDarkMode ? 'text-purple-300' : 'text-purple-600'}`} />
-              </div>
-              <div>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Courses</p>
-                <p className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{featuredCourses.length}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className={`p-6 rounded-2xl ${isDarkMode ? 'bg-gray-800 border border-purple-700' : 'bg-white border border-gray-200'} shadow-lg`}>
-            <div className="flex items-center gap-4">
-              <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-purple-700' : 'bg-purple-100'}`}>
-                <Users className={`w-6 h-6 ${isDarkMode ? 'text-purple-300' : 'text-purple-600'}`} />
-              </div>
-              <div>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Students</p>
-                <p className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  {featuredCourses.reduce((sum, course) => sum + course.students, 0).toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className={`p-6 rounded-2xl ${isDarkMode ? 'bg-gray-800 border border-purple-700' : 'bg-white border border-gray-200'} shadow-lg`}>
-            <div className="flex items-center gap-4">
-              <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-purple-700' : 'bg-purple-100'}`}>
-                <Award className={`w-6 h-6 ${isDarkMode ? 'text-purple-300' : 'text-purple-600'}`} />
-              </div>
-              <div>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Avg Rating</p>
-                <p className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>4.8</p>
-              </div>
-            </div>
-          </div>
-        </div>
+          {/* Secondary & Cart buttons row */}
+          <div className="flex gap-3">
+            <Link
+              href={`/courses/${course.id}`}
+              className={`flex-1 h-12 border-[1.5px] rounded-[20px] text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1.5 transform active:scale-[0.98] ${style.secondaryBtn}`}
+            >
+              <span>View Details</span>
+              <span className="text-sm">→</span>
+            </Link>
 
-        {/* Search and Filter */}
-        <SearchFilterBar 
-          courses={featuredCourses} 
-          onFilteredCourses={setFilteredCourses} 
-          isDarkMode={isDarkMode}
-        />
-
-        {/* Course Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
-          {filteredCourses.length > 0 ? (
-            filteredCourses.map((course) => (
-              <div key={course.id} className={`group rounded-2xl overflow-hidden transition-all duration-300 hover:scale-105 ${isDarkMode ? 'bg-gray-800 border border-purple-700' : 'bg-white border border-gray-200'} shadow-lg hover:shadow-2xl`}>
-                {/* Course Image/Gradient */}
-                <div className={`h-56 relative overflow-hidden ${isDarkMode ? 'bg-gradient-to-br from-purple-800 to-blue-800' : 'bg-gradient-to-br from-purple-500 to-blue-500'}`}>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Sparkles className="w-16 h-16 text-white/20" />
-                  </div>
-                  <div className="absolute top-4 right-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isDarkMode ? 'bg-purple-700 text-purple-200' : 'bg-white text-purple-700'}`}>
-                      {course.level}
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Course Content */}
-                <div className="p-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    {renderStars(course.rating)}
-                    <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>({course.rating})</span>
-                  </div>
-                  
-                  <h3 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {course.title}
-                  </h3>
-                  
-                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mb-4 line-clamp-2`}>
-                    {course.description}
-                  </p>
-                  
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-1">
-                      <Clock className={`w-4 h-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{course.duration}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Users className={`w-4 h-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                      <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{course.students}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between mb-4">
-                    <span className={`text-2xl font-bold ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-                      {course.price}
-                    </span>
-                  </div>
-                  
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => addItem(course)}
-                      disabled={isInCart(course.id)}
-                      className={`flex-1 px-4 py-2 rounded-xl font-medium transition-all duration-200 transform hover:translate-y-[-2px] hover:scale-105 ${
-                        isInCart(course.id)
-                          ? 'bg-green-500 text-white'
-                          : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 active:scale-[0.97]'
-                      }`}
-                    >
-                      {isInCart(course.id) ? 'In Cart' : 'Add to Cart'}
-                    </button>
-                    
-                    <Link
-                      href={`/courses/${course.id}`}
-                      className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 border-2 transform hover:translate-y-[-2px] hover:scale-105 ${
-                        isDarkMode 
-                          ? 'border-purple-600 text-purple-400 hover:bg-purple-600' 
-                          : 'border-purple-600 text-purple-600 hover:bg-purple-50'
-                      }`}
-                    >
-                      View Details
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-16">
-              <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                <svg className={`w-12 h-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.562M15 6.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <h3 className={`text-xl font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No courses found</h3>
-              <p className={`mb-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Try adjusting your filters to see more results.</p>
-              <button 
-                onClick={() => setFilteredCourses(featuredCourses)}
-                className="inline-flex items-center justify-center px-6 py-3 font-medium rounded-xl transition-all duration-200 ease-in-out bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px]"
-              >
-                Clear Filters
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Call to Action */}
-        <div className={`mt-16 p-8 rounded-3xl text-center ${isDarkMode ? 'bg-gradient-to-r from-purple-800 to-blue-800 border border-purple-700' : 'bg-gradient-to-r from-purple-600 to-blue-600'} shadow-2xl`}>
-          <h3 className={`text-3xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-white'}`}>
-            Ready to Start Your Musical Journey?
-          </h3>
-          <p className={`text-xl mb-8 ${isDarkMode ? 'text-purple-200' : 'text-purple-100'} max-w-2xl mx-auto`}>
-            Join thousands of students learning music with our expert instructors and interactive courses
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="inline-flex items-center justify-center px-8 py-4 font-semibold rounded-xl transition-all duration-200 ease-in-out bg-white text-purple-600 hover:bg-gray-100 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 shadow-lg hover:shadow-xl min-h-[44px]">
-              View All Courses
-            </button>
-            <button className="inline-flex items-center justify-center px-8 py-4 font-semibold rounded-xl transition-all duration-200 ease-in-out border-2 border-white text-white hover:bg-white/10 active:bg-white/20 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 min-h-[44px]">
-              Browse by Instrument
+            <button
+              onClick={() => onAddToCart(course)}
+              className={`w-12 h-12 border-[1.5px] rounded-[20px] transition-all duration-300 flex items-center justify-center transform active:scale-[0.98] ${
+                isInCartAlready 
+                  ? 'bg-green-500 border-green-500 text-white shadow-sm shadow-green-200' 
+                  : style.cartBtn
+              }`}
+              title={isInCartAlready ? 'Added to Cart' : 'Add to Cart'}
+            >
+              <ShoppingCart className="w-5 h-5" />
             </button>
           </div>
         </div>
       </div>
+    </div>
+  )
+})
+CourseCard.displayName = 'CourseCard'
+
+export default function FeaturedCourses() {
+  const { addItem, isInCart } = useCart()
+  const [selectedClass, setSelectedClass] = useState<any>(null)
+  const [showBookingModal, setShowBookingModal] = useState(false)
+  
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [booking, setBooking] = useState<any>(null)
+
+  const handleBookClick = useCallback((course: any) => {
+    setSelectedClass({
+      id: course.id,
+      name: course.title,
+      instructor: course.instructor,
+      level: course.level,
+      category: 'piano'
+    })
+    setShowBookingModal(true)
+  }, [])
+
+  const handleAddToCart = useCallback((course: any) => {
+    addItem({
+      id: course.id,
+      title: course.title,
+      price: course.price,
+      instructor: course.instructor,
+      level: course.level,
+      duration: course.duration,
+      image: `/courses/${course.id}.jpg`,
+      category: 'Piano'
+    })
+  }, [addItem])
+
+  const handleBookingSuccess = useCallback((newBooking: any) => {
+    setBooking(newBooking)
+    setShowBookingModal(false)
+    setShowSuccess(true)
+  }, [])
+
+  return (
+    <section className="py-24 bg-gradient-to-b from-[#FAFBFF] to-[#FFFFFF] relative font-sans overflow-hidden">
+      {/* Decorative subtle top accents */}
+      <div className="absolute top-0 left-0 w-8 h-8 bg-pink-100/30 rounded-br-full opacity-40"></div>
+      <div className="absolute top-0 right-0 w-8 h-8 bg-blue-100/30 rounded-bl-full opacity-40"></div>
+
+      <div className="container mx-auto px-6 max-w-7xl">
+        {/* Section Header */}
+        <div className="text-center mb-16">
+          <h2 className="text-[28px] md:text-3xl font-bold text-[#0F1E4A]">
+            Showing 3 Piano courses
+          </h2>
+        </div>
+
+        {/* Course Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {pianoCourses.map((course) => {
+            const isInCartAlready = isInCart(course.id)
+
+            return (
+              <CourseCard
+                key={course.id}
+                course={course}
+                isInCartAlready={isInCartAlready}
+                onBookClick={handleBookClick}
+                onAddToCart={handleAddToCart}
+              />
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Booking Calendar Modal */}
+      {selectedClass && (
+        <BookingModal
+          isOpen={showBookingModal}
+          onClose={() => {
+            setShowBookingModal(false)
+            setSelectedClass(null)
+          }}
+          classSchedule={selectedClass}
+          onBookingSuccess={handleBookingSuccess}
+        />
+      )}
+
+      {/* Booking Success Modal */}
+      <BookingSuccess
+        isOpen={showSuccess}
+        booking={booking}
+        onClose={() => {
+          setShowSuccess(false)
+          setBooking(null)
+        }}
+      />
     </section>
   )
 }

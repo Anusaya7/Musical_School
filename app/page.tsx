@@ -5,7 +5,6 @@ import Header from '@/components/Header'
 import Hero from '@/components/Hero'
 import ExploreInstruments from '@/components/ExploreInstruments'
 import WhyChooseUs from '@/components/WhyChooseUs'
-import AIMusicPractice from '@/components/AIMusicPractice'
 import FeaturedCourses from '@/components/FeaturedCourses'
 import ClassSchedule from '@/components/ClassSchedule'
 import InstructorInfo from '@/components/InstructorInfo'
@@ -28,7 +27,6 @@ export default function Home() {
         <Hero />
         <ExploreInstruments />
         <WhyChooseUs />
-        <AIMusicPractice />
         <FeaturedCourses />
         <InstructorInfo />
         <ClassSchedule onClassSelect={setSelectedClass} />

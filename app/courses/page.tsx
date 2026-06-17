@@ -1,11 +1,11 @@
 'use client'
 
+import React, { useState, useEffect, useMemo } from 'react'
 import Header from '@/components/Header'
 import CourseCard from '@/components/CourseCard'
 import CourseBooking from '@/components/CourseBooking'
 import { useCart } from '@/contexts/CartContext'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useState, useEffect, useMemo } from 'react'
 import {
   getAllCourses,
   getCoursesByCategory,
@@ -58,27 +58,27 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-gradient-to-b from-[#FAFBFF] to-[#FFFFFF] font-sans pb-24 text-[#0F1E4A]">
       <Header />
 
-      <main className="container mx-auto px-4 pb-20 pt-32">
-        {/* Hero */}
-        <section className="relative mb-14 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-purple-900/40 via-slate-900 to-indigo-900/40 px-8 py-14 text-center shadow-2xl">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(168,85,247,0.15),transparent_60%)]" />
-          <div className="relative">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-4 py-1.5 text-sm text-purple-300">
-              <Music2 className="h-4 w-4" />
+      <main className="container mx-auto px-6 pb-20 pt-32 max-w-7xl">
+        {/* Hero Banner Card */}
+        <section className="relative mb-14 overflow-hidden rounded-[24px] border border-gray-100 bg-white px-8 py-14 text-center shadow-lg shadow-gray-100/50">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(223,167,255,0.1),transparent_60%)]" />
+          <div className="relative z-10">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-purple-100 bg-purple-50/50 px-4 py-1.5 text-xs font-semibold text-purple-600">
+              <Music2 className="h-3.5 w-3.5" />
               Premium Music Academy
             </div>
-            <h1 className="mb-4 text-4xl font-bold tracking-tight text-white md:text-5xl">
-              {category ? `${getCategoryDisplayName(category)} Courses` : 'Our Courses'}
+            <h1 className="mb-4 text-3xl font-extrabold tracking-tight text-[#0F1E4A] md:text-4xl">
+              {category ? `${getCategoryDisplayName(category)} Courses` : 'Our Music Courses'}
             </h1>
-            <p className="mx-auto max-w-2xl text-lg text-slate-300">
+            <p className="mx-auto max-w-2xl text-sm md:text-base text-slate-500 leading-relaxed font-medium">
               {category
-                ? `Master ${getCategoryDisplayName(category)} with Ajinkya Amrule — Beginner, Intermediate, and Advanced pathways.`
+                ? `Master ${getCategoryDisplayName(category)} with instructor Ajinkya Amrule — structured Beginner, Intermediate, and Advanced pathways.`
                 : 'Explore every instrument with structured learning paths taught by Ajinkya Amrule.'}
             </p>
-            <p className="mt-3 text-sm text-purple-300/80">
+            <p className="mt-3 text-xs font-semibold text-purple-600/80">
               All courses · Same expert instructor · Three levels per instrument
             </p>
           </div>
@@ -88,15 +88,15 @@ export default function CoursesPage() {
         <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <Filter className="h-4 w-4 text-slate-400" />
-            <span className="text-sm font-medium text-slate-400">Level:</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Level Filter:</span>
             {(['All', ...LEVELS] as const).map((level) => (
               <button
                 key={level}
                 onClick={() => setLevelFilter(level)}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
+                className={`rounded-full px-5 py-2 text-xs font-bold transition-all duration-300 ${
                   levelFilter === level
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25'
-                    : 'border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-200'
+                    : 'border border-gray-200 bg-white text-slate-600 hover:bg-gray-50 hover:border-gray-300'
                 }`}
               >
                 {level}
@@ -107,16 +107,16 @@ export default function CoursesPage() {
           {category && (
             <button
               onClick={clearFilter}
-              className="inline-flex items-center gap-2 self-start rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300 transition-colors hover:bg-white/10 sm:self-auto"
+              className="inline-flex items-center gap-2 self-start rounded-full border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 transition-colors hover:bg-gray-50 hover:border-gray-300 sm:self-auto"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
               Clear category filter
             </button>
           )}
         </div>
 
         {category && (
-          <p className="mb-6 text-center text-sm text-slate-400">
+          <p className="mb-6 text-center text-xs font-bold text-slate-400 uppercase tracking-widest">
             Showing {filteredCourses.length} {getCategoryDisplayName(category)} course
             {filteredCourses.length !== 1 ? 's' : ''}
             {levelFilter !== 'All' ? ` · ${levelFilter} level` : ''}
@@ -124,11 +124,11 @@ export default function CoursesPage() {
         )}
 
         {filteredCourses.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-slate-900/50 py-20 text-center">
-            <p className="text-lg text-slate-400">No courses match your filters.</p>
+          <div className="rounded-[24px] border border-gray-100 bg-white py-20 text-center shadow-sm">
+            <p className="text-sm text-slate-500 font-medium">No courses match your filters.</p>
             <button
               onClick={() => setLevelFilter('All')}
-              className="mt-4 text-purple-400 underline hover:text-purple-300"
+              className="mt-4 text-xs font-bold text-purple-600 underline hover:text-purple-500"
             >
               Reset level filter
             </button>

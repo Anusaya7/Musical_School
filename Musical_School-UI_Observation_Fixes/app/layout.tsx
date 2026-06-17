@@ -7,7 +7,6 @@ import Toast from '@/components/Toast'
 import FooterPremium from '@/components/FooterPremium'
 import WhatsAppChat from '@/components/WhatsAppChat'
 import AIChatbot from '@/components/AIChatbot'
-import VoiceAITeacher from '@/components/VoiceAITeacher'
 import Script from 'next/script'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -38,7 +37,6 @@ export default function RootLayout({
               <Toast />
               <WhatsAppChat />
               <AIChatbot />
-              <VoiceAITeacher />
             </CartProvider>
           </AuthProvider>
         </ThemeProvider>

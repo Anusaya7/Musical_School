@@ -21,19 +21,12 @@ export default function CoursesPage() {
 
   useEffect(() => {
     setIsLoading(true)
-    
-    if (category) {
-      // Filter courses by category and limit to exact count
-      const categoryCourses = getCoursesByCategory(category)
-      const maxCount = COURSE_COUNTS[category as keyof typeof COURSE_COUNTS] || categoryCourses.length
-      const limitedCourses = categoryCourses.slice(0, maxCount)
-      setFilteredCourses(limitedCourses)
-    } else {
-      setFilteredCourses(courses)
-    }
-    
+
+    const categoryCourses = category ? getCoursesByCategory(category) : courses
+    const maxCount = category ? COURSE_COUNTS[category as keyof typeof COURSE_COUNTS] || categoryCourses.length : categoryCourses.length
+    setFilteredCourses(categoryCourses.slice(0, maxCount))
     setIsLoading(false)
-  }, [category])
+  }, [category, courses])
 
   const clearFilter = () => {
     window.location.href = '/courses'
@@ -73,23 +66,23 @@ export default function CoursesPage() {
         <div className="text-center mb-16">
           {category && (
             <div className="mb-6">
-              <div className="inline-flex items-center gap-3 bg-blue-50 border-2 border-blue-200 rounded-full px-6 py-3">
-                <span className="text-blue-700 font-semibold">
+              <div className="inline-flex items-center gap-3 bg-slate-100 border border-slate-300 rounded-full px-6 py-3">
+                <span className="text-slate-800 font-semibold">
                   Showing {getCategoryDisplayName(category)} Courses ({filteredCourses.length})
                 </span>
                 <button
                   onClick={clearFilter}
-                  className="text-blue-600 hover:text-blue-800 font-medium underline"
+                  className="text-slate-700 hover:text-slate-900 font-medium underline"
                 >
                   Clear Filter
                 </button>
               </div>
             </div>
           )}
-          <h1 className="text-4xl font-bold text-primary mb-4">
+          <h1 className="text-4xl font-bold text-slate-900 mb-4">
             {category ? `${getCategoryDisplayName(category)} Courses` : 'Our Courses'}
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-slate-600">
             {category 
               ? `Choose from our ${filteredCourses.length} ${getCategoryDisplayName(category)} courses taught by expert instructors`
               : 'Choose from our wide range of music courses taught by expert instructors'
@@ -105,7 +98,7 @@ export default function CoursesPage() {
         )}
 
         {/* Courses Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {filteredCourses.map((course) => (
             <CourseCard
               key={course.id}

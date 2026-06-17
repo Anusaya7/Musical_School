@@ -44,27 +44,6 @@ export default function CTASection() {
         </div>
       </div>
 
-      {/* Floating Buttons - Fixed Bottom Right */}
-      <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
-        {/* Voice Button */}
-        <button className="w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 flex items-center justify-center group">
-          <span className="text-xl">🎤</span>
-          <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-20"></div>
-        </button>
-
-        {/* Chat Button */}
-        <button className="w-14 h-14 bg-purple-500 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 flex items-center justify-center group">
-          <span className="text-xl">💬</span>
-          <div className="absolute inset-0 bg-purple-500 rounded-full animate-ping opacity-20"></div>
-        </button>
-
-        {/* WhatsApp Button */}
-        <button className="w-14 h-14 bg-green-500 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 flex items-center justify-center group">
-          <span className="text-xl">🟢</span>
-          <div className="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-20"></div>
-        </button>
-      </div>
-
       <style jsx>{`
         @keyframes fade-in-up {
           from {
