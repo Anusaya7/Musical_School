@@ -1,57 +1,46 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Header from '@/components/Header'
-import { useTheme } from '@/contexts/ThemeContext'
-import { useCart, Course } from '@/contexts/CartContext'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useTheme } from '@/contexts/ThemeContext'
+import { useCart, Course } from '@/contexts/CartContext'
 import {
   BookOpen,
   Clock,
-  TrendingUp,
   Calendar,
-  Download,
   Play,
-  CheckCircle,
   Award,
   Target,
   User,
-  Settings,
   Music,
-  Piano,
-  Guitar,
-  Drum,
-  Mic,
-  BarChart3,
-  Flame,
   Video,
-  FileText,
   Star,
   AlertCircle,
-  ChevronRight,
-  LogOut,
   Bell,
-  Mail,
-  Phone,
-  MapPin,
-  Camera,
   LayoutDashboard,
   Heart,
   MessageSquare,
   Search,
   Menu,
   X,
-  ShoppingCart,
-  Eye,
-  ArrowRight,
   PlayCircle,
-  Lock,
-  Check,
-  Users,
-  HelpCircle
+  LogOut,
+  Settings,
+  CheckCircle,
+  ChevronRight,
+  Flame,
+  HelpCircle,
+  Mail,
+  Phone,
+  MapPin,
+  TrendingUp,
+  Award as AwardIcon,
+  BookOpen as BookIcon,
+  Tv,
+  ExternalLink,
+  ShieldCheck
 } from 'lucide-react'
-
 
 interface PracticeSession {
   id: string
@@ -72,6 +61,7 @@ interface UpcomingClass {
   time: string
   duration: string
   type: 'live' | 'recorded'
+  batchTiming: string
   link?: string
 }
 
@@ -87,1273 +77,1342 @@ interface ProfileData {
   joinDate: string
 }
 
-interface Certificate {
-  id: number
-  courseName: string
+interface Holiday {
+  id: string
+  date: string
+  reason: string
+  isRecurringWeekly: boolean
+  dayOfWeek?: number
+}
+
+interface Workshop {
+  id: string
+  title: string
   instructor: string
-  completionDate: string
-  certificateId: string
-  score: number
-}
-
-interface Message {
-  id: number
-  sender: string
-  subject: string
-  message: string
+  date: string
   time: string
-  avatar: string
-  unread: boolean
+  price: number
+  description: string
 }
 
-const wishlistCourses = [
-  {
-    id: '4',
-    title: 'Violin for Beginners',
-    instructor: 'Maria Rodriguez',
-    price: 2999,
-    image: '/api/placeholder/300/200',
-    rating: 4.9,
-    duration: '10 hours',
-    level: 'Beginner',
-    students: 1234
-  },
-  {
-    id: '5',
-    title: 'Jazz Piano Improvisation',
-    instructor: 'John Davis',
-    price: 3999,
-    image: '/api/placeholder/300/200',
-    rating: 4.8,
-    duration: '15 hours',
-    level: 'Advanced',
-    students: 567
-  }
-]
-
-const enrolledCourses: Course[] = [
-  {
-    id: '1',
-    title: 'Piano Fundamentals',
-    instructor: 'Sarah Johnson',
-    level: 'beginner',
-    duration: '8 weeks',
-    price: 2999,
-    image: '/api/placeholder/300/200',
-    rating: 4.9,
-    category: 'Piano'
-  },
-  {
-    id: '2',
-    title: 'Guitar Basics',
-    instructor: 'Mike Wilson',
-    level: 'beginner',
-    duration: '6 weeks',
-    price: 2499,
-    image: '/api/placeholder/300/200',
-    rating: 4.7,
-    category: 'Guitar'
-  },
-  {
-    id: '3',
-    title: 'Music Theory',
-    instructor: 'Dr. Emily Chen',
-    level: 'intermediate',
-    duration: '10 weeks',
-    price: 2999,
-    image: '/api/placeholder/300/200',
-    rating: 4.8,
-    category: 'Music Theory'
-  }
-]
-
-const practiceSessions: PracticeSession[] = [
-  {
-    id: '1',
-    instrument: 'piano',
-    date: '2024-01-20',
-    duration: 45,
-    exercises: 5,
-    completed: 4,
-    level: 'beginner'
-  },
-  {
-    id: '2',
-    instrument: 'guitar',
-    date: '2024-01-19',
-    duration: 30,
-    exercises: 3,
-    completed: 3,
-    level: 'beginner'
-  },
-  {
-    id: '3',
-    instrument: 'piano',
-    date: '2024-01-18',
-    duration: 60,
-    exercises: 6,
-    completed: 5,
-    level: 'beginner'
-  }
-]
-
-const upcomingClasses: UpcomingClass[] = [
-  {
-    id: '1',
-    title: 'Live Piano Session',
-    instructor: 'Sarah Johnson',
-    instrument: 'piano',
-    date: '2024-01-25',
-    time: '3:00 PM',
-    duration: '1 hour',
-    type: 'live',
-    link: '#'
-  },
-  {
-    id: '2',
-    title: 'Guitar Workshop',
-    instructor: 'Mike Wilson',
-    instrument: 'guitar',
-    date: '2024-01-26',
-    time: '4:00 PM',
-    duration: '45 minutes',
-    type: 'live',
-    link: '#'
-  },
-  {
-    id: '3',
-    title: 'Music Theory Lecture',
-    instructor: 'Dr. Emily Chen',
-    instrument: 'theory',
-    date: '2024-01-27',
-    time: '2:00 PM',
-    duration: '1 hour',
-    type: 'recorded'
-  }
-]
-
-const certificates: Certificate[] = [
-  {
-    id: 1,
-    courseName: 'Introduction to Music Theory',
-    instructor: 'Dr. Sarah Chen',
-    completionDate: 'March 15, 2024',
-    certificateId: 'CERT-2024-001',
-    score: 95
-  },
-  {
-    id: 2,
-    courseName: 'Basic Piano Techniques',
-    instructor: 'Ajinkya Amrule',
-    completionDate: 'February 28, 2024',
-    certificateId: 'CERT-2024-002',
-    score: 92
-  },
-  {
-    id: 3,
-    courseName: 'Guitar Fundamentals',
-    instructor: 'Mike Johnson',
-    completionDate: 'January 10, 2024',
-    certificateId: 'CERT-2024-003',
-    score: 88
-  }
-]
-
-const messages: Message[] = [
-  {
-    id: 1,
-    sender: 'Ajinkya Amrule',
-    subject: 'Great progress on Piano Fundamentals!',
-    message: 'I noticed you\'ve completed 75% of course. Keep up the excellent work!',
-    time: '2 hours ago',
-    avatar: '/api/placeholder/40/40',
-    unread: true
-  },
-  {
-    id: 2,
-    sender: 'Dr. Sarah Chen',
-    subject: 'Music Theory Assignment Feedback',
-    message: 'Your latest assignment on chord progressions was outstanding. Check my feedback.',
-    time: '1 day ago',
-    avatar: '/api/placeholder/40/40',
-    unread: false
-  },
-  {
-    id: 3,
-    sender: 'Support Team',
-    subject: 'New course recommendations',
-    message: 'Based on your progress, we think you might enjoy our Advanced Piano course.',
-    time: '3 days ago',
-    avatar: '/api/placeholder/40/40',
-    unread: false
-  }
-]
-
-const courseSections = [
-  {
-    id: 1,
-    title: 'Getting Started',
-    lessons: [
-      { id: 1, title: 'Course Introduction', duration: '5:30', completed: true, locked: false },
-      { id: 2, title: 'Setting Up Your Instrument', duration: '8:15', completed: true, locked: false },
-      { id: 3, title: 'Basic Music Notation', duration: '12:45', completed: true, locked: false }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Core Fundamentals',
-    lessons: [
-      { id: 4, title: 'Understanding Scales', duration: '15:20', completed: true, locked: false },
-      { id: 5, title: 'Learning Basic Chords', duration: '18:30', completed: false, locked: false, current: true },
-      { id: 6, title: 'Rhythm and Timing', duration: '14:10', completed: false, locked: true }
-    ]
-  },
-  {
-    id: 3,
-    title: 'Intermediate Techniques',
-    lessons: [
-      { id: 7, title: 'Advanced Chord Progressions', duration: '22:15', completed: false, locked: true },
-      { id: 8, title: 'Improvisation Basics', duration: '19:45', completed: false, locked: true },
-      { id: 9, title: 'Performance Techniques', duration: '25:30', completed: false, locked: true }
-    ]
-  }
-]
+interface RecordedSession {
+  id: string
+  title: string
+  description: string
+  url: string
+  instrument: string
+}
 
 export default function StudentDashboard() {
   const { theme } = useTheme()
-  const { addItem, isInCart } = useCart()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'courses' | 'practice' | 'schedule' | 'profile' | 'learning' | 'course-player' | 'wishlist' | 'certificates' | 'messages'>('dashboard')
+  const { addItem, isInCart } = useCart()
+  
+  // Tab State
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'courses' | 'workshops' | 'recorded' | 'schedule' | 'learning' | 'achievements' | 'profile' | 'settings'>('dashboard')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [showNotification, setShowNotification] = useState(false)
+  const [notificationMessage, setNotificationMessage] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([])
-  const [practiceSessions, setPracticeSessions] = useState<PracticeSession[]>([])
-  const [upcomingClasses, setUpcomingClasses] = useState<UpcomingClass[]>([])
+
+  // Profile data
   const [profileData, setProfileData] = useState<ProfileData>({
     firstName: 'John',
     lastName: 'Doe',
     email: 'john.doe@example.com',
-    phone: '+1 (555) 123-4567',
-    bio: 'Passionate music learner exploring different instruments',
+    phone: '+91 98765 43210',
+    bio: 'Passionate music learner exploring piano and guitar.',
     instruments: ['Piano', 'Guitar'],
-    level: 'Intermediate',
-    goals: 'Become proficient in piano and guitar',
-    joinDate: '2024-01-15'
+    level: 'Beginner',
+    goals: 'Learn fundamental chords and scales',
+    joinDate: '2026-01-15'
   })
-  const [isEditingProfile, setIsEditingProfile] = useState(false)
+
+  // Database Driven States
+  const [upcomingClasses, setUpcomingClasses] = useState<UpcomingClass[]>([])
+  const [holidays, setHolidays] = useState<Holiday[]>([])
+  const [workshops, setWorkshops] = useState<Workshop[]>([])
+  const [recordedSessions, setRecordedSessions] = useState<RecordedSession[]>([])
+  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([])
+
+  const handleNotification = (message: string) => {
+    setNotificationMessage(message)
+    setShowNotification(true)
+    setTimeout(() => setShowNotification(false), 3000)
+  }
+
+  // Load backend database records on mount
+  const loadStudentDashboardData = async () => {
+    setLoading(true)
+    try {
+      const [bookingsRes, holidaysRes, workshopsRes, videosRes, coursesRes] = await Promise.all([
+        fetch('/api/bookings').then(r => r.json()).catch(() => []),
+        fetch('/api/holidays').then(r => r.json()).catch(() => []),
+        fetch('/api/workshops').then(r => r.json()).catch(() => []),
+        fetch('/api/recorded-sessions').then(r => r.json()).catch(() => []),
+        fetch('/api/courses').then(r => r.json()).catch(() => [])
+      ])
+
+      // 1. Process Bookings to show as Upcoming Classes
+      if (Array.isArray(bookingsRes) && bookingsRes.length > 0) {
+        const myBookings = bookingsRes.filter(b => b.studentEmail?.toLowerCase() === profileData.email.toLowerCase())
+        const mapped = myBookings.map((b: any) => ({
+          id: b.id,
+          title: b.courseName,
+          instructor: b.instructor || 'Senior Music Instructor',
+          instrument: b.courseId?.split('-')[0] || 'piano',
+          date: b.date,
+          time: b.timeSlot,
+          duration: '1 hour',
+          type: 'live' as const,
+          batchTiming: b.batchTiming || 'evening',
+          link: b.link || '#'
+        }))
+        setUpcomingClasses(mapped)
+
+        // Set enrolled courses based on bookings
+        if (Array.isArray(coursesRes) && coursesRes.length > 0) {
+          const coursesMap = new Map()
+          myBookings.forEach((b: any) => {
+            const courseObj = coursesRes.find(c => c.id === b.courseId)
+            if (courseObj) {
+              coursesMap.set(courseObj.id, courseObj)
+            }
+          })
+          setEnrolledCourses(Array.from(coursesMap.values()))
+        }
+      } else {
+        // Fallback Mock Courses if DB empty
+        setEnrolledCourses([
+          { id: 'piano-101', title: 'Piano Fundamentals', instructor: 'Sarah Johnson', level: 'beginner', duration: '8 weeks', price: 2999, image: '/api/placeholder/300/200', rating: 4.9, category: 'Piano' },
+          { id: 'guitar-101', title: 'Guitar Mastery', instructor: 'Mike Wilson', level: 'beginner', duration: '6 weeks', price: 2499, image: '/api/placeholder/300/200', rating: 4.7, category: 'Guitar' }
+        ])
+        setUpcomingClasses([
+          { id: '1', title: 'Live Piano Session', instructor: 'Sarah Johnson', instrument: 'piano', date: 'June 20, 2026', time: '3:00 PM', duration: '1 hour', type: 'live', batchTiming: 'evening', link: '#' },
+          { id: '2', title: 'Guitar Workshop Jam', instructor: 'Mike Wilson', instrument: 'guitar', date: 'June 21, 2026', time: '4:00 PM', duration: '45 mins', type: 'live', batchTiming: 'afternoon', link: '#' }
+        ])
+      }
+
+      if (Array.isArray(holidaysRes)) setHolidays(holidaysRes)
+      if (Array.isArray(workshopsRes) && workshopsRes.length > 0) {
+        setWorkshops(workshopsRes)
+      } else {
+        // Fallback Mock Workshops
+        setWorkshops([
+          { id: 'w1', title: 'Vocal Performance masterclass', instructor: 'Dr. Sarah Chen', date: 'June 25, 2026', time: '11:00 AM', price: 1500, description: 'Learn breath control, performance delivery, and pitch correction guidelines.' },
+          { id: 'w2', title: 'Piano Techniques & Posture', instructor: 'Ajinkya Amrule', date: 'June 28, 2026', time: '2:00 PM', price: 1200, description: 'Correct hand positioning and chord transitions for classical songs.' }
+        ])
+      }
+
+      if (Array.isArray(videosRes) && videosRes.length > 0) {
+        setRecordedSessions(videosRes)
+      } else {
+        // Fallback Mock Videos
+        setRecordedSessions([
+          { id: 'v1', title: 'Basic Chord Progressions', description: 'Understanding I-V-vi-IV chords in C Major key.', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', instrument: 'Piano' },
+          { id: 'v2', title: 'Fingerstyle Guitar Patterns', description: 'Introduction to Travis picking and baseline flows.', url: 'https://www.youtube.com/embed/dQw4w9WgXcQ', instrument: 'Guitar' }
+        ])
+      }
+      
+    } catch (error) {
+      console.error("Failed to load student dashboard", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadStudentDashboardData()
+  }, [profileData.email])
+
+  const handleRegisterWorkshop = (workshop: Workshop) => {
+    addItem({
+      id: workshop.id,
+      title: workshop.title,
+      price: workshop.price,
+      instructor: workshop.instructor,
+      level: 'General',
+      duration: '2 hours'
+    })
+    handleNotification(`${workshop.title} added to checkout cart!`)
+  }
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'courses', label: 'My Courses', icon: BookOpen },
-    { id: 'learning', label: 'My Learning', icon: BookOpen },
-    { id: 'course-player', label: 'Course Player', icon: Video },
-    { id: 'wishlist', label: 'Wishlist', icon: Heart },
-    { id: 'certificates', label: 'Certificates', icon: Award },
-    { id: 'messages', label: 'Messages', icon: MessageSquare },
-    { id: 'practice', label: 'Practice', icon: Target },
-    { id: 'schedule', label: 'Schedule', icon: Calendar },
-    { id: 'profile', label: 'Profile', icon: User }
+    { id: 'dashboard', label: 'Dashboard', emoji: '🏠' },
+    { id: 'courses', label: 'My Courses', emoji: '📚' },
+    { id: 'workshops', label: 'Workshops', emoji: '🎤' },
+    { id: 'recorded', label: 'Recorded Sessions', emoji: '🎥' },
+    { id: 'schedule', label: 'Class Schedule', emoji: '📅' },
+    { id: 'learning', label: 'Learning Progress', emoji: '📊' },
+    { id: 'achievements', label: 'Achievements', emoji: '🏆' },
+    { id: 'profile', label: 'My Profile', emoji: '👤' },
+    { id: 'settings', label: 'Settings', emoji: '⚙️' },
   ]
 
-  const stats = [
-    { label: 'Courses Enrolled', value: enrolledCourses.length.toString(), icon: BookOpen, change: '+2 this month', color: 'blue' },
-    { label: 'Hours Learned', value: '156', icon: Clock, change: '+24 this week', color: 'green' },
-    { label: 'Certificates', value: '3', icon: Award, change: '+1 this month', color: 'purple' },
-    { label: 'Practice Streak', value: '7 days', icon: Flame, change: 'Personal best!', color: 'orange' }
-  ]
-
-  // Load data on mount
-  useEffect(() => {
-    // Initialize with sample data
-    const sampleCourses: Course[] = [
-      {
-        id: '1',
-        title: 'Piano Fundamentals',
-        instructor: 'Sarah Johnson',
-        level: 'beginner',
-        duration: '8 weeks',
-        price: 2999,
-        image: '/api/placeholder/300/200',
-        rating: 4.9,
-        category: 'Piano'
-      },
-      {
-        id: '2',
-        title: 'Guitar Basics',
-        instructor: 'Mike Wilson',
-        level: 'beginner',
-        duration: '6 weeks',
-        price: 2499,
-        image: '/api/placeholder/300/200',
-        rating: 4.7,
-        category: 'Guitar'
-      }
-    ]
-    
-    const sampleSessions: PracticeSession[] = [
-      {
-        id: '1',
-        instrument: 'piano',
-        date: '2024-01-20',
-        duration: 45,
-        exercises: 5,
-        completed: 4,
-        level: 'beginner'
-      },
-      {
-        id: '2',
-        instrument: 'guitar',
-        date: '2024-01-19',
-        duration: 30,
-        exercises: 3,
-        completed: 3,
-        level: 'beginner'
-      }
-    ]
-    
-    const sampleClasses: UpcomingClass[] = [
-      {
-        id: '1',
-        title: 'Live Piano Session',
-        instructor: 'Sarah Johnson',
-        instrument: 'piano',
-        date: '2024-01-25',
-        time: '3:00 PM',
-        duration: '1 hour',
-        type: 'live',
-        link: '#'
-      }
-    ]
-    
-    setEnrolledCourses(sampleCourses)
-    setPracticeSessions(sampleSessions)
-    setUpcomingClasses(sampleClasses)
-  }, [])
-
-  const getInstrumentIcon = (category: string) => {
-    switch (category.toLowerCase()) {
-      case 'piano': return <Piano className="w-5 h-5" />
-      case 'guitar': return <Guitar className="w-5 h-5" />
-      case 'drums': return <Drum className="w-5 h-5" />
-      case 'vocals': return <Mic className="w-5 h-5" />
-      default: return <Music className="w-5 h-5" />
+  const getCourseImage = (category: string) => {
+    const term = category?.toLowerCase() || ''
+    if (term.includes('piano') || term.includes('v1')) {
+      return 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?q=80&w=400&auto=format&fit=crop'
     }
-  }
-
-  const getInstrumentName = (instrument: string) => {
-    switch (instrument) {
-      case 'piano': return 'Piano'
-      case 'guitar': return 'Guitar'
-      case 'drums': return 'Drums'
-      case 'vocals': return 'Vocals'
-      case 'theory': return 'Music Theory'
-      default: return instrument
+    if (term.includes('guitar') || term.includes('v2')) {
+      return 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?q=80&w=400&auto=format&fit=crop'
     }
+    return 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=400&auto=format&fit=crop'
   }
-
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case 'beginner': return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30'
-      case 'intermediate': return 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30'
-      case 'advanced': return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30'
-      default: return 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-900/30'
-    }
-  }
-
-  const formatTime = (minutes: number) => {
-    const hours = Math.floor(minutes / 60)
-    const mins = minutes % 60
-    if (hours > 0) {
-      return `${hours}h ${mins}m`
-    }
-    return `${mins}m`
-  }
-
-  const getTotalPracticeTime = () => {
-    return practiceSessions.reduce((total, session) => total + session.duration, 0)
-  }
-
-  const getTotalCompletedExercises = () => {
-    return practiceSessions.reduce((total, session) => total + session.completed, 0)
-  }
-
-  const getCurrentStreak = () => {
-    return 7 // Mock streak
-  }
-
-  const getAverageProgress = () => {
-    if (enrolledCourses.length === 0) return 0
-    return Math.round(enrolledCourses.reduce((total, course) => total + 75, 0) / enrolledCourses.length)
-  }
-
-  const handleStartCourse = (courseId: string) => {
-    router.push(`/courses/${courseId}`)
-  }
-
-  const handleContinueLearning = (courseId: string) => {
-    router.push(`/courses/${courseId}`)
-  }
-
-  const handlePracticeNow = (instrument: string) => {
-    router.push(`/practice?instrument=${instrument}`)
-  }
-
-  const handleAddToCart = (course: Course) => {
-    addItem({
-      id: course.id,
-      title: course.title,
-      price: course.price,
-      instructor: course.instructor,
-      level: course.level,
-      duration: course.duration
-    })
-  }
-
-  const handleDownloadMaterials = (courseId: string) => {
-    // Download course materials
-    const link = document.createElement('a')
-    link.href = '#'
-    link.download = `course_${courseId}_materials.pdf`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-
-  const handleProfileUpdate = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsEditingProfile(false)
-  }
-
 
   const renderDashboard = () => (
     <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className={`rounded-2xl p-8 ${theme === 'dark' ? 'bg-gradient-to-r from-purple-900 to-blue-900' : 'bg-gradient-to-r from-purple-600 to-blue-600'} text-white`}>
-        <h1 className="text-3xl font-bold mb-2">Welcome back, {profileData.firstName}! 👋</h1>
-        <p className="text-lg mb-6 opacity-90">You're making great progress! Keep up the excellent work.</p>
-        <button 
-          onClick={() => setActiveTab('courses')}
-          className="bg-white text-purple-600 px-6 py-3 rounded-xl font-semibold hover:bg-gray-100 transition-colors flex items-center gap-2"
-        >
-          Continue Learning
-          <ArrowRight className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <div key={index} className={`rounded-xl p-6 ${
-            theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-          } shadow-lg`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className={`text-sm ${
-                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                }`}>{stat.label}</p>
-                <p className={`text-2xl font-bold ${
-                  theme === 'dark' ? 'text-white' : 'text-gray-900'
-                }`}>{stat.value}</p>
-                <p className="text-xs text-green-500 mt-2">{stat.change}</p>
-              </div>
-              <div className={`p-3 rounded-xl ${
-                stat.color === 'blue' ? 'bg-blue-100 text-blue-600' :
-                stat.color === 'green' ? 'bg-green-100 text-green-600' :
-                stat.color === 'purple' ? 'bg-purple-100 text-purple-600' :
-                'bg-orange-100 text-orange-600'
-              }`}>
-                <stat.icon className="w-6 h-6" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Continue Learning */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className={`rounded-xl p-6 ${
-          theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-        } shadow-lg`}>
-          <h3 className={`text-lg font-semibold mb-4 ${
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          }`}>Continue Learning</h3>
-          
-          <div className="space-y-4">
-            {enrolledCourses.slice(0, 3).map((course) => (
-              <div key={course.id} className={`p-4 rounded-lg ${
-                theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
-              }`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      theme === 'dark' ? 'bg-purple-900/30' : 'bg-purple-100'
-                    }`}>
-                      <div className="text-purple-600">
-                        {getInstrumentIcon(course.category)}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className={`font-semibold ${
-                        theme === 'dark' ? 'text-white' : 'text-gray-900'
-                      }`}>{course.title}</h4>
-                      <p className={`text-sm ${
-                        theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                      }`}>{course.instructor}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-medium ${
-                      theme === 'dark' ? 'text-white' : 'text-gray-900'
-                    }`}>75%</p>
-                  </div>
-                </div>
-                
-                <div className={`w-full h-2 rounded-full mb-3 ${
-                  theme === 'dark' ? 'bg-gray-600' : 'bg-gray-200'
-                }`}>
-                  <div 
-                    className="h-2 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 transition-all duration-500"
-                    style={{ width: '75%' }}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className={`text-sm ${
-                    theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    Next: Chord Progressions
-                  </span>
-                  <button
-                    onClick={() => handleContinueLearning(course.id)}
-                    className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center"
-                  >
-                    <Play className="w-3 h-3 mr-1" />
-                    Continue
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Upcoming Classes */}
-        <div className={`rounded-xl p-6 ${
-          theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-        } shadow-lg`}>
-          <h3 className={`text-lg font-semibold mb-4 ${
-            theme === 'dark' ? 'text-white' : 'text-gray-900'
-          }`}>Upcoming Classes</h3>
-          
-          <div className="space-y-4">
-            {upcomingClasses.slice(0, 3).map((classItem) => (
-              <div key={classItem.id} className={`p-4 rounded-lg ${
-                theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
-              }`}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'
-                    }`}>
-                      <Calendar className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h4 className={`font-semibold ${
-                        theme === 'dark' ? 'text-white' : 'text-gray-900'
-                      }`}>{classItem.title}</h4>
-                      <p className={`text-sm ${
-                        theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                      }`}>{classItem.instructor}</p>
-                    </div>
-                  </div>
-                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    classItem.type === 'live'
-                      ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
-                      : 'bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400'
-                  }`}>
-                    {classItem.type === 'live' ? 'Live' : 'Recorded'}
-                  </div>
-                </div>
-                
-                <div className={`flex items-center justify-between text-sm ${
-                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                }`}>
-                  <div className="flex items-center space-x-4">
-                    <span>{classItem.date}</span>
-                    <span>{classItem.time}</span>
-                    <span>{classItem.duration}</span>
-                  </div>
-                  {classItem.link && (
-                    <button className="text-blue-600 hover:text-blue-700 font-medium">
-                      Join
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Practice Sessions */}
-      <div className={`rounded-xl p-6 ${
-        theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-      } shadow-lg`}>
-        <h3 className={`text-lg font-semibold mb-4 ${
-          theme === 'dark' ? 'text-white' : 'text-gray-900'
-        }`}>Recent Practice Sessions</h3>
-        
-        <div className="space-y-3">
-          {practiceSessions.map((session) => (
-            <div key={session.id} className={`flex items-center justify-between p-4 rounded-lg ${
-              theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'
-            }`}>
-              <div className="flex items-center space-x-4">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  theme === 'dark' ? 'bg-green-900/30' : 'bg-green-100'
-                }`}>
-                  <div className="text-green-600">
-                    {getInstrumentIcon(session.instrument)}
-                  </div>
-                </div>
-                <div>
-                  <p className={`font-medium ${
-                    theme === 'dark' ? 'text-white' : 'text-gray-900'
-                  }`}>
-                    {getInstrumentName(session.instrument)}
-                  </p>
-                  <p className={`text-sm ${
-                    theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    {session.exercises} exercises • {session.completed} completed
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className={`font-medium ${
-                  theme === 'dark' ? 'text-white' : 'text-gray-900'
-                }`}>{formatTime(session.duration)}</p>
-                <p className={`text-sm ${
-                  theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                }`}>{session.date}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-
-  const renderMyLearning = () => (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">My Learning</h1>
-        <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Continue your courses and track your progress</p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {enrolledCourses.map((course) => (
-          <div key={course.id} className={`rounded-2xl p-6 ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white'} shadow-lg`}>
-            <div className="flex gap-6">
-              <img src={course.image} alt={course.title} className="w-32 h-24 rounded-xl object-cover flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="text-lg font-bold mb-1">{course.title}</h3>
-                <div className="flex items-center gap-4 mb-3">
-                  <div className="flex items-center gap-1">
-                    <img src="/api/placeholder/24/24" alt={course.instructor} className="w-6 h-6 rounded-full" />
-                    <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{course.instructor}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                    <span className="text-sm font-semibold">{course.rating}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
-                  <div>
-                    <p className={theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}>Progress</p>
-                    <p className="font-semibold">75%</p>
-                  </div>
-                  <div>
-                    <p className={theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}>Duration</p>
-                    <p className="font-semibold">{course.duration}</p>
-                  </div>
-                  <div>
-                    <p className={theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}>Lessons</p>
-                    <p className="font-semibold">18/24</p>
-                  </div>
-                </div>
-
-                
-                <div className={`w-full ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-2 mb-4`}>
-                  <div 
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: '75%' }}
-                  ></div>
-                </div>
-
-                <button 
-                  onClick={() => handleContinueLearning(course.id)}
-                  className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transition-colors flex items-center justify-center gap-2"
-                >
-                  <Play className="w-4 h-4" />
-                  Continue Learning
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-
-  const renderCoursePlayer = () => {
-    if (!selectedCourse) return null
-
-    return (
-      <div className="space-y-6">
-        <button 
-          onClick={() => setActiveTab('courses')}
-          className={`flex items-center gap-2 ${theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'} transition-colors`}
-        >
-          <ArrowRight className="w-4 h-4 rotate-180" />
-          Back to My Learning
-        </button>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Side - Video Player */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className={`rounded-2xl overflow-hidden ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-lg`}>
-              <div className="relative aspect-video bg-black">
-                <div className="w-full h-full bg-gray-600 opacity-50"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <button className="bg-purple-600 text-white p-4 rounded-full hover:bg-purple-700 transition-colors">
-                    <Play className="w-8 h-8" />
-                  </button>
-                </div>
-              </div>
-              <div className="p-6">
-                <h2 className="text-2xl font-bold mb-2">{selectedCourse.title}</h2>
-                <div className="flex items-center gap-4 text-sm">
-                  <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Duration: 18:30</span>
-                  <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Lesson 5 of 24</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Course Content */}
-            <div className={`rounded-2xl p-6 ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white'} shadow-lg`}>
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold">Course Content</h3>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">75% Complete</span>
-                  <div className={`w-24 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} rounded-full h-2`}>
-                    <div 
-                      className="bg-gradient-to-r from-purple-600 to-blue-600 h-2 rounded-full"
-                      style={{ width: '75%' }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {courseSections.map((section) => (
-                  <div key={section.id} className={`rounded-xl ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'} p-4`}>
-                    <h4 className="font-semibold mb-3">{section.title}</h4>
-                    <div className="space-y-2">
-                      {section.lessons.map((lesson) => (
-                        <div 
-                          key={lesson.id}
-                          className={`flex items-center justify-between p-3 rounded-lg ${
-                            lesson.current ? 'bg-purple-100 dark:bg-purple-900/30' :
-                            lesson.completed ? 'bg-green-100 dark:bg-green-900/30' :
-                            theme === 'dark' ? 'bg-gray-600' : 'bg-white'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            {lesson.completed ? (
-                              <CheckCircle className="w-5 h-5 text-green-600" />
-                            ) : lesson.current ? (
-                              <PlayCircle className="w-5 h-5 text-purple-600" />
-                            ) : lesson.locked ? (
-                              <Lock className="w-5 h-5 text-gray-400" />
-                            ) : (
-                              <PlayCircle className="w-5 h-5 text-gray-400" />
-                            )}
-                            <span className={`text-sm ${lesson.current ? 'font-semibold' : ''}`}>
-                              {lesson.title}
-                            </span>
-                          </div>
-                          <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                            {lesson.duration}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side - Course Info & Tabs */}
-          <div className="space-y-4">
-            {/* Course Info */}
-            <div className={`rounded-2xl p-6 ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white'} shadow-lg`}>
-              <h3 className="text-xl font-bold mb-4">{selectedCourse.title}</h3>
-              
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center gap-3">
-                  <img src="/api/placeholder/32/32" alt={selectedCourse.instructor} className="w-8 h-8 rounded-full" />
-                  <div>
-                    <p className="font-semibold">{selectedCourse.instructor}</p>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                      <span className="text-sm">{selectedCourse.rating}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <p className={theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}>Category</p>
-                    <p className="font-semibold">{selectedCourse.category}</p>
-                  </div>
-                  <div>
-                    <p className={theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}>Level</p>
-                    <p className="font-semibold">{selectedCourse.level}</p>
-                  </div>
-                  <div>
-                    <p className={theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}>Duration</p>
-                    <p className="font-semibold">{selectedCourse.duration}</p>
-                  </div>
-                  <div>
-                    <p className={theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}>Lessons</p>
-                    <p className="font-semibold">24</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Tabs */}
-            <div className={`rounded-2xl ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white'} shadow-lg`}>
-              <div className="flex border-b border-gray-200 dark:border-gray-700">
-                {['Overview', 'Q&A', 'Resources'].map((tab) => (
-                  <button
-                    key={tab}
-                    className={`flex-1 py-3 text-sm font-semibold ${
-                      theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
-                    } transition-colors`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-              <div className="p-6">
-                <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
-                  Course overview, Q&A section, and downloadable resources will appear here.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  const renderWishlist = () => (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">My Wishlist</h1>
-        <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Courses you've saved for later</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {wishlistCourses.map((course) => (
-          <div key={course.id} className={`rounded-2xl overflow-hidden ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white'} shadow-lg hover:shadow-xl transition-shadow`}>
-            <div className="relative">
-              <img src={course.image} alt={course.title} className="w-full h-48 object-cover" />
-              <button className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-6">
-              <h3 className="text-lg font-bold mb-2">{course.title}</h3>
-              <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} mb-1`}>{course.instructor}</p>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                  <span className="text-sm font-semibold">{course.rating}</span>
-                </div>
-                <span className={`text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>({course.students} students)</span>
-              </div>
-              
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-2xl font-bold text-purple-600">₹{course.price.toLocaleString('en-IN')}</p>
-                  <p className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>{course.duration} • {course.level}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => handleAddToCart(course)}
-                  disabled={isInCart(course.id)}
-                  className={`flex-1 py-2 px-4 rounded-xl font-semibold transition-colors ${
-                    isInCart(course.id)
-                      ? 'bg-green-100 text-green-600 cursor-not-allowed'
-                      : 'bg-purple-600 text-white hover:bg-purple-700'
-                  }`}
-                >
-                  {isInCart(course.id) ? (
-                    <>
-                      <Check className="w-4 h-4 inline mr-1" />
-                      In Cart
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart className="w-4 h-4 inline mr-1" />
-                      Add to Cart
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-
-  const renderCertificates = () => (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">My Certificates</h1>
-        <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Your earned certificates</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {certificates.map((cert) => (
-          <div key={cert.id} className={`rounded-2xl p-6 ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white'} shadow-lg`}>
-            <div className={`rounded-xl p-4 mb-4 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gradient-to-br from-purple-50 to-blue-50'}`}>
-              <Award className="w-12 h-12 text-purple-600 mx-auto mb-2" />
-              <h3 className="text-lg font-bold text-center">{cert.courseName}</h3>
-            </div>
-            
-            <div className="space-y-2 mb-4 text-sm">
-              <div className="flex justify-between">
-                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Instructor:</span>
-                <span className="font-semibold">{cert.instructor}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Completed:</span>
-                <span className="font-semibold">{cert.completionDate}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Score:</span>
-                <span className="font-semibold text-green-600">{cert.score}%</span>
-              </div>
-              <div className="flex justify-between">
-                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Certificate ID:</span>
-                <span className="font-semibold">{cert.certificateId}</span>
-              </div>
-            </div>
-
-            <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transition-colors flex items-center justify-center gap-2">
-              <Download className="w-4 h-4" />
-              Download PDF
+      
+      {/* Welcome Hero Banner */}
+      <div className="bg-gradient-to-tr from-[#5EA8FF] to-[#FF6FAF] rounded-[24px] p-8 text-white shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent pointer-events-none"></div>
+        <div className="relative space-y-2.5 max-w-xl">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Welcome Back, {profileData.firstName}! 👋</h1>
+          <p className="text-sm sm:text-md opacity-90 leading-relaxed font-medium">
+            Continue your musical journey and track your learning progress.
+          </p>
+          <div className="pt-2">
+            <button 
+              onClick={() => setActiveTab('courses')}
+              className="bg-white text-[#5EA8FF] px-6 py-2.5 rounded-xl font-bold text-sm hover:shadow-md hover:scale-[1.02] active:scale-100 transition-all shadow-sm flex items-center space-x-2"
+            >
+              <span>Continue Learning →</span>
             </button>
           </div>
-        ))}
-      </div>
-    </div>
-  )
+        </div>
 
-  const renderMessages = () => (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Messages</h1>
-        <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Communicate with your instructors</p>
+        {/* Hero Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-3 shrink-0 w-full lg:w-auto relative">
+          <div className="bg-white/15 backdrop-blur-md border border-white/20 rounded-[20px] p-4 text-center min-w-[120px] transition-all hover:bg-white/25">
+            <span className="text-xl select-none mb-1 block">📚</span>
+            <span className="block text-xl font-extrabold">{enrolledCourses.length}</span>
+            <span className="text-[9px] uppercase font-extrabold tracking-wider opacity-90 block mt-0.5">Courses Enrolled</span>
+          </div>
+          <div className="bg-white/15 backdrop-blur-md border border-white/20 rounded-[20px] p-4 text-center min-w-[120px] transition-all hover:bg-white/25">
+            <span className="text-xl select-none mb-1 block">🎥</span>
+            <span className="block text-xl font-extrabold">{recordedSessions.length + 10}</span>
+            <span className="text-[9px] uppercase font-extrabold tracking-wider opacity-90 block mt-0.5">Recorded Lessons</span>
+          </div>
+          <div className="bg-white/15 backdrop-blur-md border border-white/20 rounded-[20px] p-4 text-center min-w-[120px] transition-all hover:bg-white/25">
+            <span className="text-xl select-none mb-1 block">🏆</span>
+            <span className="block text-xl font-extrabold">2</span>
+            <span className="text-[9px] uppercase font-extrabold tracking-wider opacity-90 block mt-0.5">Certificates</span>
+          </div>
+          <div className="bg-white/15 backdrop-blur-md border border-white/20 rounded-[20px] p-4 text-center min-w-[120px] transition-all hover:bg-white/25">
+            <span className="text-xl select-none mb-1 block">⭐</span>
+            <span className="block text-xl font-extrabold">92%</span>
+            <span className="text-[9px] uppercase font-extrabold tracking-wider opacity-90 block mt-0.5">Learning Score</span>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Message List */}
-        <div className="lg:col-span-2 space-y-4">
-          {messages.map((message) => (
-            <div key={message.id} className={`rounded-2xl p-6 ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white'} shadow-lg ${message.unread ? 'border-l-4 border-purple-600' : ''}`}>
-              <div className="flex items-start gap-4">
-                <img src={message.avatar} alt={message.sender} className="w-12 h-12 rounded-full" />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold">{message.sender}</h3>
-                    <span className={`text-sm ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>{message.time}</span>
+      {/* Quick Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white border-2 border-[#DCEEFF] rounded-[24px] p-5 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300 flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-[#DCEEFF]/50 flex items-center justify-center text-xl shrink-0 select-none">
+            📚
+          </div>
+          <div>
+            <span className="block text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Enrolled Courses</span>
+            <span className="block text-xl font-extrabold text-[#0F1E4A] mt-0.5">{enrolledCourses.length || 4}</span>
+          </div>
+        </div>
+
+        <div className="bg-white border-2 border-[#DCEEFF] rounded-[24px] p-5 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300 flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-[#FFD6E8]/50 flex items-center justify-center text-xl shrink-0 select-none">
+            🎥
+          </div>
+          <div>
+            <span className="block text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Recorded Sessions</span>
+            <span className="block text-xl font-extrabold text-[#0F1E4A] mt-0.5">25</span>
+          </div>
+        </div>
+
+        <div className="bg-white border-2 border-[#DCEEFF] rounded-[24px] p-5 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300 flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-[#DCEEFF]/50 flex items-center justify-center text-xl shrink-0 select-none">
+            🏆
+          </div>
+          <div>
+            <span className="block text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Certificates Earned</span>
+            <span className="block text-xl font-extrabold text-[#0F1E4A] mt-0.5">2</span>
+          </div>
+        </div>
+
+        <div className="bg-white border-2 border-[#DCEEFF] rounded-[24px] p-5 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300 flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-[#FFD6E8]/50 flex items-center justify-center text-xl shrink-0 select-none">
+            ⭐
+          </div>
+          <div>
+            <span className="block text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Attendance Rate</span>
+            <span className="block text-xl font-extrabold text-[#0F1E4A] mt-0.5">96%</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Holiday Announcements Section */}
+      <div className="bg-white border-2 border-[#DCEEFF] rounded-[24px] p-6 shadow-sm space-y-4">
+        <h3 className="font-extrabold text-md text-[#0F1E4A] flex items-center gap-2">
+          <span>📢</span> Holiday Announcements
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Card 1 - Weekly Holiday */}
+          <div className="p-5 bg-[#DCEEFF]/60 border-2 border-[#FFD6E8] rounded-[24px] relative overflow-hidden shadow-sm hover:scale-[1.01] transition-transform">
+            <div className="absolute -top-4 -right-4 w-16 h-16 bg-[#FFD6E8]/40 rounded-full blur-sm"></div>
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-xl">📅</span>
+                <h4 className="font-extrabold text-xs text-[#0F1E4A] uppercase tracking-wider mt-2">Weekly Holiday</h4>
+                <p className="text-sm text-[#FF6FAF] font-black mt-1">Every Monday</p>
+              </div>
+              <span className="bg-[#FF6FAF]/10 text-[#FF6FAF] text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Closed</span>
+            </div>
+            <p className="text-xs text-slate-600 mt-3 font-medium">No regular classes conducted. Virtual practice rooms remain open.</p>
+          </div>
+
+          {/* Card 2 - Scheduled Holidays */}
+          {holidays.length > 0 ? (
+            holidays.slice(0, 1).map(h => (
+              <div key={h.id} className="p-5 bg-[#DCEEFF]/60 border-2 border-[#FFD6E8] rounded-[24px] relative overflow-hidden shadow-sm hover:scale-[1.01] transition-transform">
+                <div className="absolute -top-4 -right-4 w-16 h-16 bg-[#FFD6E8]/40 rounded-full blur-sm"></div>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-xl">🎉</span>
+                    <h4 className="font-extrabold text-xs text-[#0F1E4A] uppercase tracking-wider mt-2">Scheduled Holiday</h4>
+                    <p className="text-sm text-[#5EA8FF] font-black mt-1">{h.date}</p>
                   </div>
-                  <h4 className="font-medium mb-2">{message.subject}</h4>
-                  <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{message.message}</p>
-                  <button className={`mt-4 text-sm font-semibold ${theme === 'dark' ? 'text-purple-400 hover:text-purple-300' : 'text-purple-600 hover:text-purple-700'} transition-colors`}>
-                    Reply →
+                  <span className="bg-[#5EA8FF]/10 text-[#5EA8FF] text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Public Holiday</span>
+                </div>
+                <p className="text-xs text-slate-600 mt-3 font-medium">{h.reason}</p>
+              </div>
+            ))
+          ) : (
+            <div className="p-5 bg-[#DCEEFF]/60 border-2 border-[#FFD6E8] rounded-[24px] relative overflow-hidden shadow-sm hover:scale-[1.01] transition-transform">
+              <div className="absolute -top-4 -right-4 w-16 h-16 bg-[#FFD6E8]/40 rounded-full blur-sm"></div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="text-xl">🎵</span>
+                  <h4 className="font-extrabold text-xs text-[#0F1E4A] uppercase tracking-wider mt-2">Practice Challenge</h4>
+                  <p className="text-sm text-[#5EA8FF] font-black mt-1">Weekend Jam Session</p>
+                </div>
+                <span className="bg-green-100 text-green-700 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Active</span>
+              </div>
+              <p className="text-xs text-slate-600 mt-3 font-medium">Record and submit your weekly guitar/piano scale progressions by Sunday midnight.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* My Courses Section */}
+      <div className="bg-white border-2 border-[#DCEEFF] rounded-[24px] p-6 shadow-sm">
+        <div className="flex justify-between items-center pb-4 border-b border-[#DCEEFF] mb-6">
+          <div>
+            <h3 className="font-extrabold text-lg text-[#0F1E4A] flex items-center gap-2">
+              <span>📚</span> My Enrolled Courses
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">Track your active courses and daily tasks</p>
+          </div>
+          <button 
+            onClick={() => setActiveTab('courses')}
+            className="text-xs font-bold text-[#5EA8FF] hover:text-[#FF6FAF] transition-colors"
+          >
+            View All Courses →
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {enrolledCourses.map((course, idx) => {
+            const progress = idx === 0 ? 75 : 45
+            const duration = course.duration || '8 weeks'
+            const courseImg = getCourseImage(course.category || course.title)
+            return (
+              <div 
+                key={course.id || idx} 
+                className="bg-white border-2 border-[#DCEEFF] rounded-[24px] overflow-hidden shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300 flex flex-col justify-between"
+              >
+                {/* Course Image */}
+                <div className="h-44 w-full relative overflow-hidden bg-slate-100">
+                  <img 
+                    src={courseImg} 
+                    alt={course.title}
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                  />
+                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-[#0F1E4A] border border-[#DCEEFF]">
+                    {course.category || 'Music'}
+                  </div>
+                </div>
+
+                {/* Course Details */}
+                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                  <div className="space-y-1">
+                    <h4 className="font-extrabold text-md text-[#0F1E4A] leading-tight hover:text-[#5EA8FF] transition-colors">
+                      {course.title}
+                    </h4>
+                    <p className="text-xs text-slate-500 font-medium">Instructor: {course.instructor}</p>
+                  </div>
+
+                  {/* Progress Bar & Info */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[11px] font-bold text-[#0F1E4A]">
+                      <span>Progress</span>
+                      <span className="text-[#5EA8FF]">{progress}%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-[#DCEEFF]/50">
+                      <div 
+                        className="bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] h-full rounded-full transition-all duration-500" 
+                        style={{ width: `${progress}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-[10px] text-slate-400 font-semibold pt-1">
+                      <span>⏱️ {duration}</span>
+                      <span>Level: {course.level || 'Beginner'}</span>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => setActiveTab('recorded')}
+                    className="w-full bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] hover:scale-[1.02] active:scale-100 text-white font-extrabold py-3 rounded-[16px] text-xs shadow-md transition-all text-center flex items-center justify-center space-x-2"
+                  >
+                    <span>Continue Learning</span>
+                    <span>→</span>
                   </button>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Modern Schedule Widget */}
+      <div className="bg-white border-2 border-[#DCEEFF] rounded-[24px] p-6 shadow-sm space-y-6">
+        <div>
+          <h3 className="font-extrabold text-lg text-[#0F1E4A] flex items-center gap-2">
+            <span>📅</span> Class Schedule & Events
+          </h3>
+          <p className="text-xs text-slate-400 mt-1">Don't miss out on live learning opportunities with top mentors</p>
         </div>
 
-        {/* Chat Sidebar */}
-        <div className={`rounded-2xl p-6 ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white'} shadow-lg`}>
-          <h3 className="text-lg font-bold mb-4">Quick Chat</h3>
-          <div className={`rounded-xl p-4 mb-4 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'}`}>
-            <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Start a conversation with your instructor or get support.</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Today's Classes */}
+          <div className="space-y-4">
+            <h4 className="font-extrabold text-sm text-[#0F1E4A] border-b-2 border-[#5EA8FF]/30 pb-2 flex items-center justify-between">
+              <span>Today's Classes</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
+            </h4>
+            <div className="space-y-3">
+              {upcomingClasses.length > 0 ? (
+                upcomingClasses.slice(0, 1).map((cls) => (
+                  <div key={cls.id} className="p-4 bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-[20px] space-y-3 hover:border-[#5EA8FF] transition-all">
+                    <div>
+                      <h5 className="font-bold text-xs text-[#0F1E4A]">{cls.title}</h5>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Instructor: {cls.instructor}</p>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] text-slate-400 font-semibold border-t border-[#DCEEFF] pt-2">
+                      <span>🕒 {cls.time}</span>
+                      <span>Batch: {cls.batchTiming}</span>
+                    </div>
+                    <button 
+                      onClick={() => handleNotification(`Redirecting to class: ${cls.title}`)}
+                      className="w-full bg-[#5EA8FF] text-white py-2 rounded-xl text-[10px] font-bold hover:scale-[1.02] active:scale-100 transition-all shadow-sm"
+                    >
+                      Join Class
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-[20px] text-center">
+                  <p className="text-[11px] text-slate-400">No classes scheduled today.</p>
+                </div>
+              )}
+            </div>
           </div>
-          <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transition-colors">
-            Start New Conversation
+
+          {/* Tomorrow's Classes */}
+          <div className="space-y-4">
+            <h4 className="font-extrabold text-sm text-[#0F1E4A] border-b-2 border-[#FF6FAF]/30 pb-2">
+              Tomorrow's Classes
+            </h4>
+            <div className="space-y-3">
+              {upcomingClasses.length > 1 ? (
+                upcomingClasses.slice(1, 2).map((cls) => (
+                  <div key={cls.id} className="p-4 bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-[20px] space-y-3 hover:border-[#FF6FAF] transition-all">
+                    <div>
+                      <h5 className="font-bold text-xs text-[#0F1E4A]">{cls.title}</h5>
+                      <p className="text-[10px] text-slate-500 mt-0.5">Instructor: {cls.instructor}</p>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] text-slate-400 font-semibold border-t border-[#DCEEFF] pt-2">
+                      <span>🕒 {cls.time}</span>
+                      <span>Batch: {cls.batchTiming}</span>
+                    </div>
+                    <button 
+                      onClick={() => handleNotification(`Class starts tomorrow at ${cls.time}`)}
+                      className="w-full bg-slate-200 text-slate-600 py-2 rounded-xl text-[10px] font-bold cursor-not-allowed"
+                    >
+                      Upcoming Tomorrow
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-[20px] space-y-3">
+                  <div>
+                    <h5 className="font-bold text-xs text-[#0F1E4A]">Guitar Mastery Session</h5>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Instructor: Mike Wilson</p>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px] text-slate-400 font-semibold border-t border-[#DCEEFF] pt-2">
+                    <span>🕒 4:00 PM</span>
+                    <span>Batch: Afternoon</span>
+                  </div>
+                  <button 
+                    onClick={() => handleNotification('Class starts tomorrow at 4:00 PM')}
+                    className="w-full bg-[#DCEEFF] text-[#5EA8FF] py-2 rounded-xl text-[10px] font-bold hover:scale-[1.02] active:scale-100 transition-all"
+                  >
+                    Upcoming Tomorrow
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Upcoming Workshops */}
+          <div className="space-y-4">
+            <h4 className="font-extrabold text-sm text-[#0F1E4A] border-b-2 border-purple-300 pb-2">
+              Upcoming Workshops
+            </h4>
+            <div className="space-y-3">
+              {workshops.slice(0, 1).map((w) => (
+                <div key={w.id} className="p-4 bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-[20px] space-y-3 hover:border-purple-400 transition-all">
+                  <div>
+                    <h5 className="font-bold text-xs text-[#0F1E4A]">{w.title}</h5>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Host: {w.instructor}</p>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px] text-slate-400 font-semibold border-t border-[#DCEEFF] pt-2">
+                    <span>📅 {w.date}</span>
+                    <span>🕒 {w.time}</span>
+                  </div>
+                  <button 
+                    onClick={() => handleRegisterWorkshop(w)}
+                    className="w-full bg-gradient-to-r from-purple-500 to-[#FF6FAF] text-white py-2 rounded-xl text-[10px] font-bold hover:scale-[1.02] active:scale-100 transition-all shadow-sm"
+                  >
+                    Register Now
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Recorded Sessions Section */}
+      <div className="bg-white border-2 border-[#DCEEFF] rounded-[24px] p-6 shadow-sm space-y-6">
+        <div className="flex justify-between items-center pb-4 border-b border-[#DCEEFF]">
+          <div>
+            <h3 className="font-extrabold text-lg text-[#0F1E4A] flex items-center gap-2">
+              <span>🎥</span> Recent Recordings
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">Catch up on sessions you missed or want to review</p>
+          </div>
+          <button 
+            onClick={() => setActiveTab('recorded')}
+            className="text-xs font-bold text-[#5EA8FF] hover:text-[#FF6FAF] transition-colors"
+          >
+            Watch All →
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {recordedSessions.slice(0, 2).map((rec, idx) => {
+            const courseImg = getCourseImage(rec.instrument)
+            return (
+              <div 
+                key={rec.id || idx} 
+                className="bg-white border-2 border-[#DCEEFF] rounded-[24px] overflow-hidden shadow-sm group hover:-translate-y-1 hover:shadow-md transition-all duration-300 flex flex-col justify-between"
+              >
+                {/* Video Thumbnail with Play Button Overlay */}
+                <div className="h-44 w-full relative overflow-hidden bg-black flex items-center justify-center">
+                  <img 
+                    src={courseImg} 
+                    alt={rec.title}
+                    className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-slate-905/20 group-hover:bg-slate-955/40 transition-colors duration-300"></div>
+                  {/* Play Button Overlay */}
+                  <button 
+                    onClick={() => {
+                      setActiveTab('recorded')
+                      handleNotification(`Playing: ${rec.title}`)
+                    }}
+                    className="absolute w-12 h-12 rounded-full bg-white/95 text-[#5EA8FF] shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 z-10"
+                  >
+                    <Play className="w-5 h-5 fill-current ml-0.5" />
+                  </button>
+                </div>
+
+                <div className="p-5 space-y-2 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-[10px] font-extrabold uppercase text-[#FF6FAF] tracking-wider">{rec.instrument}</span>
+                      <span className="bg-[#DCEEFF] text-[#5EA8FF] text-[8px] font-extrabold px-2 py-0.5 rounded-full uppercase">Continue Watching</span>
+                    </div>
+                    <h4 className="font-extrabold text-sm text-[#0F1E4A] leading-snug">{rec.title}</h4>
+                    <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">{rec.description}</p>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Learning Progress svg rings & stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Completion Ring */}
+        <div className="bg-white border-2 border-[#DCEEFF] rounded-[24px] p-5 shadow-sm flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Course Completion</span>
+            <h4 className="text-xl font-extrabold text-[#0F1E4A]">75%</h4>
+            <span className="text-[10px] text-[#5EA8FF] font-semibold">Good pace</span>
+          </div>
+          <div className="relative w-12 h-12 shrink-0">
+            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+              <path className="text-slate-100" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path className="text-[#5EA8FF]" strokeDasharray="75, 100" strokeWidth="3" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold">75%</div>
+          </div>
+        </div>
+
+        {/* Practice Hours */}
+        <div className="bg-white border-2 border-[#DCEEFF] rounded-[24px] p-5 shadow-sm flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Practice Hours</span>
+            <h4 className="text-xl font-extrabold text-[#0F1E4A]">156 Hrs</h4>
+            <span className="text-[10px] text-[#FF6FAF] font-semibold">+24 hrs this week</span>
+          </div>
+          <div className="relative w-12 h-12 shrink-0">
+            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+              <path className="text-slate-100" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path className="text-[#FF6FAF]" strokeDasharray="80, 100" strokeWidth="3" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold">80%</div>
+          </div>
+        </div>
+
+        {/* Attendance */}
+        <div className="bg-white border-2 border-[#DCEEFF] rounded-[24px] p-5 shadow-sm flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Attendance Rate</span>
+            <h4 className="text-xl font-extrabold text-[#0F1E4A]">96%</h4>
+            <span className="text-[10px] text-green-500 font-semibold">Excellent</span>
+          </div>
+          <div className="relative w-12 h-12 shrink-0">
+            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+              <path className="text-slate-100" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path className="text-green-500" strokeDasharray="96, 100" strokeWidth="3" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold">96%</div>
+          </div>
+        </div>
+
+        {/* Learning Score */}
+        <div className="bg-white border-2 border-[#DCEEFF] rounded-[24px] p-5 shadow-sm flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Performance Score</span>
+            <h4 className="text-xl font-extrabold text-[#0F1E4A]">92%</h4>
+            <span className="text-[10px] text-purple-600 font-semibold">Active learner</span>
+          </div>
+          <div className="relative w-12 h-12 shrink-0">
+            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+              <path className="text-slate-100" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path className="text-purple-500" strokeDasharray="92, 100" strokeWidth="3" strokeLinecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold">92%</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Achievements Section */}
+      <div className="bg-white border-2 border-[#DCEEFF] rounded-[24px] p-6 shadow-sm space-y-6">
+        <div>
+          <h3 className="font-extrabold text-lg text-[#0F1E4A] flex items-center gap-2">
+            <span>🏆</span> Achievements
+          </h3>
+          <p className="text-xs text-slate-400 mt-1">Unlock badges as you complete courses and workshops</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Badge 1 */}
+          <div className="p-[1.5px] bg-gradient-to-tr from-[#5EA8FF] to-[#FF6FAF] rounded-[20px] shadow-sm hover:scale-[1.02] transition-transform duration-300">
+            <div className="bg-white/90 backdrop-blur-md rounded-[18.5px] p-5 text-center flex flex-col items-center justify-between h-full space-y-3">
+              <span className="text-3xl select-none">🏆</span>
+              <div>
+                <h4 className="font-extrabold text-xs text-[#0F1E4A]">First Course Completed</h4>
+                <p className="text-[10px] text-slate-400 font-medium mt-1">Awarded on completing Piano 101 theory basics.</p>
+              </div>
+              <span className="bg-[#DCEEFF] text-[#5EA8FF] text-[8px] font-extrabold px-2 py-0.5 rounded-full uppercase">Unlocked</span>
+            </div>
+          </div>
+
+          {/* Badge 2 */}
+          <div className="p-[1.5px] bg-gradient-to-tr from-[#5EA8FF] to-[#FF6FAF] rounded-[20px] shadow-sm hover:scale-[1.02] transition-transform duration-300">
+            <div className="bg-white/90 backdrop-blur-md rounded-[18.5px] p-5 text-center flex flex-col items-center justify-between h-full space-y-3">
+              <span className="text-3xl select-none">⭐</span>
+              <div>
+                <h4 className="font-extrabold text-xs text-[#0F1E4A]">Perfect Attendance</h4>
+                <p className="text-[10px] text-slate-400 font-medium mt-1">96% session presence achieved over 3 months.</p>
+              </div>
+              <span className="bg-[#DCEEFF] text-[#5EA8FF] text-[8px] font-extrabold px-2 py-0.5 rounded-full uppercase">Unlocked</span>
+            </div>
+          </div>
+
+          {/* Badge 3 */}
+          <div className="p-[1.5px] bg-gradient-to-tr from-[#5EA8FF] to-[#FF6FAF] rounded-[20px] shadow-sm hover:scale-[1.02] transition-transform duration-300">
+            <div className="bg-white/90 backdrop-blur-md rounded-[18.5px] p-5 text-center flex flex-col items-center justify-between h-full space-y-3">
+              <span className="text-3xl select-none">🎵</span>
+              <div>
+                <h4 className="font-extrabold text-xs text-[#0F1E4A]">Piano Beginner Certified</h4>
+                <p className="text-[10px] text-slate-400 font-medium mt-1">Finger dexterity assessment completed with grade A.</p>
+              </div>
+              <span className="bg-[#DCEEFF] text-[#5EA8FF] text-[8px] font-extrabold px-2 py-0.5 rounded-full uppercase">Unlocked</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity Section */}
+      <div className="bg-white border-2 border-[#DCEEFF] rounded-[24px] p-6 shadow-sm space-y-4">
+        <div>
+          <h3 className="font-extrabold text-lg text-[#0F1E4A] flex items-center gap-2">
+            <span>🔔</span> Latest Actions
+          </h3>
+          <p className="text-xs text-slate-400 mt-1">Review your latest actions and notifications</p>
+        </div>
+
+        <div className="divide-y divide-[#DCEEFF]/50">
+          <div className="flex items-center justify-between py-3">
+            <div className="flex items-center space-x-3">
+              <span className="text-xl">✅</span>
+              <div>
+                <h5 className="font-bold text-xs text-[#0F1E4A]">Lesson Completed</h5>
+                <p className="text-[10px] text-slate-400 mt-0.5">Finished "Basic Chord Progressions" theory lecture</p>
+              </div>
+            </div>
+            <span className="text-[9px] font-bold text-[#5EA8FF] bg-[#DCEEFF] px-2 py-0.5 rounded-full">2 hrs ago</span>
+          </div>
+
+          <div className="flex items-center justify-between py-3">
+            <div className="flex items-center space-x-3">
+              <span className="text-xl">🎤</span>
+              <div>
+                <h5 className="font-bold text-xs text-[#0F1E4A]">Workshop Joined</h5>
+                <p className="text-[10px] text-slate-400 mt-0.5">Registered for Dr. Sarah Chen's Vocal masterclass</p>
+              </div>
+            </div>
+            <span className="text-[9px] font-bold text-[#FF6FAF] bg-[#FFD6E8] px-2 py-0.5 rounded-full">1 day ago</span>
+          </div>
+
+          <div className="flex items-center justify-between py-3">
+            <div className="flex items-center space-x-3">
+              <span className="text-xl">📝</span>
+              <div>
+                <h5 className="font-bold text-xs text-[#0F1E4A]">Assignment Submitted</h5>
+                <p className="text-[10px] text-slate-400 mt-0.5">Uploaded Practice Record for "C Major Scale Scales"</p>
+              </div>
+            </div>
+            <span className="text-[9px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">3 days ago</span>
+          </div>
+
+          <div className="flex items-center justify-between py-3">
+            <div className="flex items-center space-x-3">
+              <span className="text-xl">🏆</span>
+              <div>
+                <h5 className="font-bold text-xs text-[#0F1E4A]">Certificate Earned</h5>
+                <p className="text-[10px] text-slate-400 mt-0.5">Acquired "Music Theory Basics Level 1" certificate</p>
+              </div>
+            </div>
+            <span className="text-[9px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">1 week ago</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions Grid */}
+      <div className="bg-white border-2 border-[#DCEEFF] rounded-[24px] p-6 shadow-sm">
+        <h3 className="font-extrabold text-md text-[#0F1E4A] pb-3 border-b border-[#DCEEFF] mb-4 flex items-center gap-2">
+          <span>⚡</span> Quick Actions
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <button 
+            onClick={() => setActiveTab('courses')}
+            className="p-3 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white border-2 border-[#2563EB] rounded-[16px] text-xs font-extrabold shadow-sm hover:-translate-y-0.5 hover:scale-[1.02] active:translate-y-0 active:scale-100 transition-all text-center"
+          >
+            📚 Browse Courses
+          </button>
+          <button 
+            onClick={() => setActiveTab('workshops')}
+            className="p-3 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white border-2 border-[#2563EB] rounded-[16px] text-xs font-extrabold shadow-sm hover:-translate-y-0.5 hover:scale-[1.02] active:translate-y-0 active:scale-100 transition-all text-center"
+          >
+            🎤 Join Workshop
+          </button>
+          <button 
+            onClick={() => setActiveTab('recorded')}
+            className="p-3 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white border-2 border-[#2563EB] rounded-[16px] text-xs font-extrabold shadow-sm hover:-translate-y-0.5 hover:scale-[1.02] active:translate-y-0 active:scale-100 transition-all text-center"
+          >
+            🎥 Watch Recordings
+          </button>
+          <button 
+            onClick={() => setActiveTab('schedule')}
+            className="p-3 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white border-2 border-[#2563EB] rounded-[16px] text-xs font-extrabold shadow-sm hover:-translate-y-0.5 hover:scale-[1.02] active:translate-y-0 active:scale-100 transition-all text-center"
+          >
+            📅 Book Class
+          </button>
+          <button 
+            onClick={() => handleNotification('Message compose opened for Ajinkya Amrule!')}
+            className="p-3 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white border-2 border-[#2563EB] rounded-[16px] text-xs font-extrabold shadow-sm hover:-translate-y-0.5 hover:scale-[1.02] active:translate-y-0 active:scale-100 transition-all text-center col-span-2 sm:col-span-1"
+          >
+            💬 Contact Instructor
           </button>
         </div>
       </div>
-    </div>
-  )
 
-  const renderProfile = () => (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Profile</h1>
-        <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Manage your personal information</p>
+      {/* Bottom CTA Banner */}
+      <div className="bg-gradient-to-tr from-[#5EA8FF] to-[#FF6FAF] rounded-[24px] p-8 shadow-md text-white text-center space-y-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent pointer-events-none"></div>
+        <h3 className="text-2xl font-black">Start Your Musical Journey Today</h3>
+        <p className="text-xs opacity-95 max-w-lg mx-auto font-medium">
+          Join 10,000+ Students Mastering Music. Learn piano, guitar, and vocals from Trinity College Guildhall verified educators.
+        </p>
+        <div className="flex justify-center space-x-3.5 pt-2">
+          <button 
+            onClick={() => handleNotification('Demo booked successfully!')}
+            className="bg-white text-[#5EA8FF] hover:bg-slate-50 hover:-translate-y-0.5 hover:scale-[1.02] active:translate-y-0 active:scale-100 px-6 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all duration-200"
+          >
+            Book Free Demo
+          </button>
+          <button 
+            onClick={() => setActiveTab('courses')}
+            className="bg-[#0F1E4A] hover:bg-[#0F1E4A]/90 hover:-translate-y-0.5 hover:scale-[1.02] active:translate-y-0 active:scale-100 text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow-sm transition-all duration-200"
+          >
+            Explore Courses
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Info */}
-        <div className="lg:col-span-2">
-          <div className={`rounded-2xl p-6 ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white'} shadow-lg`}>
-            <div className="flex items-center gap-6 mb-6">
-              <div className="relative">
-                <img src="/api/placeholder/100/100" alt="Profile" className="w-24 h-24 rounded-full" />
-                <button className="absolute bottom-0 right-0 bg-purple-600 text-white p-2 rounded-full hover:bg-purple-700 transition-colors">
-                  <Settings className="w-4 h-4" />
-                </button>
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold">John Doe</h2>
-                <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Student</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-700'}`}>Full Name</label>
-                <input 
-                  type="text" 
-                  defaultValue="John Doe" 
-                  className={`w-full px-4 py-2 rounded-xl border ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                />
-              </div>
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-700'}`}>Email</label>
-                <input 
-                  type="email" 
-                  defaultValue="john.doe@example.com" 
-                  className={`w-full px-4 py-2 rounded-xl border ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                />
-              </div>
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-700'}`}>Phone</label>
-                <input 
-                  type="tel" 
-                  defaultValue="+91 98765 43210" 
-                  className={`w-full px-4 py-2 rounded-xl border ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                />
-              </div>
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-700'}`}>Location</label>
-                <input 
-                  type="text" 
-                  defaultValue="Mumbai, India" 
-                  className={`w-full px-4 py-2 rounded-xl border ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                />
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-700'}`}>Bio</label>
-              <textarea 
-                rows={4} 
-                defaultValue="Passionate about learning music and exploring different instruments. Currently focusing on piano and guitar."
-                className={`w-full px-4 py-2 rounded-xl border ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-              />
-            </div>
-
-            <button className="mt-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-blue-700 transition-colors">
-              Update Profile
+      {/* Footer Redesign */}
+      <footer className="pt-8 border-t border-[#DCEEFF] grid grid-cols-2 md:grid-cols-4 gap-6 text-slate-500 text-xs">
+        <div className="space-y-2">
+          <h4 className="font-extrabold text-[#0F1E4A]">🎵 2nd Inversion</h4>
+          <p className="leading-relaxed">AI-powered music school featuring smart schedule bookings and interactive practice sessions.</p>
+        </div>
+        <div className="space-y-2">
+          <h4 className="font-extrabold text-[#0F1E4A]">Quick Links</h4>
+          <ul className="space-y-1">
+            <li><Link href="/courses" className="hover:text-[#5EA8FF]">Browse All Courses</Link></li>
+            <li><button onClick={() => setActiveTab('workshops')} className="hover:text-[#5EA8FF]">Upcoming Seminars</button></li>
+            <li><button onClick={() => setActiveTab('profile')} className="hover:text-[#5EA8FF]">Student Profile</button></li>
+          </ul>
+        </div>
+        <div className="space-y-2">
+          <h4 className="font-extrabold text-[#0F1E4A]">Top Courses</h4>
+          <ul className="space-y-1">
+            <li>Piano Fundamentals</li>
+            <li>Guitar Mastery</li>
+            <li>Music Theory</li>
+          </ul>
+        </div>
+        <div className="space-y-2">
+          <h4 className="font-extrabold text-[#0F1E4A]">Contact Details</h4>
+          <p>📧 support@2ndinversion.com</p>
+          <p>📞 +91 98765 43210</p>
+          <div className="flex space-x-2 pt-2">
+            <button className="p-1.5 bg-[#DCEEFF] rounded-full text-[#5EA8FF] hover:bg-[#5EA8FF] hover:text-white transition-colors">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+            </button>
+            <button className="p-1.5 bg-[#DCEEFF] rounded-full text-[#5EA8FF] hover:bg-[#5EA8FF] hover:text-white transition-colors">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17z"/><polygon points="9.7 15 9.7 9 14.3 12 9.7 15"/></svg>
+            </button>
+            <button className="p-1.5 bg-[#DCEEFF] rounded-full text-[#5EA8FF] hover:bg-[#5EA8FF] hover:text-white transition-colors">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+            </button>
+            <button className="p-1.5 bg-[#DCEEFF] rounded-full text-[#5EA8FF] hover:bg-[#5EA8FF] hover:text-white transition-colors">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
             </button>
           </div>
         </div>
+      </footer>
 
-        {/* Stats Sidebar */}
-        <div className="space-y-4">
-          <div className={`rounded-2xl p-6 ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white'} shadow-lg`}>
-            <h3 className="text-lg font-bold mb-4">Learning Stats</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Total Courses</span>
-                <span className="font-bold">12</span>
-              </div>
-              <div className="flex justify-between">
-                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Completed</span>
-                <span className="font-bold text-green-600">3</span>
-              </div>
-              <div className="flex justify-between">
-                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>In Progress</span>
-                <span className="font-bold text-blue-600">9</span>
-              </div>
-              <div className="flex justify-between">
-                <span className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>Learning Hours</span>
-                <span className="font-bold">156</span>
-              </div>
-            </div>
-          </div>
-
-          <div className={`rounded-2xl p-6 ${theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white'} shadow-lg`}>
-            <h3 className="text-lg font-bold mb-4">Achievements</h3>
-            <div className="grid grid-cols-3 gap-3">
-              <div className={`p-3 rounded-xl ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'} text-center`}>
-                <Award className="w-8 h-8 text-yellow-500 mx-auto mb-1" />
-                <p className="text-xs">First Course</p>
-              </div>
-              <div className={`p-3 rounded-xl ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'} text-center`}>
-                <Star className="w-8 h-8 text-purple-500 mx-auto mb-1" />
-                <p className="text-xs">Top Student</p>
-              </div>
-              <div className={`p-3 rounded-xl ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'} text-center`}>
-                <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-1" />
-                <p className="text-xs">7-Day Streak</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   )
 
-  const renderContent = () => {
-    switch(activeTab) {
-      case 'dashboard':
-        return renderDashboard()
-      case 'learning':
-        return renderMyLearning()
-      case 'course-player':
-        return renderCoursePlayer()
-      case 'wishlist':
-        return renderWishlist()
-      case 'certificates':
-        return renderCertificates()
-      case 'messages':
-        return renderMessages()
-      case 'profile':
-        return renderProfile()
-      default:
-        return renderDashboard()
-    }
-  }
-
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      {/* Header */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        theme === 'dark' 
-          ? 'bg-gray-900/95 backdrop-blur-md border-b border-gray-800' 
-          : 'bg-white/95 backdrop-blur-md border-b border-gray-200'
-      }`}>
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className={`lg:hidden p-2 rounded-xl ${theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} transition-colors`}
-              >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
-              <h1 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>Student Dashboard</h1>
+    <div className="min-h-screen bg-[#FAFBFF] text-[#0F1E4A] flex flex-col md:flex-row antialiased font-sans">
+      
+      {/* Mobile Menu Backdrop */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar navigation */}
+      <div 
+        className={`${
+          mobileMenuOpen 
+            ? 'fixed inset-y-0 left-0 w-80 z-40 bg-white border-r border-[#DCEEFF] flex flex-col transition-transform duration-300 translate-x-0'
+            : 'hidden md:flex w-72 bg-white border-r border-[#DCEEFF] flex flex-col shrink-0 z-30'
+        }`}
+      >
+        <div className="p-6 border-b border-[#DCEEFF] flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
+            <span className="text-2xl">🎵</span>
+            <div>
+              <h2 className="font-extrabold text-[#0F1E4A] text-sm leading-tight">2nd Inversion</h2>
+              <p className="text-[10px] text-[#5EA8FF] font-extrabold uppercase tracking-wider">Musical School</p>
             </div>
+          </div>
+          <button 
+            onClick={() => setMobileMenuOpen(false)} 
+            className="md:hidden p-2 hover:bg-slate-100 rounded-lg text-slate-500"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-            <div className="flex items-center gap-4">
-              <div className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-xl ${
-                theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'
-              }`}>
-                <Search className="w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search courses..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`bg-transparent outline-none ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}
-                />
+        {/* Student Profile card */}
+        <div className="p-5">
+          <div className="p-[2px] bg-gradient-to-tr from-[#5EA8FF] to-[#FF6FAF] rounded-[24px] shadow-sm hover:shadow-md transition-all duration-300">
+            <div className="bg-white/95 backdrop-blur-md rounded-[22px] p-5 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#DCEEFF] to-[#FFD6E8] opacity-20 rounded-bl-full pointer-events-none transition-transform group-hover:scale-105"></div>
+              <div className="flex items-center space-x-3.5 mb-4">
+                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#5EA8FF] to-[#FF6FAF] flex items-center justify-center text-white text-sm font-extrabold shadow-inner shrink-0">
+                  JD
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-sm leading-tight text-[#0F1E4A]">{profileData.firstName} {profileData.lastName}</h4>
+                  <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Music Student</p>
+                </div>
               </div>
-              
-              <button className={`p-2 rounded-xl ${theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} transition-colors relative`}>
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-
-              <div className="flex items-center gap-2">
-                <img src="/api/placeholder/32/32" alt="Profile" className="w-8 h-8 rounded-full" />
-                <span className={`hidden md:block text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>John Doe</span>
+              <div className="flex justify-between items-center pt-3 border-t border-[#DCEEFF]/50 text-[10px] text-slate-500 font-bold">
+                <span className="bg-[#FFD6E8] text-[#FF6FAF] px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wider">🟢 Active Learner</span>
+                <span className="text-[#5EA8FF] font-extrabold uppercase">Online</span>
               </div>
             </div>
           </div>
         </div>
-      </header>
 
-      <div className="flex pt-20">
-        {/* Sidebar */}
-        <aside className={`fixed left-0 top-20 bottom-0 w-64 transition-transform duration-300 z-40 ${
-          theme === 'dark' ? 'bg-gray-800 border-r border-gray-700' : 'bg-white border-r border-gray-200'
-        } ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-          <nav className="p-4 space-y-2">
-            {menuItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id as any)
-                    setMobileMenuOpen(false)
-                  }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                    activeTab === item.id
-                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
-                      : theme === 'dark' 
-                        ? 'text-gray-300 hover:bg-gray-700' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
-                </button>
-              )
-            })}
-            
-            <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
-              <Link 
-                href="/"
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                  theme === 'dark' 
-                    ? 'text-gray-300 hover:bg-gray-700' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <LogOut className="w-5 h-5" />
-                <span className="font-medium">Logout</span>
-              </Link>
+        <nav className="flex-1 px-4 py-2 overflow-y-auto space-y-1">
+          {menuItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                setActiveTab(item.id as any)
+                setMobileMenuOpen(false)
+              }}
+              className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-[16px] transition-all duration-200 group text-left ${
+                activeTab === item.id
+                  ? 'bg-gradient-to-r from-[#DCEEFF]/60 to-[#FAFBFF] text-[#0F1E4A] border-l-4 border-[#5EA8FF] font-extrabold shadow-sm'
+                  : 'text-slate-600 hover:bg-[#FAFBFF] hover:text-[#5EA8FF]'
+              }`}
+            >
+              <span className="text-lg transition-transform duration-200 group-hover:scale-110 select-none">{item.emoji}</span>
+              <span className="text-xs font-semibold">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* Exit link */}
+        <div className="p-4 border-t border-[#DCEEFF]">
+          <Link
+            href="/"
+            className="w-full flex items-center space-x-3.5 px-4 py-3 rounded-[16px] text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+          >
+            <span className="text-lg select-none">🚪</span>
+            <span className="text-xs font-bold">Exit Dashboard</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        
+        {/* Top Header Bar */}
+        <header className="bg-white border-b border-[#DCEEFF] px-6 py-4 sticky top-0 z-20 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden p-2 hover:bg-[#DCEEFF] rounded-lg transition-colors text-[#0F1E4A]"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <div>
+              <h1 className="text-xl font-extrabold text-[#0F1E4A] tracking-tight capitalize">
+                {activeTab === 'dashboard' ? 'Student Dashboard' : activeTab.replace('-', ' ')}
+              </h1>
+              <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">2nd Inversion Music Academy</p>
             </div>
-          </nav>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 lg:ml-64 p-6">
-          <div className="max-w-7xl mx-auto">
-            {renderContent()}
           </div>
+
+          <div className="flex items-center space-x-4">
+            <div className="relative w-48 sm:w-64 hidden sm:block">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search lessons, workshops..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 text-xs bg-[#FAFBFF] border border-[#DCEEFF] rounded-[16px] focus:outline-none"
+              />
+            </div>
+            
+            <button className="p-2 hover:bg-[#DCEEFF] rounded-lg transition-colors relative">
+              <Bell className="w-5 h-5 text-[#0F1E4A]" />
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-[#FF6FAF] rounded-full border-2 border-white"></span>
+            </button>
+
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#5EA8FF] to-[#FF6FAF] flex items-center justify-center text-white text-xs font-bold">
+                JD
+              </div>
+              <span className="hidden lg:block text-xs font-bold">{profileData.firstName} {profileData.lastName}</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Dashboard Content Container */}
+        <main className="flex-1 p-6 space-y-6">
+          
+          {/* Notification Alert */}
+          {showNotification && (
+            <div className="fixed top-6 right-6 bg-white border border-[#DCEEFF] text-[#0F1E4A] px-5 py-4 rounded-[20px] shadow-lg z-50 flex items-center space-x-3 animate-slide-in">
+              <div className="p-1.5 bg-[#DCEEFF] rounded-full">
+                <CheckCircle className="w-5 h-5 text-[#5EA8FF]" />
+              </div>
+              <div>
+                <p className="text-sm font-bold">LMS Notice</p>
+                <p className="text-xs text-slate-500">{notificationMessage}</p>
+              </div>
+            </div>
+          )}
+
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#5EA8FF]"></div>
+            </div>
+          ) : (
+            <>
+              {activeTab === 'dashboard' && renderDashboard()}
+
+              {/* MY COURSES TAB */}
+              {activeTab === 'courses' && (
+                <div className="bg-white border border-[#DCEEFF] rounded-[24px] p-6 shadow-sm space-y-6">
+                  <div>
+                    <h2 className="font-extrabold text-lg text-[#0F1E4A] flex items-center gap-2">
+                      <span>📚</span> My Enrolled Courses
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">Manage, play video tutorials, and track batch assignments.</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {enrolledCourses.map((course, idx) => {
+                      const progress = idx === 0 ? 75 : 45
+                      const courseImg = getCourseImage(course.category || course.title)
+                      return (
+                        <div key={course.id || idx} className="border-2 border-[#DCEEFF] bg-[#FAFBFF] rounded-[24px] overflow-hidden flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+                          <div className="h-40 w-full relative bg-slate-100">
+                            <img src={courseImg} alt={course.title} className="w-full h-full object-cover" />
+                            <span className="absolute top-3 right-3 text-[10px] bg-green-100 text-green-800 border border-green-200 px-2.5 py-0.5 rounded-full font-bold uppercase">
+                              Active
+                            </span>
+                          </div>
+                          <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                            <div>
+                              <h4 className="font-extrabold text-sm text-[#0F1E4A] mb-1 leading-snug">{course.title}</h4>
+                              <p className="text-xs text-slate-500">Instructor: {course.instructor}</p>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-[#DCEEFF]/50">
+                                <div className="bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] h-full rounded-full" style={{ width: `${progress}%` }}></div>
+                              </div>
+                              <div className="flex justify-between text-[10px] text-slate-400 font-bold">
+                                <span>Progress: {progress}%</span>
+                                <span>Level: {course.level || 'Beginner'}</span>
+                              </div>
+                            </div>
+                            <button 
+                              onClick={() => setActiveTab('recorded')}
+                              className="w-full bg-[#5EA8FF] hover:bg-[#2563EB] text-white py-2.5 rounded-xl font-bold text-xs hover:-translate-y-0.5 transition-all shadow-sm"
+                            >
+                              Continue Learning
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* WORKSHOPS TAB */}
+              {activeTab === 'workshops' && (
+                <div className="bg-white border border-[#DCEEFF] rounded-[24px] p-6 shadow-sm space-y-6">
+                  <div>
+                    <h2 className="font-extrabold text-lg text-[#0F1E4A] flex items-center gap-2">
+                      <span>🎤</span> Special Music Workshops
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">Book live interaction sessions, Q&As, and masterclasses.</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {workshops.map((w) => {
+                      const courseImg = getCourseImage(w.title)
+                      return (
+                        <div key={w.id} className="border-2 border-[#DCEEFF] bg-[#FAFBFF] rounded-[24px] overflow-hidden flex flex-col justify-between hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+                          <div className="h-32 w-full relative bg-slate-100">
+                            <img src={courseImg} alt={w.title} className="w-full h-full object-cover" />
+                            <span className="absolute top-3 right-3 text-[10px] bg-purple-100 text-purple-800 border border-purple-200 px-2.5 py-0.5 rounded-full font-bold uppercase">
+                              Workshop
+                            </span>
+                          </div>
+                          <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                            <div className="space-y-1">
+                              <h3 className="font-extrabold text-sm text-[#0F1E4A]">{w.title}</h3>
+                              <p className="text-xs text-slate-500">Instructor: {w.instructor}</p>
+                              <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 pt-1.5 border-t border-[#DCEEFF]">{w.description}</p>
+                            </div>
+                            <div className="space-y-3 pt-2">
+                              <div className="flex justify-between text-[10px] text-slate-400 font-bold">
+                                <span>📅 {w.date}</span>
+                                <span>⏰ {w.time}</span>
+                              </div>
+                              <p className="text-xs font-black text-[#FF6FAF]">Fee: ₹{w.price.toLocaleString('en-IN')}</p>
+                              <button 
+                                onClick={() => handleRegisterWorkshop(w)}
+                                className="w-full bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white py-2.5 rounded-xl text-xs font-bold hover:scale-[1.02] active:scale-100 shadow-sm transition-all border-2 border-[#2563EB]"
+                              >
+                                Register for Workshop
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* RECORDED LESSONS TAB */}
+              {activeTab === 'recorded' && (
+                <div className="bg-white border border-[#DCEEFF] rounded-[24px] p-6 shadow-sm space-y-6">
+                  <div>
+                    <h2 className="font-extrabold text-lg text-[#0F1E4A] flex items-center gap-2">
+                      <span>🎥</span> Recorded Practice Directory
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">Access lecture videos, scale guides, and backing audios.</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {recordedSessions.map((rec) => {
+                      return (
+                        <div key={rec.id} className="border-2 border-[#DCEEFF] bg-[#FAFBFF] rounded-[24px] overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+                          <div className="aspect-video bg-black relative">
+                            <iframe src={rec.url} title={rec.title} className="w-full h-full" allowFullScreen></iframe>
+                          </div>
+                          <div className="p-5 space-y-2">
+                            <div className="flex justify-between items-center">
+                              <h4 className="font-extrabold text-sm text-[#0F1E4A]">{rec.title}</h4>
+                              <span className="bg-[#DCEEFF] text-[#5EA8FF] font-bold text-[9px] px-2.5 py-0.5 rounded-full uppercase shrink-0">
+                                {rec.instrument}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-500 leading-relaxed font-medium">{rec.description}</p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* CLASS SCHEDULE CALENDAR */}
+              {activeTab === 'schedule' && (
+                <div className="bg-white border border-[#DCEEFF] rounded-[24px] p-6 shadow-sm space-y-6">
+                  <div>
+                    <h2 className="font-extrabold text-lg text-[#0F1E4A] flex items-center gap-2">
+                      <span>📅</span> Class Schedule
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">Check class dates, batch timings, and scheduled recurring holidays.</p>
+                  </div>
+                  <div className="space-y-4">
+                    {upcomingClasses.map((cls) => (
+                      <div key={cls.id} className="p-5 bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-[24px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-[#5EA8FF] transition-colors">
+                        <div className="space-y-1">
+                          <h4 className="font-extrabold text-sm text-[#0F1E4A]">{cls.title}</h4>
+                          <p className="text-xs text-slate-500 font-medium">Instructor: {cls.instructor} • Instrument: {cls.instrument}</p>
+                          <p className="text-[10px] text-slate-400 font-semibold mt-1">Timings: {cls.time} ({cls.duration})</p>
+                        </div>
+                        <div className="flex items-center space-x-3 w-full sm:w-auto">
+                          <span className="text-[10px] bg-green-100 text-green-700 font-bold px-3 py-1 rounded-full uppercase shrink-0">
+                            {cls.date}
+                          </span>
+                          <button 
+                            onClick={() => handleNotification(`Starting class: ${cls.title}`)}
+                            className="bg-[#5EA8FF] hover:bg-[#2563EB] text-white px-5 py-2 rounded-xl text-xs font-bold w-full sm:w-auto transition-colors"
+                          >
+                            Join Batch
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* LEARNING PROGRESS DATA */}
+              {activeTab === 'learning' && (
+                <div className="bg-white border border-[#DCEEFF] rounded-[24px] p-6 shadow-sm space-y-6">
+                  <div>
+                    <h2 className="font-extrabold text-lg text-[#0F1E4A]">Learning Statistics & Analytics</h2>
+                    <p className="text-xs text-slate-500 mt-1">Detailed statistics of practice milestones and streak summaries.</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="p-5 bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-[24px] text-center space-y-1">
+                      <span className="block text-3xl font-black text-[#5EA8FF]">156</span>
+                      <span className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Practice Hours</span>
+                    </div>
+                    <div className="p-5 bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-[24px] text-center space-y-1">
+                      <span className="block text-3xl font-black text-[#FF6FAF]">96%</span>
+                      <span className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Attendance Rate</span>
+                    </div>
+                    <div className="p-5 bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-[24px] text-center space-y-1">
+                      <span className="block text-3xl font-black text-purple-600">75%</span>
+                      <span className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Completion Rate</span>
+                    </div>
+                    <div className="p-5 bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-[24px] text-center space-y-1">
+                      <span className="block text-3xl font-black text-amber-600">92%</span>
+                      <span className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Performance Score</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ACHIEVEMENTS TAB */}
+              {activeTab === 'achievements' && (
+                <div className="bg-white border border-[#DCEEFF] rounded-[24px] p-6 shadow-sm space-y-6">
+                  <div>
+                    <h2 className="font-extrabold text-lg text-[#0F1E4A]">Earned Achievements</h2>
+                    <p className="text-xs text-slate-500 mt-1">Certifications, course badges, and milestones.</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="p-[1.5px] bg-gradient-to-tr from-[#5EA8FF] to-[#FF6FAF] rounded-[20px]">
+                      <div className="bg-white/90 backdrop-blur-md rounded-[18.5px] p-5 text-center flex flex-col items-center justify-between h-full space-y-3 shadow-inner">
+                        <span className="text-3xl select-none">🏆</span>
+                        <div>
+                          <h4 className="font-bold text-xs text-[#0F1E4A]">First Course Completed</h4>
+                          <p className="text-[10px] text-slate-400 font-semibold mt-1">Introduction to Music Theory Completed</p>
+                        </div>
+                        <span className="bg-[#DCEEFF] text-[#5EA8FF] text-[8px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">Unlocked</span>
+                      </div>
+                    </div>
+                    <div className="p-[1.5px] bg-gradient-to-tr from-[#5EA8FF] to-[#FF6FAF] rounded-[20px]">
+                      <div className="bg-white/90 backdrop-blur-md rounded-[18.5px] p-5 text-center flex flex-col items-center justify-between h-full space-y-3 shadow-inner">
+                        <span className="text-3xl select-none">⭐</span>
+                        <div>
+                          <h4 className="font-bold text-xs text-[#0F1E4A]">Perfect Attendance</h4>
+                          <p className="text-[10px] text-slate-400 font-semibold mt-1">96% active student class attendance</p>
+                        </div>
+                        <span className="bg-[#DCEEFF] text-[#5EA8FF] text-[8px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">Unlocked</span>
+                      </div>
+                    </div>
+                    <div className="p-[1.5px] bg-gradient-to-tr from-[#5EA8FF] to-[#FF6FAF] rounded-[20px]">
+                      <div className="bg-white/90 backdrop-blur-md rounded-[18.5px] p-5 text-center flex flex-col items-center justify-between h-full space-y-3 shadow-inner">
+                        <span className="text-3xl select-none">🎵</span>
+                        <div>
+                          <h4 className="font-bold text-xs text-[#0F1E4A]">Piano Beginner Certified</h4>
+                          <p className="text-[10px] text-slate-400 font-semibold mt-1">Scales assessment passed</p>
+                        </div>
+                        <span className="bg-[#DCEEFF] text-[#5EA8FF] text-[8px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">Unlocked</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* PROFILE TAB */}
+              {activeTab === 'profile' && (
+                <div className="bg-white border border-[#DCEEFF] rounded-[24px] p-6 shadow-sm space-y-6">
+                  <div>
+                    <h2 className="font-extrabold text-lg text-[#0F1E4A] flex items-center gap-2">
+                      <span>👤</span> My Student Profile
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">Verify and manage your personal details.</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs max-w-xl">
+                    <div className="p-4 bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-[20px] space-y-1">
+                      <span className="block text-[10px] text-slate-400 uppercase font-extrabold">First Name</span>
+                      <p className="font-bold text-sm text-[#0F1E4A]">{profileData.firstName}</p>
+                    </div>
+                    <div className="p-4 bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-[20px] space-y-1">
+                      <span className="block text-[10px] text-slate-400 uppercase font-extrabold">Last Name</span>
+                      <p className="font-bold text-sm text-[#0F1E4A]">{profileData.lastName}</p>
+                    </div>
+                    <div className="p-4 bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-[20px] space-y-1 sm:col-span-2">
+                      <span className="block text-[10px] text-slate-400 uppercase font-extrabold">Email Address</span>
+                      <p className="font-bold text-sm text-[#0F1E4A]">{profileData.email}</p>
+                    </div>
+                    <div className="p-4 bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-[20px] space-y-1">
+                      <span className="block text-[10px] text-slate-400 uppercase font-extrabold">Current Learning Level</span>
+                      <p className="font-bold text-sm text-[#0F1E4A]">{profileData.level}</p>
+                    </div>
+                    <div className="p-4 bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-[20px] space-y-1">
+                      <span className="block text-[10px] text-slate-400 uppercase font-extrabold">Academy Join Date</span>
+                      <p className="font-bold text-sm text-[#0F1E4A]">{profileData.joinDate}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SETTINGS TAB */}
+              {activeTab === 'settings' && (
+                <div className="bg-white border border-[#DCEEFF] rounded-[24px] p-6 shadow-sm space-y-6">
+                  <div>
+                    <h2 className="font-extrabold text-lg text-[#0F1E4A] flex items-center gap-2">
+                      <span>⚙️</span> Settings Panel
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">Manage profile bio and name preferences.</p>
+                  </div>
+                  <div className="space-y-5 max-w-md">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-wider">Edit First Name</label>
+                      <input 
+                        type="text" 
+                        value={profileData.firstName} 
+                        onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
+                        className="w-full px-4 py-2.5 text-xs bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-xl font-bold focus:outline-none focus:border-[#5EA8FF]"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-wider">Edit Bio</label>
+                      <textarea 
+                        value={profileData.bio} 
+                        onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                        className="w-full px-4 py-2.5 text-xs bg-[#FAFBFF] border-2 border-[#DCEEFF] rounded-xl font-bold focus:outline-none focus:border-[#5EA8FF]"
+                        rows={3}
+                      />
+                    </div>
+                    <button 
+                      onClick={() => handleNotification('Settings saved successfully!')}
+                      className="bg-[#5EA8FF] hover:bg-[#2563EB] text-white px-6 py-2.5 rounded-xl text-xs font-extrabold transition-colors shadow-sm"
+                    >
+                      Save Settings
+                    </button>
+                  </div>
+                </div>
+              )}
+
+            </>
+          )}
         </main>
       </div>
+
     </div>
   )
 }
+
