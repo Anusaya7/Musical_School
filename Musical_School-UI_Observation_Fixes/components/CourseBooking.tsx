@@ -129,7 +129,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
       {/* Book Time Slot Button */}
       <button
         onClick={() => setShowTimeSlots(true)}
-        className="w-full px-6 py-3 rounded-lg font-semibold transition-all bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700"
+        className="btn-premium-base btn-premium-gradient w-full px-6 py-3 font-semibold text-white"
       >
         Book Time Slot
       </button>
@@ -202,14 +202,10 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                     <button
                       key={slot}
                       onClick={() => setSelectedTimeSlot(slot)}
-                      className={`p-3 rounded-xl border-2 font-medium transition-all ${
+                      className={`btn-premium-base p-3 text-sm font-semibold flex-col ${
                         selectedTimeSlot === slot
-                          ? theme === 'dark'
-                            ? 'bg-blue-600 border-blue-500 text-white'
-                            : 'bg-blue-100 border-blue-500 text-blue-900'
-                          : theme === 'dark'
-                            ? 'bg-gray-700 border-gray-600 text-gray-300 hover:border-blue-500'
-                            : 'bg-white border-gray-200 text-gray-700 hover:border-blue-500'
+                          ? 'bg-blue-100 border-blue-500 text-blue-900'
+                          : 'btn-premium-secondary'
                       }`}
                     >
                       <Clock className="w-4 h-4 mx-auto mb-1" />
@@ -258,22 +254,18 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowTimeSlots(false)}
-                  className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all ${
-                    theme === 'dark'
-                      ? 'bg-gray-700 text-white hover:bg-gray-600'
-                      : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                  }`}
+                  className="btn-premium-base btn-premium-secondary flex-1 py-3 px-6 text-sm font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleBookTimeSlot}
                   disabled={!selectedDate || !selectedTimeSlot}
-                  className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all ${
+                  className={
                     !selectedDate || !selectedTimeSlot
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 transform hover:scale-105 shadow-lg'
-                  }`}
+                      ? 'flex-1 py-3 px-6 rounded-xl font-semibold bg-gray-200 text-gray-400 cursor-not-allowed border-none shadow-none'
+                      : 'btn-premium-base btn-premium-submit flex-1 py-3 px-6 text-sm font-semibold text-white'
+                  }
                 >
                   {!selectedDate || !selectedTimeSlot ? 'Please select date and time' : 'Continue to Payment'}
                 </button>
@@ -321,22 +313,18 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowPayment(false)}
-                  className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all ${
-                    theme === 'dark'
-                      ? 'bg-gray-700 text-white hover:bg-gray-600'
-                      : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                  }`}
+                  className="btn-premium-base btn-premium-secondary flex-1 py-3 px-6 text-sm font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handlePayment}
                   disabled={isBooking || !studentName || !studentEmail}
-                  className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all ${
+                  className={
                     isBooking || !studentName || !studentEmail
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'
-                  }`}
+                      ? 'flex-1 py-3 px-6 rounded-xl font-semibold bg-gray-200 text-gray-400 cursor-not-allowed border-none shadow-none'
+                      : 'btn-premium-base btn-premium-submit flex-1 py-3 px-6 text-sm font-semibold text-white'
+                  }
                 >
                   {isBooking ? 'Processing...' : 'Pay Now'}
                 </button>
@@ -378,11 +366,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                 <button
                   onClick={() => processPayment('Credit/Debit Card')}
                   disabled={isBooking}
-                  className={`w-full p-4 rounded-xl border-2 transition-all ${
-                    theme === 'dark'
-                      ? 'bg-gray-700 border-gray-600 hover:border-blue-500 hover:bg-gray-600'
-                      : 'bg-white border-gray-200 hover:border-blue-500 hover:bg-blue-50'
-                  } ${isBooking ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className="btn-premium-base btn-premium-secondary w-full p-4 flex items-center gap-4"
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
@@ -405,11 +389,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                 <button
                   onClick={() => processPayment('UPI')}
                   disabled={isBooking}
-                  className={`w-full p-4 rounded-xl border-2 transition-all ${
-                    theme === 'dark'
-                      ? 'bg-gray-700 border-gray-600 hover:border-green-500 hover:bg-gray-600'
-                      : 'bg-white border-gray-200 hover:border-green-500 hover:bg-green-50'
-                  } ${isBooking ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className="btn-premium-base btn-premium-secondary w-full p-4 flex items-center gap-4"
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
@@ -432,11 +412,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                 <button
                   onClick={() => processPayment('Net Banking')}
                   disabled={isBooking}
-                  className={`w-full p-4 rounded-xl border-2 transition-all ${
-                    theme === 'dark'
-                      ? 'bg-gray-700 border-gray-600 hover:border-purple-500 hover:bg-gray-600'
-                      : 'bg-white border-gray-200 hover:border-purple-500 hover:bg-purple-50'
-                  } ${isBooking ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className="btn-premium-base btn-premium-secondary w-full p-4 flex items-center gap-4"
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
@@ -460,11 +436,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                 <button
                   onClick={() => setShowPaymentOptions(false)}
                   disabled={isBooking}
-                  className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all ${
-                    theme === 'dark'
-                      ? 'bg-gray-700 text-white hover:bg-gray-600'
-                      : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                  } ${isBooking ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className="btn-premium-base btn-premium-secondary flex-1 py-3 px-6 text-sm font-semibold"
                 >
                   Cancel
                 </button>

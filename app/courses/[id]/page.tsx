@@ -226,7 +226,7 @@ export default function CourseDetail() {
           <p className="mb-8 text-sm text-slate-500 font-semibold">The course you are looking for does not exist.</p>
           <Link
             href="/courses"
-            className="block w-full h-12 text-white text-xs font-bold rounded-[20px] bg-purple-600 hover:bg-purple-500 shadow-md shadow-purple-200 transition-all flex items-center justify-center"
+            className="btn-premium-base btn-premium-gradient w-full h-12 text-xs font-bold"
           >
             Browse All Courses
           </Link>
@@ -318,10 +318,10 @@ export default function CourseDetail() {
               <button
                 onClick={handleAddToCart}
                 disabled={isInCart(course.id)}
-                className={`w-full h-12 border-[1.5px] rounded-[20px] text-xs font-bold transition-all duration-300 transform active:scale-[0.98] flex items-center justify-center ${
+                className={`btn-premium-base w-full h-12 text-xs font-bold ${
                   isInCart(course.id)
-                    ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed shadow-none'
-                    : style.outlineBtn
+                    ? 'bg-gray-50 border-gray-100 text-gray-400 cursor-not-allowed shadow-none border-none'
+                    : 'btn-premium-secondary'
                 }`}
               >
                 {isInCart(course.id) ? 'Already in Cart' : 'Add to Cart'}

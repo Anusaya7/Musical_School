@@ -45,17 +45,17 @@ export default function CourseCard({ course, isInCart, onAddToCart }: CourseCard
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <Link
             href={`/courses/${course.id}`}
-            className="inline-flex items-center justify-center rounded-2xl bg-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-700"
+            className="btn-premium-base btn-premium-secondary px-4 py-3 text-sm font-semibold"
           >
             View Details
           </Link>
           <button
             onClick={onAddToCart}
             disabled={isInCart}
-            className={`inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+            className={`btn-premium-base px-4 py-3 text-sm font-semibold ${
               isInCart
-                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-none shadow-none'
+                : 'btn-premium-secondary'
             }`}
           >
             <ShoppingCart className="mr-2 h-4 w-4" />

@@ -47,7 +47,7 @@ export default function CourseDetail() {
           <p className="text-gray-600 mb-8">The course you're looking for doesn't exist.</p>
           <button
             onClick={() => router.push('/')}
-            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="btn-premium-base btn-premium-gradient px-6 py-3 text-sm font-semibold"
           >
             Back to Home
           </button>
@@ -142,10 +142,10 @@ export default function CourseDetail() {
                 <button
                   onClick={() => addItem(course)}
                   disabled={isInCart(course.id)}
-                  className={`px-8 py-3 rounded-lg font-semibold transition-all ${
+                  className={`btn-premium-base px-8 py-3 text-sm font-semibold ${
                     isInCart(course.id)
-                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                      : 'bg-white text-violet-700 hover:bg-slate-100'
+                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-none'
+                      : 'btn-premium-secondary'
                   }`}
                 >
                   {isInCart(course.id) ? 'In Cart' : 'Add to Cart'}
@@ -354,10 +354,10 @@ export default function CourseDetail() {
                   <button
                     onClick={() => addItem(course)}
                     disabled={isInCart(course.id)}
-                    className={`w-full px-6 py-3 rounded-lg font-semibold transition-all ${
+                    className={`btn-premium-base w-full px-6 py-3 text-sm font-semibold ${
                       isInCart(course.id)
-                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-purple-600 text-white hover:bg-purple-700'
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-none shadow-none'
+                        : 'btn-premium-secondary'
                     }`}
                   >
                     {isInCart(course.id) ? 'In Cart' : 'Add to Cart'}

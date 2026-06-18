@@ -519,13 +519,13 @@ export default function AdminDashboard() {
                             <button
                               type="button"
                               onClick={() => setEditingCourse(null)}
-                              className="flex-1 py-2 px-4 border rounded-lg hover:bg-gray-100"
+                              className="btn-premium-base btn-premium-secondary flex-1 py-2 px-4 text-xs font-bold"
                             >
                               Cancel
                             </button>
                             <button
                               type="submit"
-                              className="flex-1 py-2 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold"
+                              className="btn-premium-base btn-premium-primary flex-1 py-2 px-4 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700"
                             >
                               Save Price
                             </button>
@@ -600,7 +600,7 @@ export default function AdminDashboard() {
 
                     <button
                       type="submit"
-                      className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-md transition-colors"
+                      className="btn-premium-base btn-premium-primary px-6 py-3 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700"
                     >
                       Update Operating Hours
                     </button>
@@ -670,7 +670,7 @@ export default function AdminDashboard() {
 
                       <button
                         type="submit"
-                        className="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold shadow-md transition-colors"
+                        className="btn-premium-base btn-premium-primary w-full py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 border-red-600 hover:border-red-700"
                       >
                         Add Holiday
                       </button>
@@ -793,7 +793,7 @@ export default function AdminDashboard() {
                       
                       <button
                         type="submit"
-                        className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold shadow-md transition-colors"
+                        className="btn-premium-base btn-premium-primary w-full py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700"
                       >
                         Create Workshop
                       </button>
@@ -876,7 +876,7 @@ export default function AdminDashboard() {
 
                       <button
                         type="submit"
-                        className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold shadow-md transition-colors"
+                        className="btn-premium-base btn-premium-primary w-full py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700"
                       >
                         Publish Video
                       </button>

@@ -412,7 +412,7 @@ export default function BookingModal({ isOpen, onClose, classSchedule, onBooking
                           setSelectedBatch('morning')
                           setSelectedTimeSlot('')
                         }}
-                        className={`py-3 px-4 rounded-[20px] border-[1.5px] font-semibold text-xs transition-all duration-300 ${
+                        className={`btn-premium-base py-3 px-4 text-xs font-semibold ${
                           selectedBatch === 'morning' ? style.selectedPill : style.unselectedPill
                         }`}
                       >
@@ -426,7 +426,7 @@ export default function BookingModal({ isOpen, onClose, classSchedule, onBooking
                           setSelectedBatch('evening')
                           setSelectedTimeSlot('')
                         }}
-                        className={`py-3 px-4 rounded-[20px] border-[1.5px] font-semibold text-xs transition-all duration-300 ${
+                        className={`btn-premium-base py-3 px-4 text-xs font-semibold ${
                           selectedBatch === 'evening' ? style.selectedPill : style.unselectedPill
                         }`}
                       >
@@ -449,7 +449,7 @@ export default function BookingModal({ isOpen, onClose, classSchedule, onBooking
                           key={slot}
                           type="button"
                           onClick={() => setSelectedTimeSlot(slot)}
-                          className={`py-2 px-4 rounded-full border-[1.5px] font-semibold text-xs transition-all duration-300 ${
+                          className={`btn-premium-base rounded-full !important py-2 px-4 text-xs font-semibold ${
                             selectedTimeSlot === slot ? style.selectedPill : style.unselectedPill
                           }`}
                         >
@@ -490,18 +490,18 @@ export default function BookingModal({ isOpen, onClose, classSchedule, onBooking
                   <button
                     onClick={handleBooking}
                     disabled={isSubmitting || !selectedDate || !selectedBatch || !selectedTimeSlot || !studentName || !studentEmail}
-                    className={`w-full h-12 rounded-[20px] text-xs font-bold text-white transition-all shadow-md active:scale-[0.98] flex items-center justify-center ${
+                    className={
                       isSubmitting || !selectedDate || !selectedBatch || !selectedTimeSlot || !studentName || !studentEmail
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                        : `bg-gradient-to-r ${style.gradient} hover:shadow-lg`
-                    }`}
+                        ? 'w-full h-12 rounded-[20px] text-xs font-bold text-gray-400 bg-gray-200 cursor-not-allowed shadow-none border-none'
+                        : 'btn-premium-base btn-premium-submit w-full h-12 text-xs font-bold text-white'
+                    }
                   >
                     {isSubmitting ? 'Booking...' : 'Confirm Booking'}
                   </button>
                   <button
                     type="button"
                     onClick={onClose}
-                    className="w-full py-2 text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors text-center"
+                    className="btn-premium-base btn-premium-secondary w-full py-2 text-xs font-bold"
                   >
                     Cancel
                   </button>

@@ -164,14 +164,12 @@ export default function BookingModal({ isOpen, onClose, classSchedule, onBooking
                   key={slot.id}
                   onClick={() => slot.available && setSelectedSlot(slot)}
                   disabled={!slot.available}
-                  className={`p-3 rounded-xl font-medium transition-all ${
+                  className={`btn-premium-base p-3 text-sm font-semibold flex-col ${
                     !slot.available
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-none'
                       : selectedSlot?.id === slot.id
-                      ? 'bg-indigo-600 text-white'
-                      : theme === 'dark'
-                      ? 'bg-gray-700 text-white hover:bg-gray-600'
-                      : 'bg-white border border-gray-300 text-gray-900 hover:bg-gray-50'
+                      ? 'bg-indigo-600 border-indigo-600 text-white'
+                      : 'btn-premium-secondary'
                   }`}
                 >
                   {slot.time}
@@ -219,11 +217,11 @@ export default function BookingModal({ isOpen, onClose, classSchedule, onBooking
           <button
             onClick={handleBooking}
             disabled={isSubmitting || !selectedDate || !selectedSlot || !studentName || !studentEmail}
-            className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 ${
+            className={
               isSubmitting || !selectedDate || !selectedSlot || !studentName || !studentEmail
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 transform hover:scale-105'
-            }`}
+                ? 'w-full py-4 px-6 rounded-xl font-bold text-lg text-gray-400 bg-gray-200 cursor-not-allowed shadow-none border-none'
+                : 'btn-premium-base btn-premium-submit w-full py-4 px-6 text-lg font-bold text-white'
+            }
           >
             {isSubmitting ? 'Booking...' : 'Book This Class'}
           </button>

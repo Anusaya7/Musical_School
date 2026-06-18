@@ -318,7 +318,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
     <div className="space-y-4">
       <button
         onClick={() => setShowBookingModal(true)}
-        className={`w-full py-4 text-white text-sm font-bold rounded-2xl transition-all duration-300 transform active:scale-[0.98] shadow-md hover:shadow-lg bg-gradient-to-r ${style.gradient}`}
+        className="btn-premium-base btn-premium-gradient w-full py-4 text-sm font-bold text-white"
       >
         Book Time Slot
       </button>
@@ -439,7 +439,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                               setSelectedBatch('morning')
                               setSelectedTimeSlot('')
                             }}
-                            className={`py-3 px-4 rounded-[20px] border-[1.5px] font-semibold text-xs transition-all duration-300 ${
+                            className={`btn-premium-base py-3 px-4 text-xs font-semibold ${
                               selectedBatch === 'morning' ? style.selectedPill : style.unselectedPill
                             }`}
                           >
@@ -453,7 +453,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                               setSelectedBatch('evening')
                               setSelectedTimeSlot('')
                             }}
-                            className={`py-3 px-4 rounded-[20px] border-[1.5px] font-semibold text-xs transition-all duration-300 ${
+                            className={`btn-premium-base py-3 px-4 text-xs font-semibold ${
                               selectedBatch === 'evening' ? style.selectedPill : style.unselectedPill
                             }`}
                           >
@@ -476,7 +476,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                               key={slot}
                               type="button"
                               onClick={() => setSelectedTimeSlot(slot)}
-                              className={`py-2 px-4 rounded-full border-[1.5px] font-semibold text-xs transition-all duration-300 ${
+                              className={`btn-premium-base rounded-full !important py-2 px-4 text-xs font-semibold ${
                                 selectedTimeSlot === slot ? style.selectedPill : style.unselectedPill
                               }`}
                             >
@@ -517,18 +517,18 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                       <button
                         onClick={handleBookTimeSlot}
                         disabled={!selectedDate || !selectedBatch || !selectedTimeSlot}
-                        className={`w-full h-12 rounded-[20px] text-xs font-bold text-white transition-all shadow-md active:scale-[0.98] flex items-center justify-center ${
+                        className={
                           !selectedDate || !selectedBatch || !selectedTimeSlot
-                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                            : `bg-gradient-to-r ${style.gradient} hover:shadow-lg`
-                        }`}
+                            ? 'w-full h-12 rounded-[20px] text-xs font-bold text-gray-400 bg-gray-200 cursor-not-allowed shadow-none border-none'
+                            : 'btn-premium-base btn-premium-submit w-full h-12 text-xs font-bold text-white'
+                        }
                       >
                         Continue to Payment
                       </button>
                       <button
                         type="button"
                         onClick={() => setShowBookingModal(false)}
-                        className="w-full py-2 text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors text-center"
+                        className="btn-premium-base btn-premium-secondary w-full py-2 text-xs font-bold"
                       >
                         Cancel
                       </button>
@@ -582,18 +582,18 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                 <button
                   onClick={handlePayment}
                   disabled={isBooking || !studentName || !studentEmail}
-                  className={`w-full h-12 rounded-[20px] text-xs font-bold text-white transition-all shadow-md active:scale-[0.98] flex items-center justify-center ${
+                  className={
                     isBooking || !studentName || !studentEmail
-                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                      : `bg-gradient-to-r ${style.gradient} hover:shadow-lg`
-                  }`}
+                      ? 'w-full h-12 rounded-[20px] text-xs font-bold text-gray-400 bg-gray-200 cursor-not-allowed shadow-none border-none'
+                      : 'btn-premium-base btn-premium-submit w-full h-12 text-xs font-bold text-white'
+                  }
                 >
                   {isBooking ? 'Processing...' : 'Pay Now'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowPayment(false)}
-                  className="w-full py-2 text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors text-center"
+                  className="btn-premium-base btn-premium-secondary w-full py-2 text-xs font-bold"
                 >
                   Back to Details
                 </button>
@@ -629,7 +629,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                 <button
                   onClick={() => processPayment('Credit/Debit Card')}
                   disabled={isBooking}
-                  className="w-full p-4 rounded-[20px] border border-gray-200 hover:border-gray-300 transition-all flex items-center gap-4 bg-white active:scale-[0.99]"
+                  className="btn-premium-base btn-premium-secondary w-full p-4 flex items-center gap-4"
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${style.pillBg}`}>
                     <CreditCard className="w-5 h-5" style={{ color: style.iconColor }} />
@@ -644,7 +644,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                 <button
                   onClick={() => processPayment('UPI')}
                   disabled={isBooking}
-                  className="w-full p-4 rounded-[20px] border border-gray-200 hover:border-gray-300 transition-all flex items-center gap-4 bg-white active:scale-[0.99]"
+                  className="btn-premium-base btn-premium-secondary w-full p-4 flex items-center gap-4"
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${style.pillBg}`}>
                     <Smartphone className="w-5 h-5" style={{ color: style.iconColor }} />
@@ -659,7 +659,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                 <button
                   onClick={() => processPayment('Net Banking')}
                   disabled={isBooking}
-                  className="w-full p-4 rounded-[20px] border border-gray-200 hover:border-gray-300 transition-all flex items-center gap-4 bg-white active:scale-[0.99]"
+                  className="btn-premium-base btn-premium-secondary w-full p-4 flex items-center gap-4"
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${style.pillBg}`}>
                     <Building className="w-5 h-5" style={{ color: style.iconColor }} />

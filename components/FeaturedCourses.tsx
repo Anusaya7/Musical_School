@@ -302,7 +302,7 @@ const CourseCard = memo(({ course, isInCartAlready, onBookClick, onAddToCart }: 
           {/* Primary button: Book Time Slot */}
           <button
             onClick={() => onBookClick(course)}
-            className={`w-full h-12 text-white text-sm font-bold rounded-[20px] transition-all duration-300 transform active:scale-[0.98] shadow-md hover:shadow-lg flex items-center justify-center ${style.primaryBtn}`}
+            className="btn-premium-base btn-premium-gradient w-full h-12 text-sm font-bold flex items-center justify-center"
           >
             Book Time Slot
           </button>
@@ -311,7 +311,7 @@ const CourseCard = memo(({ course, isInCartAlready, onBookClick, onAddToCart }: 
           <div className="flex gap-3">
             <Link
               href={`/courses/${course.id}`}
-              className={`flex-1 h-12 border-[1.5px] rounded-[20px] text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1.5 transform active:scale-[0.98] ${style.secondaryBtn}`}
+              className="btn-premium-base btn-premium-secondary flex-1 h-12 text-xs gap-1.5"
             >
               <span>View Details</span>
               <span className="text-sm">→</span>
@@ -319,10 +319,10 @@ const CourseCard = memo(({ course, isInCartAlready, onBookClick, onAddToCart }: 
 
             <button
               onClick={() => onAddToCart(course)}
-              className={`w-12 h-12 border-[1.5px] rounded-[20px] transition-all duration-300 flex items-center justify-center transform active:scale-[0.98] ${
+              className={`btn-premium-base w-12 h-12 ${
                 isInCartAlready 
                   ? 'bg-green-500 border-green-500 text-white shadow-sm shadow-green-200' 
-                  : style.cartBtn
+                  : 'btn-premium-secondary'
               }`}
               title={isInCartAlready ? 'Added to Cart' : 'Add to Cart'}
             >

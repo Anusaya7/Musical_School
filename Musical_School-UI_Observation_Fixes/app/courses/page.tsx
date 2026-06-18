@@ -112,7 +112,7 @@ export default function CoursesPage() {
         {/* Load More Button (if applicable) */}
         {category && filteredCourses.length < getCoursesByCategory(category).length && (
           <div className="text-center mt-8">
-            <button className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">
+            <button className="btn-premium-base btn-premium-gradient px-6 py-3 font-semibold text-white">
               Load More Courses
             </button>
           </div>

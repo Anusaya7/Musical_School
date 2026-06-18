@@ -248,10 +248,10 @@ export default function FeaturedCourses() {
                     <button
                       onClick={() => addItem(course)}
                       disabled={isInCart(course.id)}
-                      className={`flex-1 px-4 py-2 rounded-xl font-medium transition-all duration-200 transform hover:translate-y-[-2px] hover:scale-105 ${
+                      className={`btn-premium-base px-4 py-2 text-sm font-semibold flex-1 ${
                         isInCart(course.id)
-                          ? 'bg-green-500 text-white'
-                          : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 active:scale-[0.97]'
+                          ? 'bg-green-500 border-green-500 text-white shadow-sm shadow-green-200'
+                          : 'btn-premium-gradient'
                       }`}
                     >
                       {isInCart(course.id) ? 'In Cart' : 'Add to Cart'}
@@ -259,11 +259,7 @@ export default function FeaturedCourses() {
                     
                     <Link
                       href={`/courses/${course.id}`}
-                      className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 border-2 transform hover:translate-y-[-2px] hover:scale-105 ${
-                        isDarkMode 
-                          ? 'border-purple-600 text-purple-400 hover:bg-purple-600' 
-                          : 'border-purple-600 text-purple-600 hover:bg-purple-50'
-                      }`}
+                      className="btn-premium-base btn-premium-secondary px-4 py-2 text-sm font-semibold"
                     >
                       View Details
                     </Link>
@@ -282,7 +278,7 @@ export default function FeaturedCourses() {
               <p className={`mb-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Try adjusting your filters to see more results.</p>
               <button 
                 onClick={() => setFilteredCourses(featuredCourses)}
-                className="inline-flex items-center justify-center px-6 py-3 font-medium rounded-xl transition-all duration-200 ease-in-out bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px]"
+                className="btn-premium-base btn-premium-secondary px-6 py-3 text-sm font-semibold"
               >
                 Clear Filters
               </button>
@@ -299,10 +295,10 @@ export default function FeaturedCourses() {
             Join thousands of students learning music with our expert instructors and interactive courses
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="inline-flex items-center justify-center px-8 py-4 font-semibold rounded-xl transition-all duration-200 ease-in-out bg-white text-purple-600 hover:bg-gray-100 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 shadow-lg hover:shadow-xl min-h-[44px]">
+            <button className="btn-premium-base btn-premium-secondary px-8 py-4 text-sm font-semibold">
               View All Courses
             </button>
-            <button className="inline-flex items-center justify-center px-8 py-4 font-semibold rounded-xl transition-all duration-200 ease-in-out border-2 border-white text-white hover:bg-white/10 active:bg-white/20 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 min-h-[44px]">
+            <button className="btn-premium-base btn-premium-secondary px-8 py-4 text-sm font-semibold">
               Browse by Instrument
             </button>
           </div>

@@ -93,10 +93,10 @@ export default function CoursesPage() {
               <button
                 key={level}
                 onClick={() => setLevelFilter(level)}
-                className={`rounded-full px-5 py-2 text-xs font-bold transition-all duration-300 ${
+                className={`btn-premium-base px-5 py-2 text-xs font-bold ${
                   levelFilter === level
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-200'
-                    : 'border border-gray-200 bg-white text-slate-600 hover:bg-gray-50 hover:border-gray-300'
+                    ? 'btn-premium-gradient'
+                    : 'btn-premium-secondary'
                 }`}
               >
                 {level}
@@ -107,7 +107,7 @@ export default function CoursesPage() {
           {category && (
             <button
               onClick={clearFilter}
-              className="inline-flex items-center gap-2 self-start rounded-full border border-gray-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 transition-colors hover:bg-gray-50 hover:border-gray-300 sm:self-auto"
+              className="btn-premium-base btn-premium-secondary px-4 py-2.5 text-xs font-bold inline-flex items-center gap-2 self-start sm:self-auto"
             >
               <X className="h-3.5 w-3.5" />
               Clear category filter
@@ -128,7 +128,7 @@ export default function CoursesPage() {
             <p className="text-sm text-slate-500 font-medium">No courses match your filters.</p>
             <button
               onClick={() => setLevelFilter('All')}
-              className="mt-4 text-xs font-bold text-purple-600 underline hover:text-purple-500"
+              className="mt-4 text-xs font-bold text-purple-600 underline hover:text-purple-500 active:scale-95 transition-transform"
             >
               Reset level filter
             </button>

@@ -187,3 +187,128 @@ button, a {
 .page-transition-exit-active {
   opacity: 0;
 }
+
+@keyframes buttonShake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  50% { transform: translateX(2px); }
+  75% { transform: translateX(-1px); }
+  100% { transform: translateX(0); }
+}
+
+.animate-button-shake {
+  animation: buttonShake 250ms ease-out;
+}
+
+/* ==========================================================================
+   NEW PREMIUM BUTTON BORDER SYSTEM
+   ========================================================================== */
+
+/* Base style applied to all premium buttons to ensure consistency */
+.btn-premium-base {
+  border-width: 2px !important;
+  border-radius: 16px !important;
+  outline: none !important;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  backface-visibility: hidden !important;
+  transform: translateZ(0) !important;
+}
+
+.btn-premium-base:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.15) !important;
+}
+
+.btn-premium-base:active {
+  transform: translateY(-2px) scale(0.97) !important;
+}
+
+.btn-premium-base:focus-visible,
+.btn-premium-base:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* EXPLORE COURSES / PRIMARY BUTTONS (Borders: Default #2563EB, Hover #1D4ED8, Active #1E40AF) */
+.btn-premium-primary {
+  border-color: #2563EB !important;
+  border-style: solid !important;
+}
+
+.btn-premium-primary:hover {
+  border-color: #1D4ED8 !important;
+}
+
+.btn-premium-primary:active {
+  border-color: #1E40AF !important;
+}
+
+/* EXPLORE COURSES BUTTON */
+.btn-premium-explore {
+  border: 2px solid #2563EB !important;
+  background-color: #FFFFFF !important;
+  color: #0F1E4A !important;
+}
+
+.btn-premium-explore:hover {
+  border-color: #1D4ED8 !important;
+  background-color: #F8FBFF !important;
+}
+
+.btn-premium-explore:active {
+  border-color: #1E40AF !important;
+}
+
+/* SECONDARY BUTTONS (e.g. View Details) */
+.btn-premium-secondary {
+  border: 2px solid #2563EB !important;
+  background-color: #FFFFFF !important;
+  color: #0F1E4A !important;
+}
+
+.btn-premium-secondary:hover {
+  border-color: #1D4ED8 !important;
+  background-color: #F8FBFF !important;
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.15) !important;
+}
+
+.btn-premium-secondary:active {
+  border-color: #1E40AF !important;
+}
+
+/* BOOK TIME SLOT / GRADIENT BUTTON */
+.btn-premium-gradient {
+  background: linear-gradient(135deg, #5EA8FF, #FF6FAF) !important;
+  border: 2px solid #2563EB !important;
+  color: #FFFFFF !important;
+}
+
+.btn-premium-gradient:hover {
+  border-color: #1D4ED8 !important;
+}
+
+.btn-premium-gradient:active {
+  border-color: #1E40AF !important;
+}
+
+/* SUBMIT BOOKING REQUEST BUTTON (Rich Gradient background) */
+.btn-premium-submit {
+  background: linear-gradient(135deg, #5EA8FF 0%, #7CB8FF 30%, #FF8AB8 70%, #FF6FAF 100%) !important;
+  border: 2px solid #2563EB !important;
+  color: #FFFFFF !important;
+}
+
+.btn-premium-submit:hover {
+  border-color: #1D4ED8 !important;
+}
+
+.btn-premium-submit:active {
+  border-color: #1E40AF !important;
+}
+

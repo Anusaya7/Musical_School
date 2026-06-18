@@ -1044,7 +1044,7 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div className="flex justify-end">
-                  <button className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                  <button className="btn-premium-base btn-premium-primary bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700">
                     Save Changes
                   </button>
                 </div>
@@ -1119,7 +1119,7 @@ export default function AdminDashboard() {
               </div>
 
               <div className="mt-6 flex justify-end">
-                <button className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                <button className="btn-premium-base btn-premium-primary bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors">
                   Save Settings
                 </button>
               </div>
