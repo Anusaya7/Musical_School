@@ -1,11 +1,12 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { useSession, signOut } from 'next-auth/react'
 
 export interface User {
   email: string
   name: string
-  role: 'admin' | 'instructor' | 'student'
+  role: 'SUPER_ADMIN' | 'INSTRUCTOR' | 'STUDENT'
   firstName?: string
   lastName?: string
   phone?: string
@@ -25,6 +26,25 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
+  const { data: session, status } = useSession()
+
+  // Sync NextAuth session with local context state
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user) {
+      const dbUser: User = {
+        email: session.user.email || '',
+        name: session.user.name || '',
+        role: (session.user as any).role || 'STUDENT'
+      }
+      setUser(dbUser)
+      localStorage.setItem('user', JSON.stringify(dbUser))
+    } else if (status === 'unauthenticated') {
+      const savedUser = localStorage.getItem('user')
+      if (!savedUser) {
+        setUser(null)
+      }
+    }
+  }, [session, status])
 
   // Load user from localStorage on mount
   useEffect(() => {
@@ -46,31 +66,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return new Promise((resolve) => {
         setTimeout(() => {
           // Check credentials
-          if (email === 'admin@2ndinversion.com' && password === 'admin123') {
+          if (email === 'admin@2ndinversion.com' && password === 'Admin@123') {
             const adminUser: User = {
               email,
-              name: 'Admin User',
-              role: 'admin',
+              name: 'Ajinkya Amrule',
+              role: 'SUPER_ADMIN',
               rememberMe
             }
             localStorage.setItem('user', JSON.stringify(adminUser))
             setUser(adminUser)
             resolve(true)
-          } else if (email === 'ajinkya@2ndinversionmusic.com' && password === 'instructor123') {
+          } else if (email === 'instructor@2ndinversion.com' && password === 'Instructor@123') {
             const instructorUser: User = {
               email,
               name: 'Ajinkya Amrule',
-              role: 'instructor',
+              role: 'INSTRUCTOR',
               rememberMe
             }
             localStorage.setItem('user', JSON.stringify(instructorUser))
             setUser(instructorUser)
             resolve(true)
+          } else if (email === 'student@2ndinversion.com' && password === 'Student@123') {
+            const studentUser: User = {
+              email,
+              name: 'John Doe',
+              role: 'STUDENT',
+              rememberMe
+            }
+            localStorage.setItem('user', JSON.stringify(studentUser))
+            setUser(studentUser)
+            resolve(true)
           } else if (email && password.length >= 6) {
+            // General fallback student sign-in/up
             const studentUser: User = {
               email,
               name: email.split('@')[0],
-              role: 'student',
+              role: 'STUDENT',
               rememberMe
             }
             localStorage.setItem('user', JSON.stringify(studentUser))
@@ -90,6 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     localStorage.removeItem('user')
     setUser(null)
+    signOut({ callbackUrl: '/login' })
   }
 
   const isAuthenticated = !!user

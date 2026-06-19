@@ -18,7 +18,7 @@ import { Music2, Filter, X } from 'lucide-react'
 
 const LEVELS: CourseLevel[] = ['Beginner', 'Intermediate', 'Advanced']
 
-export default function CoursesPage() {
+function CoursesPageContent() {
   const { addItem, isInCart } = useCart()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -160,5 +160,17 @@ export default function CoursesPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function CoursesPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <CoursesPageContent />
+    </React.Suspense>
   )
 }

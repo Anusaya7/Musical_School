@@ -5,7 +5,7 @@
       "title": "Piano Beginner",
       "category": "piano",
       "level": "Beginner",
-      "price": 4999,
+      "price": 4500,
       "instructor": "Ajinkya Amrule",
       "duration": "3 Months",
       "rating": 4.8,
@@ -139,22 +139,7 @@
       "dayOfWeek": 1
     }
   ],
-  "bookings": [
-    {
-      "id": "BK-1781685911432-ahw7q857r",
-      "courseId": "piano-beginner",
-      "courseName": "Piano Beginner",
-      "instructor": "Ajinkya Amrule",
-      "date": "2026-07-07",
-      "timeSlot": "03:00 PM",
-      "batchTiming": "evening",
-      "studentName": "Kritika",
-      "studentEmail": "kritika123@gmail.com",
-      "status": "Booked",
-      "createdAt": "2026-06-17T08:45:11.432Z",
-      "amount": 4999
-    }
-  ],
+  "bookings": [],
   "workshops": [
     {
       "id": "w1",
@@ -173,6 +158,35 @@
       "description": "An essential guide to correct physical approach to piano keys.",
       "url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
       "instrument": "piano"
+    }
+  ],
+  "users": [
+    {
+      "id": "admin-1",
+      "name": "Ajinkya Amrule",
+      "email": "admin@2ndinversion.com",
+      "passwordHash": "$2b$10$QHlryK78hYYdrcNRrJhndOmGneDzSO69xbA23yAXCRqt2pY4CM3TS",
+      "role": "SUPER_ADMIN",
+      "createdAt": "2026-06-19T06:31:02.076Z",
+      "isVerified": true
+    },
+    {
+      "id": "inst-3",
+      "name": "Ajinkya Amrule",
+      "email": "instructor@2ndinversion.com",
+      "passwordHash": "$2b$10$6AXkYN2VwIGLcAZ80XEdLO4MctNGfWDTt5MGt5XaTPup5SdPkdi/i",
+      "role": "INSTRUCTOR",
+      "createdAt": "2026-06-19T06:31:02.076Z",
+      "isVerified": true
+    },
+    {
+      "id": "stud-1",
+      "name": "John Doe",
+      "email": "student@2ndinversion.com",
+      "passwordHash": "$2b$10$.ebMdO0g9rhQ36EeziodEO5Z0M3Tb2T3fD/NyN6w.ckCQE39jNuSG",
+      "role": "STUDENT",
+      "createdAt": "2026-06-19T06:31:02.076Z",
+      "isVerified": true
     }
   ]
 }

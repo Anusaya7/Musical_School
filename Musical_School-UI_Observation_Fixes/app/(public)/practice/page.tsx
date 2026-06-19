@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import Header from '@/components/Header'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -36,7 +36,7 @@ interface Exercise {
   completed: boolean
 }
 
-export default function PracticePage() {
+function PracticePageContent() {
   const { theme } = useTheme()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -390,5 +390,17 @@ export default function PracticePage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function PracticePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <PracticePageContent />
+    </Suspense>
   )
 }

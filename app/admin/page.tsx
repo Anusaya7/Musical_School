@@ -33,7 +33,6 @@ import {
   ShieldAlert
 } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
-import Header from '@/components/Header'
 
 // Default mock data for charts
 const defaultRevenueData = [
@@ -385,10 +384,9 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#FAFBFF] text-[#0F1E4A] font-sans flex flex-col">
-      <Header />
       
       {/* Mobile Menu Bar */}
-      <div className="xl:hidden flex items-center justify-between px-6 py-4 bg-white border-b border-[#DCEEFF] pt-24">
+      <div className="xl:hidden flex items-center justify-between px-6 py-4 bg-white border-b border-[#DCEEFF]">
         <span className="font-extrabold text-lg flex items-center gap-2 text-[#0F1E4A]">
           🎵 Music School Admin
         </span>
@@ -400,11 +398,11 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      <div className="flex flex-1 relative pt-20 xl:pt-24 min-h-[calc(100vh-80px)]">
+      <div className="flex flex-1 relative min-h-screen">
         
         {/* SIDEBAR PANEL */}
         <aside className={`
-          fixed xl:sticky top-20 xl:top-24 bottom-0 left-0 w-[290px] bg-white border-r border-[#DCEEFF] p-6 
+          fixed xl:sticky top-0 bottom-0 left-0 w-[290px] bg-white border-r border-[#DCEEFF] p-6 
           flex flex-col gap-6 overflow-y-auto z-40 transition-transform duration-300 ease-out
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'}
         `}>
