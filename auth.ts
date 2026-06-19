@@ -18,32 +18,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
-        }
-        const email = (credentials.email as string).toLowerCase()
-        console.log(`[AUTH] Login attempt for email: ${email}`)
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            return null
+          }
+          const email = (credentials.email as string).toLowerCase()
+          console.log(`[AUTH] Login attempt for email: ${email}`)
 
-        const user = await getUserByEmail(email)
-        if (!user) {
-          console.log(`[AUTH] Account not found in database for email: ${email}`)
+          const user = await getUserByEmail(email)
+          if (!user) {
+            console.log(`[AUTH] Account not found in database for email: ${email}`)
+            return null
+          }
+          if (!user.passwordHash) {
+            console.log(`[AUTH] User record has no password hash for email: ${email}`)
+            return null
+          }
+          const isValid = await bcrypt.compare(credentials.password as string, user.passwordHash)
+          if (!isValid) {
+            console.log(`[AUTH] Incorrect password validation for email: ${email}`)
+            return null
+          }
+          console.log(`[AUTH] Login successful for email: ${email}. Role detected: ${user.role}`)
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+          }
+        } catch (error) {
+          console.error("AUTH ERROR", error)
           return null
-        }
-        if (!user.passwordHash) {
-          console.log(`[AUTH] User record has no password hash for email: ${email}`)
-          return null
-        }
-        const isValid = await bcrypt.compare(credentials.password as string, user.passwordHash)
-        if (!isValid) {
-          console.log(`[AUTH] Incorrect password validation for email: ${email}`)
-          return null
-        }
-        console.log(`[AUTH] Login successful for email: ${email}. Role detected: ${user.role}`)
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role
         }
       }
     })

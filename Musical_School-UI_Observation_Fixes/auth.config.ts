@@ -1,13 +1,31 @@
 import type { NextAuthConfig } from "next-auth"
 import Google from "next-auth/providers/google"
 
-export default {
-  providers: [
+const googleId = process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID
+const googleSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET
+
+const isGoogleConfigured = 
+  googleId && 
+  googleSecret && 
+  googleId !== "your_google_client_id" && 
+  googleSecret !== "your_google_client_secret"
+
+const providers = []
+
+if (isGoogleConfigured) {
+  providers.push(
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || "your_google_client_id",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET || "your_google_client_secret",
-    }),
-  ],
+      clientId: googleId,
+      clientSecret: googleSecret,
+    })
+  )
+  console.log("[AUTH] Google authentication provider is enabled.")
+} else {
+  console.warn("[AUTH] Google authentication credentials missing. Google provider disabled.")
+}
+
+export default {
+  providers,
   session: {
     strategy: "jwt",
   },
