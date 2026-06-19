@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { signOut } from 'next-auth/react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useCart, Course } from '@/contexts/CartContext'
 import {
@@ -115,6 +116,11 @@ export default function StudentDashboard() {
   const [showNotification, setShowNotification] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+
+  const handleLogout = async () => {
+    localStorage.removeItem('user')
+    await signOut({ redirect: true, callbackUrl: '/login' })
+  }
 
   // Profile data
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -964,13 +970,16 @@ export default function StudentDashboard() {
         }`}
       >
         <div className="p-6 border-b border-[#DCEEFF] flex items-center justify-between">
-          <div className="flex items-center space-x-2.5">
+          <Link 
+            href="/" 
+            className="flex items-center space-x-2.5 p-2 rounded-xl hover:bg-[#F8FBFF] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group"
+          >
             <span className="text-2xl">🎵</span>
             <div>
               <h2 className="font-extrabold text-[#0F1E4A] text-sm leading-tight">2nd Inversion</h2>
-              <p className="text-[10px] text-[#5EA8FF] font-extrabold uppercase tracking-wider">Musical School</p>
+              <p className="text-[10px] text-[#5EA8FF] font-extrabold uppercase tracking-wider mt-0.5">Student Portal</p>
             </div>
-          </div>
+          </Link>
           <button 
             onClick={() => setMobileMenuOpen(false)} 
             className="md:hidden p-2 hover:bg-slate-100 rounded-lg text-slate-500"
@@ -1021,15 +1030,22 @@ export default function StudentDashboard() {
           ))}
         </nav>
 
-        {/* Exit link */}
-        <div className="p-4 border-t border-[#DCEEFF]">
+        {/* Exit / Logout links */}
+        <div className="p-4 border-t border-[#DCEEFF] flex flex-col gap-1.5">
           <Link
             href="/"
-            className="w-full flex items-center space-x-3.5 px-4 py-3 rounded-[16px] text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+            className="w-full flex items-center space-x-3.5 px-4 py-3 rounded-[16px] text-slate-600 hover:bg-slate-50/70 hover:text-slate-900 transition-colors"
           >
             <span className="text-lg select-none">🚪</span>
-            <span className="text-xs font-bold">Exit Dashboard</span>
+            <span className="text-xs font-bold">Exit to Homepage</span>
           </Link>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center space-x-3.5 px-4 py-3 rounded-[16px] text-[#FF6FAF] hover:bg-red-50/50 hover:border-red-100 border border-transparent transition-colors text-left"
+          >
+            <span className="text-lg select-none">🔓</span>
+            <span className="text-xs font-bold">Logout</span>
+          </button>
         </div>
       </div>
 

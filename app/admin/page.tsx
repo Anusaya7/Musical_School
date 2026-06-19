@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { signOut } from 'next-auth/react'
+import Link from 'next/link'
 import {
   LayoutDashboard,
   BookOpen,
@@ -362,9 +363,18 @@ export default function AdminDashboard() {
       
       {/* Mobile Header Bar */}
       <div className="xl:hidden flex items-center justify-between px-6 py-4 bg-white border-b border-[#E6EEFF] z-30">
-        <span className="font-extrabold text-base flex items-center gap-2 text-[#0F1E4A] select-none">
-          🎵 Music School Management
-        </span>
+        <Link 
+          href="/" 
+          className="flex items-center gap-2 p-2 rounded-xl hover:bg-[#F8FBFF] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
+        >
+          <span className="text-xl">🎵</span>
+          <div>
+            <span className="font-extrabold text-sm text-[#0F1E4A] leading-tight block">
+              2nd Inversion
+            </span>
+            <span className="text-[9px] text-[#5EA8FF] font-extrabold uppercase tracking-wider block mt-0.5">Admin Portal</span>
+          </div>
+        </Link>
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           className="p-2 border-2 border-[#DCEEFF] rounded-xl text-[#0F1E4A] hover:bg-[#FAFBFF] focus:outline-none"
@@ -382,9 +392,18 @@ export default function AdminDashboard() {
         <div className="space-y-6">
           {/* Header Branding */}
           <div className="pb-3 border-b border-[#E6EEFF]">
-            <h1 className="text-base font-extrabold flex items-center gap-2 text-[#0F1E4A]">
-              <span>🎵</span> Music School Management
-            </h1>
+            <Link 
+              href="/" 
+              className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-[#F8FBFF] hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group"
+            >
+              <span className="text-2xl">🎵</span>
+              <div>
+                <h1 className="text-sm font-extrabold text-[#0F1E4A] leading-tight">
+                  2nd Inversion
+                </h1>
+                <p className="text-[10px] text-[#5EA8FF] font-extrabold uppercase tracking-wider mt-0.5">Admin Portal</p>
+              </div>
+            </Link>
           </div>
 
           {/* Admin Profiler */}
