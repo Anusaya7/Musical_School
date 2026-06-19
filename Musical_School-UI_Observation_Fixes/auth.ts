@@ -1,25 +1,8 @@
 import NextAuth from "next-auth"
-import { MongoDBAdapter } from "@auth/mongodb-adapter"
-import clientPromise from "@/lib/mongodb"
 import authConfig from "./auth.config"
 import Credentials from "next-auth/providers/credentials"
 import { getUserByEmail, createUser, DbUser } from "@/lib/db"
 import bcrypt from "bcryptjs"
-
-const mongoUri = process.env.MONGODB_URI || process.env.DATABASE_URL
-const isMongoUriValid = 
-  mongoUri && 
-  !mongoUri.includes("username:password") && 
-  !mongoUri.includes("username") && 
-  (mongoUri.startsWith("mongodb://") || mongoUri.startsWith("mongodb+srv://"))
-
-const adapter = isMongoUriValid ? MongoDBAdapter(clientPromise) : undefined
-
-if (adapter) {
-  console.log("[AUTH] MongoDBAdapter is enabled.")
-} else {
-  console.warn("[AUTH] MongoDB connection missing or invalid. Falling back to adapter-less JWT authentication.")
-}
 
 import Google from "next-auth/providers/google"
 
@@ -86,7 +69,7 @@ if (isGoogleConfigured) {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  ...(adapter ? { adapter } : {}),
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "UY2xST5ck1IteInTQe/30uqeeGPrNIPx/dNYR0ZM2Ds=",
   ...authConfig,
   providers: serverProviders,
   callbacks: {

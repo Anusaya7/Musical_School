@@ -37,6 +37,7 @@ if (isGoogleConfigured) {
 }
 
 export default {
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "UY2xST5ck1IteInTQe/30uqeeGPrNIPx/dNYR0ZM2Ds=",
   providers,
   session: {
     strategy: "jwt",
