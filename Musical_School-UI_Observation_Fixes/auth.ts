@@ -6,8 +6,23 @@ import Credentials from "next-auth/providers/credentials"
 import { getUserByEmail, createUser, DbUser } from "@/lib/db"
 import bcrypt from "bcryptjs"
 
+const mongoUri = process.env.MONGODB_URI || process.env.DATABASE_URL
+const isMongoUriValid = 
+  mongoUri && 
+  !mongoUri.includes("username:password") && 
+  !mongoUri.includes("username") && 
+  (mongoUri.startsWith("mongodb://") || mongoUri.startsWith("mongodb+srv://"))
+
+const adapter = isMongoUriValid ? MongoDBAdapter(clientPromise) : undefined
+
+if (adapter) {
+  console.log("[AUTH] MongoDBAdapter is enabled.")
+} else {
+  console.warn("[AUTH] MongoDB connection missing or invalid. Falling back to adapter-less JWT authentication.")
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: MongoDBAdapter(clientPromise),
+  ...(adapter ? { adapter } : {}),
   ...authConfig,
   providers: [
     ...authConfig.providers,

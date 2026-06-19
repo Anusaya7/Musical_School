@@ -85,7 +85,7 @@ export interface RecordedSession {
 }
 
 // Database Connection URI
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/musical_school"
+const MONGODB_URI = process.env.MONGODB_URI || process.env.DATABASE_URL || "mongodb://localhost:27017/musical_school"
 const MONGODB_DB = process.env.MONGODB_DB || "musical_school"
 
 let cachedClient: MongoClient | null = null
@@ -95,6 +95,13 @@ let useLocalFallback = false
 async function getMongoClient(): Promise<Db | null> {
   if (useLocalFallback) return null
   if (cachedDb) return cachedDb
+
+  const isUriPlaceholder = MONGODB_URI.includes("username:password") || MONGODB_URI.includes("username");
+  if (isUriPlaceholder) {
+    console.log("MongoDB connection URI is placeholder. Falling back to local JSON database.")
+    useLocalFallback = true
+    return null
+  }
 
   try {
     const client = new MongoClient(MONGODB_URI, {
