@@ -140,7 +140,13 @@ export default function InstructorDashboard() {
 
   // Logout Handler
   const handleLogout = async () => {
-    localStorage.removeItem('user')
+    sessionStorage.clear()
+    localStorage.clear()
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
     await signOut({ redirect: true, callbackUrl: '/login' })
   }
 
@@ -269,13 +275,13 @@ export default function InstructorDashboard() {
 
   // Navigation config
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'courses', label: 'My Courses', icon: BookOpen },
-    { id: 'students', label: 'Students', icon: Users },
-    { id: 'assignments', label: 'Assignments', icon: FileText },
-    { id: 'messages', label: 'Messages', icon: MessageSquare },
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
+    { id: 'courses', label: 'My Courses', icon: '📚' },
+    { id: 'students', label: 'Students', icon: '👨‍🎓' },
+    { id: 'assignments', label: 'Assignments', icon: '📝' },
+    { id: 'messages', label: 'Messages', icon: '💬' },
+    { id: 'profile', label: 'Profile', icon: '👤' },
+    { id: 'settings', label: 'Settings', icon: '⚙️' },
   ]
 
   return (
@@ -359,7 +365,7 @@ export default function InstructorDashboard() {
                     : 'text-[#0F1E4A] hover:bg-[#FAFBFF] hover:border-[#E6EEFF]'
                 }`}
               >
-                <item.icon className={`w-4 h-4 ${activeTab === item.id ? 'text-[#5EA8FF]' : 'text-slate-400'}`} />
+                <span className="text-base select-none">{item.icon}</span>
                 <span>{item.label}</span>
               </button>
             ))}
@@ -372,7 +378,7 @@ export default function InstructorDashboard() {
             onClick={handleLogout}
             className="w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-extrabold text-[#FF6FAF] hover:bg-red-50/50 hover:border-red-100 border border-transparent transition-all"
           >
-            <LogOut className="w-4 h-4 text-[#FF6FAF]" />
+            <span className="text-base select-none">🚪</span>
             <span>Logout</span>
           </button>
         </div>
@@ -381,21 +387,22 @@ export default function InstructorDashboard() {
       {/* MAIN WORKSPACE */}
       <main className="flex-1 p-6 md:p-10 overflow-y-auto flex flex-col gap-8 bg-[#FAFBFF]">
         
-        {/* Header section */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E6EEFF] pb-6">
-          <div>
-            <h1 className="text-2xl font-black text-[#0F1E4A] tracking-tight">
+        {/* Large Welcome Card Header */}
+        <div className="bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] rounded-[24px] p-8 text-white shadow-md relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent)] pointer-events-none" />
+          <div className="relative z-10 space-y-2">
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight drop-shadow-sm">
               Welcome Back, Ajinkya 👋
             </h1>
-            <p className="text-xs text-slate-500 font-bold mt-1">
+            <p className="text-sm text-white/90 font-medium max-w-md">
               Manage your classes and students from one place.
             </p>
           </div>
-          <div className="flex items-center gap-4 bg-white/70 backdrop-blur-md border border-[#E6EEFF] px-4 py-2.5 rounded-2xl shadow-sm">
-            <span className="text-xs font-extrabold text-slate-500">
+          <div className="flex items-center gap-4 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2.5 rounded-2xl shadow-sm relative z-10">
+            <span className="text-xs font-bold text-white">
               {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#5EA8FF] to-[#FF6FAF] flex items-center justify-center text-white font-extrabold text-xs shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-white text-[#5EA8FF] flex items-center justify-center font-extrabold text-xs shadow-sm">
               AA
             </div>
           </div>
@@ -451,15 +458,20 @@ export default function InstructorDashboard() {
                 <p className="text-xs text-slate-400 font-medium mb-6">Your teaching sessions scheduled for today.</p>
                 <div className="space-y-4">
                   {todayClasses.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-4 bg-[#FAFBFF] border border-[#E6EEFF] rounded-2xl hover:border-[#5EA8FF] transition-all">
+                    <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-[#FAFBFF] border border-[#E6EEFF] rounded-2xl hover:border-[#5EA8FF] transition-all gap-4">
                       <div className="flex items-center gap-3">
                         <span className="text-2xl p-2 bg-white rounded-xl border border-[#E6EEFF] shadow-sm select-none">{item.instrument}</span>
                         <div>
                           <h4 className="text-xs font-extrabold text-[#0F1E4A]">{item.course}</h4>
-                          <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Ajinkya Amrule</p>
+                          <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{item.time}</p>
                         </div>
                       </div>
-                      <span className="text-xs font-black text-[#5EA8FF] bg-[#E6EEFF] px-3.5 py-1.5 rounded-xl">{item.time}</span>
+                      <button
+                        onClick={() => alert(`Launching virtual classroom for ${item.course}...`)}
+                        className="px-4 py-2 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] hover:shadow-[0_4px_12px_rgba(94,168,255,0.15)] text-white text-[10px] font-black rounded-xl transition-all self-end sm:self-center shrink-0"
+                      >
+                        Join Class &rarr;
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -478,28 +490,28 @@ export default function InstructorDashboard() {
                     onClick={() => setIsCreateCourseOpen(true)}
                     className="flex flex-col items-center justify-center p-5 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] hover:shadow-[0_8px_20px_rgba(94,168,255,0.2)] hover:-translate-y-0.5 active:scale-[0.98] transition-all text-white rounded-[16px] gap-2"
                   >
-                    <Plus className="w-5 h-5" />
+                    <span className="text-lg">➕</span>
                     <span className="text-[11px] font-extrabold">Create Course</span>
                   </button>
                   <button
                     onClick={() => setIsUploadLessonOpen(true)}
                     className="flex flex-col items-center justify-center p-5 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] hover:shadow-[0_8px_20px_rgba(94,168,255,0.2)] hover:-translate-y-0.5 active:scale-[0.98] transition-all text-white rounded-[16px] gap-2"
                   >
-                    <Upload className="w-5 h-5" />
+                    <span className="text-lg">📤</span>
                     <span className="text-[11px] font-extrabold">Upload Lesson</span>
                   </button>
                   <button
                     onClick={() => setIsCreateAssignmentOpen(true)}
                     className="flex flex-col items-center justify-center p-5 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] hover:shadow-[0_8px_20px_rgba(94,168,255,0.2)] hover:-translate-y-0.5 active:scale-[0.98] transition-all text-white rounded-[16px] gap-2"
                   >
-                    <FileText className="w-5 h-5" />
+                    <span className="text-lg">📝</span>
                     <span className="text-[11px] font-extrabold">Create Assignment</span>
                   </button>
                   <button
                     onClick={() => setActiveTab('students')}
                     className="flex flex-col items-center justify-center p-5 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] hover:shadow-[0_8px_20px_rgba(94,168,255,0.2)] hover:-translate-y-0.5 active:scale-[0.98] transition-all text-white rounded-[16px] gap-2"
                   >
-                    <Users className="w-5 h-5" />
+                    <span className="text-lg">👨‍🎓</span>
                     <span className="text-[11px] font-extrabold">View Students</span>
                   </button>
                 </div>
