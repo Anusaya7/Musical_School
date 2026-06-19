@@ -1,5 +1,6 @@
 import type { NextAuthConfig } from "next-auth"
 import Google from "next-auth/providers/google"
+import Credentials from "next-auth/providers/credentials"
 
 const googleId = process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID
 const googleSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET
@@ -10,7 +11,18 @@ const isGoogleConfigured =
   googleId !== "your_google_client_id" && 
   googleSecret !== "your_google_client_secret"
 
-const providers = []
+const providers: any[] = [
+  Credentials({
+    name: "Credentials",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" }
+    },
+    async authorize() {
+      return null
+    }
+  })
+]
 
 if (isGoogleConfigured) {
   providers.push(
@@ -19,9 +31,9 @@ if (isGoogleConfigured) {
       clientSecret: googleSecret,
     })
   )
-  console.log("[AUTH] Google authentication provider is enabled.")
+  console.log("[AUTH] Google authentication provider is enabled in config.")
 } else {
-  console.warn("[AUTH] Google authentication credentials missing. Google provider disabled.")
+  console.warn("[AUTH] Google authentication credentials missing. Google provider disabled in config.")
 }
 
 export default {

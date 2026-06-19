@@ -21,53 +21,74 @@ if (adapter) {
   console.warn("[AUTH] MongoDB connection missing or invalid. Falling back to adapter-less JWT authentication.")
 }
 
+import Google from "next-auth/providers/google"
+
+const googleId = process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID
+const googleSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET
+
+const isGoogleConfigured = 
+  googleId && 
+  googleSecret && 
+  googleId !== "your_google_client_id" && 
+  googleSecret !== "your_google_client_secret"
+
+const serverProviders: any[] = [
+  Credentials({
+    name: "Credentials",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" }
+    },
+    async authorize(credentials) {
+      try {
+        if (!credentials?.email || !credentials?.password) {
+          return null
+        }
+        const email = (credentials.email as string).toLowerCase()
+        console.log(`[AUTH] Login attempt for email: ${email}`)
+
+        const user = await getUserByEmail(email)
+        if (!user) {
+          console.log(`[AUTH] Account not found in database for email: ${email}`)
+          return null
+        }
+        if (!user.passwordHash) {
+          console.log(`[AUTH] User record has no password hash for email: ${email}`)
+          return null
+        }
+        const isValid = await bcrypt.compare(credentials.password as string, user.passwordHash)
+        if (!isValid) {
+          console.log(`[AUTH] Incorrect password validation for email: ${email}`)
+          return null
+        }
+        console.log(`[AUTH] Login successful for email: ${email}. Role detected: ${user.role}`)
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        }
+      } catch (error) {
+        console.error("AUTH ERROR", error)
+        return null
+      }
+    }
+  })
+]
+
+if (isGoogleConfigured) {
+  serverProviders.push(
+    Google({
+      clientId: googleId,
+      clientSecret: googleSecret,
+    })
+  )
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...(adapter ? { adapter } : {}),
   ...authConfig,
-  providers: [
-    ...authConfig.providers,
-    Credentials({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
-      },
-      async authorize(credentials) {
-        try {
-          if (!credentials?.email || !credentials?.password) {
-            return null
-          }
-          const email = (credentials.email as string).toLowerCase()
-          console.log(`[AUTH] Login attempt for email: ${email}`)
-
-          const user = await getUserByEmail(email)
-          if (!user) {
-            console.log(`[AUTH] Account not found in database for email: ${email}`)
-            return null
-          }
-          if (!user.passwordHash) {
-            console.log(`[AUTH] User record has no password hash for email: ${email}`)
-            return null
-          }
-          const isValid = await bcrypt.compare(credentials.password as string, user.passwordHash)
-          if (!isValid) {
-            console.log(`[AUTH] Incorrect password validation for email: ${email}`)
-            return null
-          }
-          console.log(`[AUTH] Login successful for email: ${email}. Role detected: ${user.role}`)
-          return {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role
-          }
-        } catch (error) {
-          console.error("AUTH ERROR", error)
-          return null
-        }
-      }
-    })
-  ],
+  providers: serverProviders,
   callbacks: {
     ...authConfig.callbacks,
     async signIn({ user, account, profile }) {
@@ -94,3 +115,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }
   }
 })
+
