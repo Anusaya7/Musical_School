@@ -50,7 +50,7 @@ export default function Footer() {
               </p>
               <p className="flex items-center justify-center md:justify-end gap-2">
                 <span>📍</span>
-                <span>Pimpri Chinchwad, Maharashtra</span>
+                <span>Kawade Nagar, Pimple Gurav, Pune – 411061</span>
               </p>
             </div>
           </div>

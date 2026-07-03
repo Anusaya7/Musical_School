@@ -115,7 +115,7 @@ export default function InstructorDashboard() {
 
   // Profile Form states
   const [profileName, setProfileName] = useState('Ajinkya Amrule')
-  const [profileEmail, setProfileEmail] = useState('ajinkya@2ndinversionmusic.com')
+  const [profileEmail, setProfileEmail] = useState('aamrule90@gmail.com')
   const [profileBio, setProfileBio] = useState('Senior Music Instructor at 2nd Inversion. Over 10 years of experience teaching classical piano, acoustic guitar, and vocals. Trinity College London certified.')
   const [expertise, setExpertise] = useState('Piano, Guitar, Vocals')
   const [experience, setExperience] = useState('10+ Years')

@@ -223,7 +223,7 @@ function initFallbackDB() {
   const defaultInstructors: Instructor[] = [
     { id: "inst-1", name: "Sarah Johnson", email: "sarah@example.com", expertise: "Piano", rating: 4.8, students: 45, avatar: "SJ" },
     { id: "inst-2", name: "Alex Brown", email: "alex@example.com", expertise: "Guitar", rating: 4.9, students: 62, avatar: "AB" },
-    { id: "inst-3", name: "Ajinkya Amrule", email: "ajinkya@2ndinversionmusic.com", expertise: "Piano, Guitar, Vocals", rating: 5.0, students: 120, avatar: "AA" }
+    { id: "inst-3", name: "Ajinkya Amrule", email: "aamrule90@gmail.com", expertise: "Piano, Guitar, Vocals", rating: 5.0, students: 120, avatar: "AA" }
   ]
 
   const defaultSchedules: BatchSchedule[] = [

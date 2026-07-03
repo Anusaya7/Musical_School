@@ -180,12 +180,12 @@ export default function FooterPremium() {
                 </div>
                 <div className="flex items-center space-x-3 text-gray-400">
                   <MapPin className="w-4 h-4 text-purple-400" />
-                  <span>Pimpri Chinchwad, Maharashtra</span>
+                  <span>Kawade Nagar, Pimple Gurav, Pune – 411061</span>
                 </div>
                 <div className="flex items-center space-x-3 text-gray-400">
                   <Mail className="w-4 h-4 text-purple-400" />
-                  <a href="mailto:support@2ndinversion.com" className="hover:text-purple-400 transition-colors">
-                    support@2ndinversion.com
+                  <a href="mailto:aamrule90@gmail.com" className="hover:text-purple-400 transition-colors">
+                    aamrule90@gmail.com
                   </a>
                 </div>
               </div>

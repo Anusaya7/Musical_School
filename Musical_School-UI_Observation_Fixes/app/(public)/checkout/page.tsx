@@ -246,7 +246,7 @@ export default function CheckoutPage() {
                         onChange={handleChange}
                         required
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="+1 (555) 123-4567"
+                        placeholder="+91 98765 43210"
                       />
                     </div>
                   </div>
@@ -262,7 +262,7 @@ export default function CheckoutPage() {
                       value={formData.address}
                       onChange={handleChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="123 Music Street"
+                      placeholder="Kawade Nagar"
                     />
                   </div>
 
@@ -278,7 +278,7 @@ export default function CheckoutPage() {
                         value={formData.city}
                         onChange={handleChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="Melody City"
+                        placeholder="Pune"
                       />
                     </div>
                     

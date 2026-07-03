@@ -29,8 +29,8 @@ export default function AIChatbot() {
     fees: "Course fees vary by instrument and duration:\n- Piano: $199-$399\n- Guitar: $149-$299\n- Drums: $279-$449\n- Vocals: $299-$499\n- Violin: $349-$599\n- Music Theory: $99-$199",
     enrollment: "Enrollment is simple! You can:\n1. Visit our courses page\n2. Add courses to cart\n3. Complete checkout\n4. Start learning immediately!",
     instructor: "Our lead instructor is Ajinkya Amrule, a distinguished pianist, music educator, and sound engineer with a graduate degree in Sound Engineering.",
-    location: "We're located at B2/30, Ganesh Mangal Kendra Road, Kavde Nagar, Pimpri Chinchwad 411027, Maharashtra, India.",
-    contact: "You can reach us at:\n- Phone: +91 77688 38832\n- Email: info@2ndinversionmusic.com\n- WhatsApp: Click the green WhatsApp button",
+    location: "We're located at Sr. No. 56/2/30, House No. B2/30, Kawade Nagar, Lane No. 2, Behind Ganesh Mangal Kendra, Pimple Gurav (New Sangvi), Pune – 411061, Maharashtra, India.",
+    contact: "You can reach us at:\n- Phone: +91 77688 38832\n- Email: aamrule90@gmail.com\n- WhatsApp: Click the green WhatsApp button",
     default: "I understand you're interested in our music school. Let me help you with that. Could you tell me more about what specific information you're looking for?"
   }
 
