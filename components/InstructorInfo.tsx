@@ -112,7 +112,7 @@ export default function InstructorInfo() {
                   Book a Trial Class &rarr;
                 </a>
                 <a
-                  href="/instructor"
+                  href="/instructor-profile"
                   className="btn-premium-base btn-premium-secondary px-8 py-3.5 text-sm"
                 >
                   View Profile
