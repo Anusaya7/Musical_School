@@ -1,5 +1,5 @@
 import './globals.css'
-import { Inter } from 'next/font/google'
+// import { Inter } from 'next/font/google'
 import { CartProvider } from '@/contexts/CartContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
@@ -7,7 +7,7 @@ import Toast from '@/components/Toast'
 import Script from 'next/script'
 import { SessionProvider } from 'next-auth/react'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = { className: 'antialiased font-sans' }
 
 export const metadata = {
   title: '2nd Inversion Musical School',

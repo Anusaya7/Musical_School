@@ -34,16 +34,115 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [addressCopied, setAddressCopied] = useState(false)
+  const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const [smtpWarning, setSmtpWarning] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+  const validate = () => {
+    const newErrors: { [key: string]: string } = {}
     
-    // Simulate API loading animation
-    setTimeout(() => {
-      console.log('Contact form submitted:', formData)
-      setIsSubmitting(false)
+    if (!formData.name.trim()) {
+      newErrors.name = 'Full Name is required.'
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email Address is required.'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address.'
+    }
+    
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone Number is required.'
+    } else if (!/^\+?[0-9\s\-()]{10,20}$/.test(formData.phone)) {
+      newErrors.phone = 'Please enter a valid phone number (10-15 digits).'
+    }
+    
+    if (!formData.subject) {
+      newErrors.subject = 'Please select a purpose.'
+    }
+    
+    if (!formData.message.trim()) {
+      newErrors.message = 'Message is required.'
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!validate()) {
+      if (typeof window !== 'undefined' && (window as any).showToast) {
+        (window as any).showToast('Please correct validation errors.', 'error')
+      }
+      return
+    }
+
+    setIsSubmitting(true)
+    setSmtpWarning(false)
+
+    try {
+      const res = await fetch('/api/inquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          purpose: formData.subject,
+          message: formData.message
+        })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to submit inquiry')
+      }
+
+      // Success
       setIsSubmitted(true)
+      if (data.smtpMissing || !data.emailSent) {
+        setSmtpWarning(true)
+      }
+
+      if (typeof window !== 'undefined' && (window as any).showToast) {
+        (window as any).showToast('Inquiry submitted successfully.', 'success')
+      }
+
+      // Open WhatsApp Click-to-Chat in new window
+      const whatsappMsg = `Hello,
+
+A new inquiry has been submitted.
+
+Name:
+${formData.name}
+
+Phone:
+${formData.phone}
+
+Email:
+${formData.email}
+
+Purpose:
+${formData.subject}
+
+Message:
+${formData.message}
+
+Submitted from the website.`
+
+      const waUrl = `https://wa.me/917768838832?text=${encodeURIComponent(whatsappMsg)}`
+      
+      try {
+        window.open(waUrl, '_blank')
+      } catch (waErr) {
+        console.error('Failed to open WhatsApp Click-to-Chat:', waErr)
+        if (typeof window !== 'undefined' && (window as any).showToast) {
+          (window as any).showToast('Could not open WhatsApp window automatically.', 'info')
+        }
+      }
+
+      // Reset form data
       setFormData({
         name: '',
         email: '',
@@ -51,14 +150,31 @@ export default function ContactPage() {
         subject: '',
         message: ''
       })
-    }, 1500)
+
+    } catch (err: any) {
+      console.error('Submit error:', err)
+      if (typeof window !== 'undefined' && (window as any).showToast) {
+        (window as any).showToast(err.message || 'An error occurred during submission.', 'error')
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+    
+    // Clear field-specific error inline
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }))
+    }
   }
 
   const fullAddress = `Sr. No. 56/2/30,
@@ -74,7 +190,50 @@ India`
   const handleCopyAddress = () => {
     navigator.clipboard.writeText(fullAddress)
     setAddressCopied(true)
+    if (typeof window !== 'undefined' && (window as any).showToast) {
+      (window as any).showToast('Address copied successfully.', 'success')
+    }
     setTimeout(() => setAddressCopied(false), 3000)
+  }
+
+  const handleCallNow = (e: React.MouseEvent) => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    if (isMobile) {
+      return
+    }
+
+    // On Desktop, trigger check if we blurred. If not, inform the user about system calling configuration.
+    let blurred = false
+    const handleBlur = () => { blurred = true }
+    window.addEventListener('blur', handleBlur)
+    setTimeout(() => {
+      window.removeEventListener('blur', handleBlur)
+      if (!blurred) {
+        if (typeof window !== 'undefined' && (window as any).showToast) {
+          (window as any).showToast('Phone dialing is available only on devices or systems with a configured calling application.', 'info')
+        }
+      }
+    }, 1500)
+  }
+
+  const handleSendEmail = (e: React.MouseEvent) => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    if (isMobile) {
+      return
+    }
+
+    // On Desktop, trigger check if default email client opened (blurs window). If not, inform the user.
+    let blurred = false
+    const handleBlur = () => { blurred = true }
+    window.addEventListener('blur', handleBlur)
+    setTimeout(() => {
+      window.removeEventListener('blur', handleBlur)
+      if (!blurred) {
+        if (typeof window !== 'undefined' && (window as any).showToast) {
+          (window as any).showToast('No email application found on this device. Please copy address manually.', 'info')
+        }
+      }
+    }, 1550)
   }
 
   return (
@@ -171,7 +330,7 @@ Pune – 411061`}
               </div>
               <div className="mt-8">
                 <a 
-                  href="https://www.google.com/maps/search/?api=1&query=18.584167,73.812083"
+                  href="https://www.google.com/maps/search/?api=1&query=18%C2%B035%2703.0%22N+73%C2%B048%2743.5%22E"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 text-xs font-bold text-white bg-gradient-to-r from-[#EC4899] to-pink-600 hover:opacity-95 py-3.5 px-4 rounded-xl shadow-md transition-all active:scale-[0.98]"
@@ -193,13 +352,14 @@ Pune – 411061`}
                   +91 77688 38832
                 </p>
                 <p className="text-slate-500 text-xs font-semibold leading-relaxed">
-                  Available Monday to Saturday<br />
-                  9:00 AM – 7:00 PM
+                  Tuesday – Sunday<br />
+                  4:00 AM – 12:00 PM & 3:00 PM – 9:00 PM
                 </p>
               </div>
               <div className="mt-8">
                 <a 
                   href="tel:+917768838832"
+                  onClick={handleCallNow}
                   className="flex items-center justify-center gap-2 text-xs font-bold text-white bg-gradient-to-r from-[#2563EB] to-[#38BDF8] hover:opacity-95 py-3.5 px-4 rounded-xl shadow-md transition-all w-full text-center active:scale-[0.98]"
                 >
                   <span>Call Now</span>
@@ -224,7 +384,8 @@ Pune – 411061`}
               </div>
               <div className="mt-8">
                 <a 
-                  href="mailto:aamrule90@gmail.com"
+                  href="mailto:aamrule90@gmail.com?subject=Website%20Inquiry&body=Hello,%0A%0AI%20would%20like%20to%20inquire%20about%20your%20music%20classes.%0A%0ARegards,"
+                  onClick={handleSendEmail}
                   className="flex items-center justify-center gap-2 text-xs font-bold text-white bg-gradient-to-r from-[#7C3AED] to-purple-600 hover:opacity-95 py-3.5 px-4 rounded-xl w-full text-center active:scale-[0.98]"
                 >
                   <span>Send Email</span>
@@ -246,14 +407,30 @@ Pune – 411061`}
                 <span className="inline-block px-2.5 py-1 bg-amber-50 border border-amber-100 text-amber-700 text-[10px] font-bold uppercase rounded-md tracking-wider mb-4">
                   Administrator
                 </span>
-                <div className="border-t border-slate-100 pt-3">
-                  <div className="flex items-start gap-2">
-                    <Clock className="w-4 h-4 text-slate-400 mt-0.5" />
-                    <div>
-                      <p className="text-[10px] font-extrabold text-slate-700 uppercase tracking-wider">Office Hours</p>
-                      <div className="text-xs text-slate-500 font-semibold leading-relaxed">
-                        Monday – Saturday: 9:00 AM – 7:00 PM<br />
-                        <span className="text-red-500 font-bold">Sunday Closed</span>
+                <div className="border-t border-slate-100 pt-4">
+                  <div className="flex items-start gap-2.5">
+                    <Clock className="w-5 h-5 text-indigo-500 mt-0.5 shrink-0" />
+                    <div className="flex-1 space-y-3">
+                      <p className="text-xs font-bold text-[#0F1E4A] uppercase tracking-wider">Office Hours</p>
+                      
+                      {/* Monday Closed Badge */}
+                      <div className="flex items-center">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-red-50 border border-red-100 text-red-600 shadow-sm">
+                          Monday: Closed
+                        </span>
+                      </div>
+
+                      {/* Tuesday – Sunday Timings Box */}
+                      <div className="bg-gradient-to-br from-blue-50/50 to-purple-50/50 border border-blue-100/50 rounded-2xl p-3.5 space-y-2">
+                        <p className="text-[10px] font-extrabold text-blue-700 uppercase tracking-widest">Tuesday – Sunday</p>
+                        <div className="text-xs text-slate-600 font-semibold space-y-1">
+                          <p className="flex items-center gap-1.5">
+                            <span>🌅</span> Morning: 4:00 AM – 12:00 PM
+                          </p>
+                          <p className="flex items-center gap-1.5">
+                            <span>🌇</span> Evening: 3:00 PM – 9:00 PM
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -369,9 +546,14 @@ Pune – 411061`}
                       <CheckCircle2 className="w-8 h-8" />
                     </div>
                     <h3 className="text-2xl font-bold text-slate-900 mb-2">Thank you!</h3>
-                    <p className="text-slate-600 font-semibold max-w-md mx-auto mb-8">
-                      Thank you! We will contact you shortly.
+                    <p className="text-slate-600 font-semibold max-w-md mx-auto mb-6">
+                      Your inquiry has been submitted successfully. We will contact you within 24 hours.
                     </p>
+                    {smtpWarning && (
+                      <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs font-semibold max-w-md mx-auto mb-8 leading-relaxed">
+                        ⚠️ Note: Email delivery requires local SMTP configuration. The inquiry has been saved successfully in the database.
+                      </div>
+                    )}
                     <button
                       onClick={() => setIsSubmitted(false)}
                       className="px-6 py-3 bg-gradient-to-r from-[#2563EB] via-[#7C3AED] to-[#EC4899] text-white font-bold rounded-xl shadow-md active:scale-95 text-sm"
@@ -393,9 +575,12 @@ Pune – 411061`}
                           value={formData.name}
                           onChange={handleChange}
                           required
-                          className="w-full px-4 py-3.5 rounded-xl border border-[#E5E7EB] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-all outline-none bg-slate-50/30 focus:bg-white text-slate-800 text-sm font-medium shadow-sm"
+                          className={`w-full px-4 py-3.5 rounded-xl border ${errors.name ? 'border-red-500 focus:border-red-500' : 'border-[#E5E7EB] focus:border-[#2563EB]'} focus:ring-2 ${errors.name ? 'focus:ring-red-500/15' : 'focus:ring-[#2563EB]/15'} transition-all outline-none bg-slate-50/30 focus:bg-white text-slate-800 text-sm font-medium shadow-sm`}
                           placeholder="Your full name"
                         />
+                        {errors.name && (
+                          <p className="mt-1.5 text-xs text-red-500 font-bold">{errors.name}</p>
+                        )}
                       </div>
                       
                       <div>
@@ -409,16 +594,19 @@ Pune – 411061`}
                           value={formData.email}
                           onChange={handleChange}
                           required
-                          className="w-full px-4 py-3.5 rounded-xl border border-[#E5E7EB] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-all outline-none bg-slate-50/30 focus:bg-white text-slate-800 text-sm font-medium shadow-sm"
+                          className={`w-full px-4 py-3.5 rounded-xl border ${errors.email ? 'border-red-500 focus:border-red-500' : 'border-[#E5E7EB] focus:border-[#2563EB]'} focus:ring-2 ${errors.email ? 'focus:ring-red-500/15' : 'focus:ring-[#2563EB]/15'} transition-all outline-none bg-slate-50/30 focus:bg-white text-slate-800 text-sm font-medium shadow-sm`}
                           placeholder="your@email.com"
                         />
+                        {errors.email && (
+                          <p className="mt-1.5 text-xs text-red-500 font-bold">{errors.email}</p>
+                        )}
                       </div>
                     </div>
                     
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
                         <label htmlFor="phone" className="block text-sm font-bold text-slate-700 mb-2">
-                          Phone Number
+                          Phone Number *
                         </label>
                         <input
                           type="tel"
@@ -426,9 +614,13 @@ Pune – 411061`}
                           name="phone"
                           value={formData.phone}
                           onChange={handleChange}
-                          className="w-full px-4 py-3.5 rounded-xl border border-[#E5E7EB] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-all outline-none bg-slate-50/30 focus:bg-white text-slate-800 text-sm font-medium shadow-sm"
+                          required
+                          className={`w-full px-4 py-3.5 rounded-xl border ${errors.phone ? 'border-red-500 focus:border-red-500' : 'border-[#E5E7EB] focus:border-[#2563EB]'} focus:ring-2 ${errors.phone ? 'focus:ring-red-500/15' : 'focus:ring-[#2563EB]/15'} transition-all outline-none bg-slate-50/30 focus:bg-white text-slate-800 text-sm font-medium shadow-sm`}
                           placeholder="+91 98765 43210"
                         />
+                        {errors.phone && (
+                          <p className="mt-1.5 text-xs text-red-500 font-bold">{errors.phone}</p>
+                        )}
                       </div>
                       
                       <div>
@@ -441,7 +633,7 @@ Pune – 411061`}
                           value={formData.subject}
                           onChange={handleChange}
                           required
-                          className="w-full px-4 py-3.5 rounded-xl border border-[#E5E7EB] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-all outline-none bg-slate-50/30 focus:bg-white text-slate-850 text-sm font-medium shadow-sm"
+                          className={`w-full px-4 py-3.5 rounded-xl border ${errors.subject ? 'border-red-500 focus:border-red-500' : 'border-[#E5E7EB] focus:border-[#2563EB]'} focus:ring-2 ${errors.subject ? 'focus:ring-red-500/15' : 'focus:ring-[#2563EB]/15'} transition-all outline-none bg-slate-50/30 focus:bg-white text-slate-850 text-sm font-medium shadow-sm`}
                         >
                           <option value="">Select a purpose</option>
                           <option value="Admission">Admission</option>
@@ -450,6 +642,9 @@ Pune – 411061`}
                           <option value="Workshop">Workshop</option>
                           <option value="General Inquiry">General Inquiry</option>
                         </select>
+                        {errors.subject && (
+                          <p className="mt-1.5 text-xs text-red-500 font-bold">{errors.subject}</p>
+                        )}
                       </div>
                     </div>
                     
@@ -464,9 +659,12 @@ Pune – 411061`}
                         onChange={handleChange}
                         required
                         rows={5}
-                        className="w-full px-4 py-3.5 rounded-xl border border-[#E5E7EB] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-all outline-none bg-slate-50/30 focus:bg-white text-slate-800 text-sm font-medium shadow-sm"
+                        className={`w-full px-4 py-3.5 rounded-xl border ${errors.message ? 'border-red-500 focus:border-red-500' : 'border-[#E5E7EB] focus:border-[#2563EB]'} focus:ring-2 ${errors.message ? 'focus:ring-red-500/15' : 'focus:ring-[#2563EB]/15'} transition-all outline-none bg-slate-50/30 focus:bg-white text-slate-800 text-sm font-medium shadow-sm`}
                         placeholder="Tell us how we can help you..."
                       />
+                      {errors.message && (
+                        <p className="mt-1.5 text-xs text-red-500 font-bold">{errors.message}</p>
+                      )}
                     </div>
                     
                     <div className="pt-2">
@@ -527,7 +725,7 @@ Pune – 411061`}
                       </div>
                     </div>
                     <a 
-                      href="https://www.google.com/maps/search/?api=1&query=18.584167,73.812083"
+                      href="https://www.google.com/maps/search/?api=1&query=18%C2%B035%2703.0%22N+73%C2%B048%2743.5%22E"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[#2563EB] hover:text-[#7C3AED] transition"
@@ -542,7 +740,7 @@ Pune – 411061`}
                 <div className="grid grid-cols-2 gap-3 mt-6">
                   {/* Get Directions */}
                   <a
-                    href="https://www.google.com/maps/dir/?api=1&destination=18.584167,73.812083"
+                    href="https://www.google.com/maps/dir/?api=1&destination=18%C2%B035%2703.0%22N+73%C2%B048%2743.5%22E"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#2563EB] to-[#7C3AED] hover:opacity-95 shadow-md transition-all active:scale-[0.98]"
@@ -554,6 +752,7 @@ Pune – 411061`}
                   {/* Call Now */}
                   <a
                     href="tel:+917768838832"
+                    onClick={handleCallNow}
                     className="inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold text-[#2563EB] bg-blue-50/50 hover:bg-blue-50 border border-blue-100 transition-all active:scale-[0.98]"
                   >
                     <Phone className="w-4 h-4" />
@@ -562,7 +761,8 @@ Pune – 411061`}
 
                   {/* Send Email */}
                   <a
-                    href="mailto:aamrule90@gmail.com"
+                    href="mailto:aamrule90@gmail.com?subject=Website%20Inquiry&body=Hello,%0A%0AI%20would%20like%20to%20inquire%20about%20your%20music%20classes.%0A%0ARegards,"
+                    onClick={handleSendEmail}
                     className="inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold text-[#2563EB] bg-blue-50/50 hover:bg-blue-50 border border-blue-100 transition-all active:scale-[0.98]"
                   >
                     <Mail className="w-4 h-4" />

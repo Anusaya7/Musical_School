@@ -6,7 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useState, useEffect } from 'react'
 import { Sun, Moon } from 'lucide-react';
 import Image from "next/image";
-import logo from "@/public/images/logo3.png"; // Update with your logo path
+import logoEmblem from "@/public/images/logo_emblem.png"; // Premium transparent logo emblem
 
 export default function Header() {
   const { itemCount } = useCart()
@@ -36,31 +36,20 @@ export default function Header() {
      <div className="container mx-auto px-4 h-full">
         <div className="h-20 flex items-center justify-between">
 
-          {/* Logo */}
-          {/* <Link
-            href="/"
-            className={`flex flex-col leading-tight font-bold shrink-0 ${
-              theme === 'dark' ? 'text-white' : 'text-primary'
-            }`}
-          >
-            <span className="text-base sm:text-lg lg:text-xl whitespace-nowrap">
-              2nd Inversion
-            </span>
-            <span className="text-[10px] sm:text-xs lg:text-sm opacity-80 whitespace-nowrap">
-              Musical School
-            </span>
-          </Link> */}
-
-           <div className="w-[250px] flex items-center">
-            <Link href="/">
-              <Image
-                src={logo}
-                alt="2nd Inversion Music School"
-                priority
-                width={250}
-                height={60}
-                className="object-contain w-full h-auto"
-              />
+           <div className="flex items-center shrink-0 pl-6 pr-7">
+            <Link href="/" className="group flex items-center transition-all duration-300 ease-in-out hover:scale-[1.05]">
+              {/* Premium Logo (Transparent) */}
+              <div className="relative shrink-0 flex items-center justify-center h-[46px] w-[46px] md:h-[54px] md:w-[54px] lg:h-[60px] lg:w-[60px]">
+                <Image
+                  src={logoEmblem}
+                  alt="2nd Inversion Logo"
+                  priority
+                  className="object-contain transition-all duration-300"
+                  style={{
+                    filter: 'drop-shadow(0 4px 10px rgba(212,175,55,0.18))'
+                  }}
+                />
+              </div>
             </Link>
           </div>
 

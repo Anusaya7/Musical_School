@@ -35,7 +35,7 @@ export const generateClassSchedules = (): ClassSchedule[] => {
     {
       id: 'morning-piano',
       name: 'Morning Piano Class',
-      time: '3:00 AM - 12:00 PM',
+      time: '4:00 AM - 12:00 PM',
       days: ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       instructor: 'Ajinkya Amrule',
       level: 'Beginner to Advanced',
@@ -55,7 +55,7 @@ export const generateClassSchedules = (): ClassSchedule[] => {
       id: 'evening-guitar',
       name: 'Evening Guitar Class',
       time: '3:00 PM - 9:00 PM',
-      days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      days: ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       instructor: 'Ajinkya Amrule',
       level: 'All Levels',
       timeSlots: [
@@ -72,7 +72,7 @@ export const generateClassSchedules = (): ClassSchedule[] => {
       id: 'vocal-training',
       name: 'Vocal Training',
       time: '3:00 PM - 9:00 PM',
-      days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      days: ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       instructor: 'Ajinkya Amrule',
       level: 'Beginner to Intermediate',
       timeSlots: [

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
+import logoEmblem from '@/public/images/logo_emblem.png'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -164,8 +166,16 @@ export default function LoginPage() {
       <div className="max-w-md w-full bg-white/70 backdrop-blur-md rounded-[24px] shadow-[0_20px_60px_rgba(94,168,255,0.08)] border border-[#E6EEFF] p-8 md:p-10 relative z-10 transition-all">
         {/* Brand Header */}
         <div className="flex flex-col items-center mb-8">
-          <div className="flex items-center gap-2 mb-3 text-sm font-bold text-[#0F1E4A] select-none">
-            <span className="text-xl">🎵</span> 2nd Inversion Musical School
+          <div className="flex flex-col items-center gap-2.5 mb-4 select-none">
+            <Image
+              src={logoEmblem}
+              alt="2nd Inversion Logo"
+              width={50}
+              height={50}
+              className="object-contain"
+              style={{ filter: 'drop-shadow(0 4px 10px rgba(212,175,55,0.18))' }}
+            />
+            <span className="text-xs font-bold text-[#0F1E4A] tracking-wide uppercase">2nd Inversion Musical School</span>
           </div>
           <h1 className="text-3xl font-extrabold text-[#0F1E4A] tracking-tight">Welcome Back</h1>
           <p className="text-slate-500 text-sm mt-2 text-center max-w-[280px]">

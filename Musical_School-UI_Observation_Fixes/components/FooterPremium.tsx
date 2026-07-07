@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
+import logoEmblem from '@/public/images/logo_emblem.png'
 import { 
   Music, 
   Home, 
@@ -105,8 +107,12 @@ export default function FooterPremium() {
             {/* Brand Section */}
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center animate-pulse">
-                  <Music className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-105" style={{ filter: 'drop-shadow(0 2px 6px rgba(212,175,55,0.18))' }}>
+                  <Image
+                    src={logoEmblem}
+                    alt="2nd Inversion Logo"
+                    className="w-10 h-10 object-contain"
+                  />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-white">2nd Inversion</h3>

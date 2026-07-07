@@ -145,7 +145,7 @@ export default function CalendarDatePicker({
     const checkDate = new Date(currentYear, currentMonth, day)
     const dayOfWeek = checkDate.getDay()
 
-    if (dayOfWeek === 1) return 'Weekly Holiday (Monday)'
+    if (dayOfWeek === 1) return 'Weekly Holiday (Monday - Closed)'
 
     const holiday = holidays.find((h) => {
       if (h.isRecurringWeekly) {

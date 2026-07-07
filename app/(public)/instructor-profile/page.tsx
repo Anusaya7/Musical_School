@@ -60,6 +60,71 @@ export default function InstructorProfile() {
   const [isVideoOpen, setIsVideoOpen] = useState(false)
   const [activeVideoUrl, setActiveVideoUrl] = useState('')
 
+  const certifications = [
+    {
+      grade: 'Grade 8 Piano',
+      issuer: 'Trinity College London',
+      award: 'Level 1 Award in Graded Examination in Music Performance',
+      date: '4 August 2025',
+      issued: '24 August 2025',
+      place: 'Pune-Music & Drama (Centre no. 303)',
+      result: 'Distinction',
+      qualification: '501/2041/4',
+      unit: 'Y/602/4074',
+      issueNum: '1',
+      trinityId: '1-9391143941:1-9719324067',
+      candidateNum: '1-9719324067',
+      id: 'grade8'
+    },
+    {
+      grade: 'Grade 7 Piano',
+      issuer: 'Trinity College London',
+      award: 'Level 1 Award in Graded Examination in Music Performance',
+      date: '12 December 2024',
+      issued: '31 January 2024',
+      place: 'Pune-Music & Drama (Centre no. 303)',
+      result: 'Distinction',
+      qualification: '501/2041/4',
+      unit: 'Y/602/4074',
+      issueNum: '1',
+      trinityId: '1-9391143941:1-9719324067',
+      candidateNum: '1-9719324067',
+      id: 'grade7'
+    },
+    {
+      grade: 'Grade 6 Piano',
+      issuer: 'Trinity College London',
+      award: 'Level 1 Award in Graded Examination in Music Performance',
+      date: '15 May 2023',
+      issued: '7 July 2023',
+      place: 'Pune-Music & Drama (Centre no. 303)',
+      result: 'Distinction',
+      qualification: '501/2041/4',
+      unit: 'Y/602/4074',
+      issueNum: '1',
+      trinityId: '1-9391143941:1-9719324067',
+      candidateNum: '1-9719324067',
+      id: 'grade6'
+    },
+    {
+      grade: 'Grade 5 Piano',
+      issuer: 'Trinity College London',
+      award: 'Level 1 Award in Graded Examination in Music Performance',
+      date: '5 May 2022',
+      issued: '30 July 2022',
+      place: 'Pune-Music & Drama (Centre no. 303)',
+      result: 'Distinction',
+      qualification: '501/2041/4',
+      unit: 'Y/602/4074',
+      issueNum: '1',
+      trinityId: '1-9391143941:1-9719324067',
+      candidateNum: '1-9719324067',
+      id: 'grade5'
+    }
+  ]
+
+  const [selectedCertIndex, setSelectedCertIndex] = useState(0)
+
   // Trigger stats animation after mounting
   useEffect(() => {
     const timer = setTimeout(() => setStatsTrigger(true), 200)
@@ -165,8 +230,9 @@ export default function InstructorProfile() {
   }
 
   const triggerCertificateDownload = () => {
-    const certText = `TRINITY COLLEGE LONDON\nGrade 6 Piano - Distinction\nLevel 1 Award in Graded Examination in Music Performance\nCandidate: Ajinkya Uddhav Amrule\nDate: 15 May 2023\nPlace: Pune\nCertificate Number: TCL-2023-PUNE-G6D`;
-    handleDownloadFile("Trinity_Grade_6_Certificate_Details.txt", certText);
+    const cert = certifications[selectedCertIndex]
+    const certText = `TRINITY COLLEGE LONDON\n${cert.grade} - ${cert.result}\n${cert.award}\nCandidate: Ajinkya Amrule\nDate: ${cert.date}\nPlace of entry: ${cert.place}\nCertificate issued: ${cert.issued}\nResult: ${cert.result}\nQualification number: ${cert.qualification}\nUnit number: ${cert.unit}\nCertificate issue number: ${cert.issueNum}\nTrinity ID: ${cert.trinityId}\nCandidate number: ${cert.candidateNum}`;
+    handleDownloadFile(`Trinity_${cert.grade.replace(/\s+/g, '_')}_Certificate_Details.txt`, certText);
   }
 
   return (
@@ -322,9 +388,9 @@ export default function InstructorProfile() {
                   <span>Active Location</span>
                   <span className="font-extrabold text-slate-800">Pune, Maharashtra</span>
                 </li>
-                <li className="flex justify-between pb-1">
+                 <li className="flex justify-between items-center pb-1">
                   <span>Holiday</span>
-                  <span className="font-extrabold text-red-500">Monday</span>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 border border-red-100 text-red-600">Monday: Closed</span>
                 </li>
               </ul>
             </div>
@@ -411,47 +477,88 @@ export default function InstructorProfile() {
             <div className="w-16 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full" />
           </div>
 
-          <div className="max-w-2xl mx-auto bg-white border-2 border-[#E5E7EB] rounded-3xl p-6 sm:p-8 shadow-lg relative overflow-hidden flex flex-col sm:flex-row gap-8 items-center">
-            <div className="absolute top-0 left-0 bottom-0 w-2 bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500 hidden sm:block" />
-            
-            {/* Left: Certificate Icon */}
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center text-white shadow-md shrink-0">
-              <Award className="w-10 h-10" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start max-w-5xl mx-auto">
+            {/* Left Column: Selector list */}
+            <div className="lg:col-span-5 space-y-3">
+              {certifications.map((cert, index) => (
+                <button
+                  key={cert.id}
+                  onClick={() => setSelectedCertIndex(index)}
+                  className={`w-full text-left p-4 rounded-2xl border transition-all duration-200 flex items-center gap-3.5 ${
+                    selectedCertIndex === index
+                      ? 'bg-blue-50/50 border-blue-500 shadow-sm'
+                      : 'bg-white border-[#E5E7EB] hover:bg-slate-50'
+                  }`}
+                >
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    selectedCertIndex === index
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    <Award className="w-4.5 h-4.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-xs font-black text-slate-900 leading-snug">
+                      {cert.grade}
+                    </h4>
+                    <p className="text-[10px] text-slate-400 font-extrabold mt-0.5 uppercase tracking-wider">
+                      {cert.issuer} • {cert.date.split(' ').slice(1).join(' ')}
+                    </p>
+                  </div>
+                  <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-transform ${
+                    selectedCertIndex === index ? 'text-blue-600 translate-x-0.5' : 'text-slate-400'
+                  }`} />
+                </button>
+              ))}
             </div>
 
-            {/* Right: Details */}
-            <div className="flex-1 space-y-4 text-center sm:text-left">
-              <div className="space-y-1">
-                <span className="text-[10px] font-black text-blue-600 uppercase tracking-wider block">Trinity College London</span>
-                <h3 className="text-xl font-black text-slate-900">Grade 6 Piano</h3>
-                <p className="text-[11px] font-extrabold text-slate-400">Level 1 Award in Graded Examination in Music Performance</p>
+            {/* Right Column: Featured Details Card */}
+            <div className="lg:col-span-7 bg-white border-2 border-[#E5E7EB] rounded-3xl p-6 sm:p-8 shadow-md relative overflow-hidden flex flex-col sm:flex-row gap-6 items-center">
+              <div className="absolute top-0 left-0 bottom-0 w-2 bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500 hidden sm:block" />
+              
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center text-white shadow-md shrink-0">
+                <Award className="w-10 h-10" />
               </div>
 
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 select-none">
-                <span className="px-2.5 py-1 bg-green-50 text-green-600 text-[10px] font-black uppercase rounded-md border border-green-100 shadow-sm">
-                  Distinction
-                </span>
-                <span className="px-2.5 py-1 bg-slate-50 text-slate-500 text-[10px] font-black uppercase rounded-md border border-[#E5E7EB]">
-                  Date: 15 May 2023
-                </span>
-                <span className="px-2.5 py-1 bg-slate-50 text-slate-500 text-[10px] font-black uppercase rounded-md border border-[#E5E7EB]">
-                  Place: Pune
-                </span>
-              </div>
+              <div className="flex-1 space-y-4 text-center sm:text-left w-full">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-wider block">
+                    {certifications[selectedCertIndex].issuer}
+                  </span>
+                  <h3 className="text-xl font-black text-slate-900">
+                    {certifications[selectedCertIndex].grade}
+                  </h3>
+                  <p className="text-[11px] font-extrabold text-slate-400 leading-relaxed">
+                    {certifications[selectedCertIndex].award}
+                  </p>
+                </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-2 justify-center sm:justify-start">
-                <button 
-                  onClick={() => setIsCertificateOpen(true)}
-                  className="px-5 py-2.5 bg-slate-900 text-white font-bold rounded-xl text-xs hover:bg-slate-800 transition active:scale-[0.98] flex items-center justify-center gap-1.5"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" /> View Certificate
-                </button>
-                <button 
-                  onClick={triggerCertificateDownload}
-                  className="px-5 py-2.5 bg-white border border-[#E5E7EB] text-slate-700 font-bold rounded-xl text-xs hover:bg-slate-50 transition active:scale-[0.98] flex items-center justify-center gap-1.5"
-                >
-                  <Download className="w-3.5 h-3.5" /> Download Details
-                </button>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 select-none">
+                  <span className="px-2 py-0.5 bg-green-50 text-green-600 text-[10px] font-black uppercase rounded-md border border-green-100 shadow-sm">
+                    {certifications[selectedCertIndex].result}
+                  </span>
+                  <span className="px-2 py-0.5 bg-slate-50 text-slate-500 text-[10px] font-black uppercase rounded-md border border-[#E5E7EB]">
+                    Date: {certifications[selectedCertIndex].date}
+                  </span>
+                  <span className="px-2 py-0.5 bg-slate-50 text-slate-500 text-[10px] font-black uppercase rounded-md border border-[#E5E7EB]">
+                    Issued: {certifications[selectedCertIndex].issued}
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-2 justify-center sm:justify-start">
+                  <button 
+                    onClick={() => setIsCertificateOpen(true)}
+                    className="px-5 py-2.5 bg-slate-900 text-white font-bold rounded-xl text-xs hover:bg-slate-800 transition active:scale-[0.98] flex items-center justify-center gap-1.5"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" /> View Certificate
+                  </button>
+                  <button 
+                    onClick={triggerCertificateDownload}
+                    className="px-5 py-2.5 bg-white border border-[#E5E7EB] text-slate-700 font-bold rounded-xl text-xs hover:bg-slate-50 transition active:scale-[0.98] flex items-center justify-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Download Details
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -814,35 +921,97 @@ export default function InstructorProfile() {
         </div>
       )}
 
-      {/* 2. Certificate Image Modal */}
+      {/* 2. Certificate Mockup Modal */}
       {isCertificateOpen && (
         <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[24px] border border-slate-200 max-w-lg w-full p-5 space-y-4 shadow-2xl relative animate-scaleUp">
+          <div className="bg-white rounded-[24px] border border-slate-200 max-w-2xl w-full p-6 md:p-8 space-y-6 shadow-2xl relative animate-scaleUp">
             <button 
               onClick={() => setIsCertificateOpen(false)}
-              className="absolute top-3 right-3 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition z-10"
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition z-10"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="h-80 relative bg-slate-100 rounded-xl overflow-hidden border border-[#E5E7EB]">
-              <img 
-                src="/images/trinity_certificate.png" 
-                alt="Trinity Certificate Grade 6 Piano Distinction" 
-                className="w-full h-full object-contain"
-              />
+            {/* The Certificate Canvas */}
+            <div className="relative bg-[#FCFBF7] border-[12px] border-double border-[#C5A880] p-6 sm:p-10 shadow-inner rounded-lg text-center font-serif text-slate-800 overflow-hidden">
+              {/* Subtle watermark background */}
+              <div className="absolute inset-0 opacity-[0.02] flex items-center justify-center pointer-events-none select-none">
+                <span className="text-[120px] font-black tracking-widest text-[#C5A880]">TRINITY</span>
+              </div>
+
+              {/* Trinity Crest SVG */}
+              <div className="flex justify-center mb-4">
+                <svg className="w-16 h-16" viewBox="0 0 100 100" fill="none">
+                  {/* Pegasus/Crest representation */}
+                  <path d="M50 5 L60 25 L85 25 L65 40 L75 65 L50 50 L25 65 L35 40 L15 25 L40 25 Z" fill="#C5A880" />
+                  <circle cx="50" cy="45" r="10" stroke="#1E3A8A" strokeWidth="2" fill="#EF4444" />
+                  <path d="M47 41 L47 49 M53 41 L53 49 M50 43 L50 47" stroke="#F59E0B" strokeWidth="1.5" />
+                </svg>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#4C1D95] tracking-wide mb-1 uppercase font-serif">
+                Trinity College London
+              </h2>
+              <p className="text-[10px] sm:text-xs font-semibold text-slate-400 tracking-widest uppercase mb-6 font-sans">
+                Patron: HRH The Duke of Kent KG
+              </p>
+
+              <p className="text-xs sm:text-sm text-slate-500 italic mb-4">This is to certify that</p>
+              
+              <h3 className="text-2xl sm:text-3xl font-black text-slate-900 border-b-2 border-slate-100 pb-2 max-w-md mx-auto mb-4 font-serif">
+                Ajinkya Amrule
+              </h3>
+
+              <p className="text-xs sm:text-sm text-slate-500 italic mb-1">is awarded</p>
+              
+              <h4 className="text-xl sm:text-2xl font-extrabold text-slate-800 mb-2 font-serif">
+                {certifications[selectedCertIndex].grade}
+              </h4>
+
+              <p className="text-[10px] sm:text-xs text-slate-400 max-w-md mx-auto mb-4 font-sans font-medium uppercase tracking-wider">
+                {certifications[selectedCertIndex].award}
+              </p>
+
+              <div className="inline-block px-4 py-1.5 bg-[#ECFDF5] border border-[#A7F3D0] rounded-lg text-[#047857] text-xs font-black uppercase tracking-widest mb-6 font-sans">
+                {certifications[selectedCertIndex].result}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[10px] sm:text-xs text-slate-450 border-t border-slate-100 pt-4 text-left font-sans font-semibold">
+                <div className="space-y-1.5">
+                  <p><span className="text-slate-400">Date of Exam:</span> <span className="text-slate-700">{certifications[selectedCertIndex].date}</span></p>
+                  <p><span className="text-slate-400">Place of Entry:</span> <span className="text-slate-700">Pune (Centre no. 303)</span></p>
+                  <p><span className="text-slate-400">Date Issued:</span> <span className="text-slate-700">{certifications[selectedCertIndex].issued}</span></p>
+                </div>
+                <div className="space-y-1.5 sm:text-right">
+                  <p><span className="text-slate-400">Qualification No:</span> <span className="text-slate-700">{certifications[selectedCertIndex].qualification}</span></p>
+                  <p><span className="text-slate-400">Trinity ID:</span> <span className="text-slate-700">{certifications[selectedCertIndex].trinityId}</span></p>
+                  <p><span className="text-slate-400">Candidate No:</span> <span className="text-slate-700">{certifications[selectedCertIndex].candidateNum}</span></p>
+                </div>
+              </div>
+
+              {/* Signature Block */}
+              <div className="mt-6 flex flex-col items-center sm:items-end justify-between border-t border-slate-100 pt-4 gap-4">
+                <div className="text-center sm:text-right">
+                  <div className="font-serif italic text-slate-700 text-sm mb-1 select-none font-bold">
+                    Erez Tocker
+                  </div>
+                  <div className="text-[9px] text-slate-400 uppercase tracking-widest font-sans font-bold">
+                    Chief Executive, Trinity College London
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="flex justify-between items-center pt-2">
-              <div>
-                <h4 className="text-xs font-black text-slate-800">Trinity College London Grade 6 Piano</h4>
-                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Verified Distinctions Credentials</p>
-              </div>
+            {/* Modal Controls */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                Official Credential Verification
+              </span>
               <button 
                 onClick={triggerCertificateDownload}
-                className="px-4 py-2.5 bg-blue-50 text-[#2563EB] hover:bg-blue-100 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold transition flex items-center gap-1.5 w-full sm:w-auto justify-center shadow-md active:scale-[0.98]"
               >
-                <Download className="w-3.5 h-3.5" /> Download Details
+                <Download className="w-4 h-4" /> Download Certificate Details
               </button>
             </div>
           </div>

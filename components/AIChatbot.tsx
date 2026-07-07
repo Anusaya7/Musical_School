@@ -25,7 +25,7 @@ export default function AIChatbot() {
   const botResponses = {
     greeting: "Welcome to 2nd Inversion Musical School! I'm here to help you with information about our courses, schedules, and enrollment.",
     courses: "We offer courses in Piano, Guitar, Drums, Vocals, Violin, Music Theory, Bass Guitar, and Saxophone. Each course is designed for different skill levels from beginner to advanced.",
-    timing: "Our class timings are:\n- Monday: Holiday\n- Tuesday to Sunday: 3:00 AM - 12:00 PM and 3:00 PM - 9:00 PM",
+    timing: "Our class timings are:\n- Monday: Closed\n- Tuesday to Sunday:\n  🌅 Morning: 4:00 AM – 12:00 PM\n  🌇 Evening: 3:00 PM – 9:00 PM",
     fees: "Course fees vary by instrument and duration:\n- Piano: $199-$399\n- Guitar: $149-$299\n- Drums: $279-$449\n- Vocals: $299-$499\n- Violin: $349-$599\n- Music Theory: $99-$199",
     enrollment: "Enrollment is simple! You can:\n1. Visit our courses page\n2. Add courses to cart\n3. Complete checkout\n4. Start learning immediately!",
     instructor: "Our lead instructor is Ajinkya Amrule, a distinguished pianist, music educator, and sound engineer with a graduate degree in Sound Engineering.",

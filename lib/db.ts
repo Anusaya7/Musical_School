@@ -555,3 +555,137 @@ export async function verifyUserEmail(email: string): Promise<boolean> {
   }
   return false
 }
+
+// Contact Inquiry and Admin Notification System
+export interface ContactInquiry {
+  id: string
+  fullName: string
+  email: string
+  phone: string
+  purpose: string
+  message: string
+  createdAt: string
+  ipAddress?: string
+  status: 'New' | 'Read'
+}
+
+export interface AdminNotification {
+  id: string
+  title: string
+  message: string
+  createdAt: string
+  isRead: boolean
+}
+
+export async function getInquiries(): Promise<ContactInquiry[]> {
+  const db = await getMongoClient()
+  if (db) {
+    return db.collection<ContactInquiry>('inquiries').find({}).toArray()
+  }
+  const data = readFallbackDB()
+  return data.inquiries || []
+}
+
+export async function addInquiry(inquiry: ContactInquiry): Promise<boolean> {
+  const db = await getMongoClient()
+  if (db) {
+    const res = await db.collection('inquiries').insertOne(inquiry)
+    return res.acknowledged
+  }
+  const data = readFallbackDB()
+  if (!data.inquiries) data.inquiries = []
+  data.inquiries.push(inquiry)
+  writeFallbackDB(data)
+  return true
+}
+
+export async function updateInquiryStatus(id: string, status: 'New' | 'Read'): Promise<boolean> {
+  const db = await getMongoClient()
+  if (db) {
+    const res = await db.collection('inquiries').updateOne({ id }, { $set: { status } })
+    return res.modifiedCount > 0
+  }
+  const data = readFallbackDB()
+  if (!data.inquiries) return false
+  const index = data.inquiries.findIndex((i: ContactInquiry) => i.id === id)
+  if (index !== -1) {
+    data.inquiries[index].status = status
+    writeFallbackDB(data)
+    return true
+  }
+  return false
+}
+
+export async function deleteInquiry(id: string): Promise<boolean> {
+  const db = await getMongoClient()
+  if (db) {
+    const res = await db.collection('inquiries').deleteOne({ id })
+    return res.deletedCount > 0
+  }
+  const data = readFallbackDB()
+  if (!data.inquiries) return false
+  const filtered = data.inquiries.filter((i: ContactInquiry) => i.id !== id)
+  if (filtered.length !== data.inquiries.length) {
+    data.inquiries = filtered
+    writeFallbackDB(data)
+    return true
+  }
+  return false
+}
+
+export async function getNotifications(): Promise<AdminNotification[]> {
+  const db = await getMongoClient()
+  if (db) {
+    return db.collection<AdminNotification>('notifications').find({}).toArray()
+  }
+  const data = readFallbackDB()
+  return data.notifications || []
+}
+
+export async function addNotification(notification: AdminNotification): Promise<boolean> {
+  const db = await getMongoClient()
+  if (db) {
+    const res = await db.collection('notifications').insertOne(notification)
+    return res.acknowledged
+  }
+  const data = readFallbackDB()
+  if (!data.notifications) data.notifications = []
+  data.notifications.push(notification)
+  writeFallbackDB(data)
+  return true
+}
+
+export async function markNotificationsAsRead(ids?: string[]): Promise<boolean> {
+  const db = await getMongoClient()
+  if (db) {
+    const filter = ids ? { id: { $in: ids } } : {}
+    const res = await db.collection('notifications').updateMany(filter, { $set: { isRead: true } })
+    return res.modifiedCount > 0
+  }
+  const data = readFallbackDB()
+  if (!data.notifications) return false
+  data.notifications.forEach((n: AdminNotification) => {
+    if (!ids || ids.includes(n.id)) {
+      n.isRead = true
+    }
+  })
+  writeFallbackDB(data)
+  return true
+}
+
+export async function deleteNotification(id: string): Promise<boolean> {
+  const db = await getMongoClient()
+  if (db) {
+    const res = await db.collection('notifications').deleteOne({ id })
+    return res.deletedCount > 0
+  }
+  const data = readFallbackDB()
+  if (!data.notifications) return false
+  const filtered = data.notifications.filter((n: AdminNotification) => n.id !== id)
+  if (filtered.length !== data.notifications.length) {
+    data.notifications = filtered
+    writeFallbackDB(data)
+    return true
+  }
+  return false
+}

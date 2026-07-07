@@ -44,9 +44,9 @@ export default function ClassSchedule({ onClassSelect }: ClassScheduleProps) {
       
       <div className="container mx-auto px-4">
         <h2 className={`text-3xl font-bold text-center mb-4 ${theme === 'dark' ? 'text-white' : 'text-primary'}`}>Class Schedule</h2>
-        <p className={`text-center mb-8 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-          <span className="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full font-semibold">
-            Monday: Holiday
+        <p className="text-center mb-8">
+          <span className="inline-flex items-center gap-1.5 bg-red-50 border border-red-100 text-red-600 px-3.5 py-1.5 rounded-full font-bold text-sm shadow-sm">
+            Monday: Closed
           </span>
         </p>
         

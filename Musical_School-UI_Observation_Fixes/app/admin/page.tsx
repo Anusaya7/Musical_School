@@ -23,7 +23,16 @@ import {
   UserCheck,
   CalendarDays,
   PlusCircle,
-  TrendingUp
+  TrendingUp,
+  Mail,
+  Search,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Check,
+  CheckSquare,
+  CornerUpLeft
 } from 'lucide-react'
 
 export default function AdminDashboard() {
@@ -82,17 +91,33 @@ export default function AdminDashboard() {
   const [whatsappConnected, setWhatsappConnected] = useState(true)
   const [chatbotActive, setChatbotActive] = useState(true)
 
+  // Inquiries and Notifications states
+  const [inquiries, setInquiries] = useState<any[]>([])
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false)
+  const [selectedInquiry, setSelectedInquiry] = useState<any>(null)
+
+  // Inquiry management filters and pagination
+  const [inquirySearch, setInquirySearch] = useState('')
+  const [inquiryPurposeFilter, setInquiryPurposeFilter] = useState('')
+  const [inquiryStatusFilter, setInquiryStatusFilter] = useState('')
+  const [inquiryPage, setInquiryPage] = useState(1)
+  const inquiriesPerPage = 8
+
   // Fetch data
   const loadDatabaseData = async () => {
     setLoading(true)
     try {
-      const [coursesRes, bookingsRes, workshopsRes, videosRes, holidaysRes, schedulesRes] = await Promise.all([
+      const [coursesRes, bookingsRes, workshopsRes, videosRes, holidaysRes, schedulesRes, inquiriesRes, notificationsRes] = await Promise.all([
         fetch('/api/courses').then(r => r.json()),
         fetch('/api/bookings').then(r => r.json()),
         fetch('/api/workshops').then(r => r.json()),
         fetch('/api/recorded-sessions').then(r => r.json()),
         fetch('/api/holidays').then(r => r.json()),
-        fetch('/api/schedules').then(r => r.json())
+        fetch('/api/schedules').then(r => r.json()),
+        fetch('/api/inquiries').then(r => r.json()),
+        fetch('/api/notifications').then(r => r.json())
       ])
 
       if (Array.isArray(coursesRes)) setCourses(coursesRes)
@@ -100,6 +125,13 @@ export default function AdminDashboard() {
       if (Array.isArray(workshopsRes)) setWorkshops(workshopsRes)
       if (Array.isArray(videosRes)) setRecordedSessions(videosRes)
       if (Array.isArray(holidaysRes)) setHolidays(holidaysRes)
+      if (Array.isArray(inquiriesRes?.inquiries || inquiriesRes)) {
+        setInquiries(inquiriesRes?.inquiries || inquiriesRes)
+      }
+      if (notificationsRes) {
+        setNotifications(notificationsRes.notifications || [])
+        setUnreadCount(notificationsRes.unreadCount || 0)
+      }
       if (Array.isArray(schedulesRes)) {
         setSchedules(schedulesRes)
         const morning = schedulesRes.find(s => s.id === 'morning')
@@ -117,6 +149,60 @@ export default function AdminDashboard() {
       console.error("Failed to load admin dashboard data", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Inquiry Handlers
+  const handleMarkInquiryRead = async (id: string) => {
+    try {
+      await fetch('/api/inquiries', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: 'Read' })
+      })
+      loadDatabaseData()
+    } catch (err) {
+      console.error('Failed to mark inquiry read:', err)
+    }
+  }
+
+  const handleDeleteInquiry = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this inquiry?')) return
+    try {
+      await fetch(`/api/inquiries?id=${id}`, {
+        method: 'DELETE'
+      })
+      if (selectedInquiry && selectedInquiry.id === id) {
+        setSelectedInquiry(null)
+      }
+      loadDatabaseData()
+    } catch (err) {
+      console.error('Failed to delete inquiry:', err)
+    }
+  }
+
+  // Notification Handlers
+  const handleMarkNotificationsRead = async (ids?: string[]) => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+      })
+      loadDatabaseData()
+    } catch (err) {
+      console.error('Failed to mark notifications read:', err)
+    }
+  }
+
+  const handleDeleteNotification = async (id: string) => {
+    try {
+      await fetch(`/api/notifications?id=${id}`, {
+        method: 'DELETE'
+      })
+      loadDatabaseData()
+    } catch (err) {
+      console.error('Failed to delete notification:', err)
     }
   }
 
@@ -355,6 +441,7 @@ export default function AdminDashboard() {
     { id: 'bookings', label: 'Bookings', icon: CalendarDays },
     { id: 'workshops', label: 'Workshops', icon: Sparkles },
     { id: 'recorded', label: 'Recorded Sessions', icon: Video },
+    { id: 'inquiries', label: 'Contact Inquiries', icon: Mail },
     { id: 'settings', label: 'Settings', icon: Settings },
   ]
 
@@ -440,7 +527,12 @@ export default function AdminDashboard() {
                 }`}
               >
                 <item.icon className={`w-4 h-4 ${activeTab === item.id ? 'text-[#5EA8FF]' : 'text-slate-400'}`} />
-                <span>{item.label}</span>
+                <span className="flex-1 text-left">{item.label}</span>
+                {item.id === 'inquiries' && inquiries.filter(i => i.status === 'New').length > 0 && (
+                  <span className="bg-red-500 text-white rounded-full px-2 py-0.5 text-[9px] font-black min-w-[16px] text-center">
+                    {inquiries.filter(i => i.status === 'New').length}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
@@ -478,7 +570,93 @@ export default function AdminDashboard() {
                   Manage your music school from one place.
                 </p>
               </div>
-              <div className="flex items-center gap-4 bg-white/70 backdrop-blur-md border border-[#E6EEFF] px-4 py-2.5 rounded-2xl shadow-sm">
+              <div className="flex items-center gap-4 bg-white/70 backdrop-blur-md border border-[#E6EEFF] px-4 py-2.5 rounded-2xl shadow-sm relative">
+                {/* Notifications Bell Dropdown */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowNotificationsDropdown(!showNotificationsDropdown)}
+                    className="p-1.5 hover:bg-slate-100/80 rounded-xl transition relative active:scale-95 flex items-center justify-center"
+                    title="View Notifications"
+                  >
+                    <Bell className="w-5 h-5 text-slate-550" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[9px] font-black animate-pulse select-none">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {showNotificationsDropdown && (
+                    <div className="absolute right-0 mt-3 w-80 bg-white border border-[#E6EEFF] rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.12)] py-4 z-50 animate-fadeIn">
+                      <div className="flex items-center justify-between px-5 pb-3 border-b border-[#E6EEFF]">
+                        <h4 className="font-extrabold text-xs text-[#0F1E4A] uppercase tracking-wider flex items-center gap-1.5">
+                          <span>🔔 Notifications</span>
+                          {unreadCount > 0 && (
+                            <span className="bg-red-50 text-red-500 rounded-full px-1.5 py-0.5 text-[8px] font-black">
+                              {unreadCount} new
+                            </span>
+                          )}
+                        </h4>
+                        {unreadCount > 0 && (
+                          <button 
+                            onClick={() => handleMarkNotificationsRead()}
+                            className="text-[10px] font-bold text-[#5EA8FF] hover:underline"
+                          >
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+                      
+                      <div className="max-h-64 overflow-y-auto divide-y divide-slate-50">
+                        {notifications.length === 0 ? (
+                          <div className="text-center py-8 text-slate-400 font-semibold text-xs">
+                            No notifications yet
+                          </div>
+                        ) : (
+                          notifications.map((notif) => (
+                            <div 
+                              key={notif.id} 
+                              className={`p-4 flex gap-3 items-start transition-all hover:bg-slate-50/60 ${
+                                notif.status === 'unread' ? 'bg-blue-50/10' : ''
+                              }`}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <h5 className={`text-xs font-bold text-slate-800 ${notif.status === 'unread' ? 'font-black' : ''}`}>
+                                  {notif.title}
+                                </h5>
+                                <p className="text-[10px] text-slate-500 font-semibold leading-relaxed mt-0.5 break-words">
+                                  {notif.message}
+                                </p>
+                                <span className="text-[9px] text-slate-400 font-medium block mt-1.5">
+                                  {new Date(notif.createdAt).toLocaleString('en-US', { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                                </span>
+                              </div>
+                              <div className="flex flex-col gap-1.5 shrink-0">
+                                {notif.status === 'unread' && (
+                                  <button
+                                    onClick={() => handleMarkNotificationsRead([notif.id])}
+                                    className="p-1 hover:bg-green-50 rounded text-green-600 transition"
+                                    title="Mark as read"
+                                  >
+                                    <Check className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleDeleteNotification(notif.id)}
+                                  className="p-1 hover:bg-red-50 rounded text-red-400 hover:text-red-650 transition"
+                                  title="Delete notification"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <span className="text-xs font-extrabold text-slate-500">
                   {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
@@ -1163,9 +1341,380 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
+
+            {/* TAB: CONTACT INQUIRIES */}
+            {activeTab === 'inquiries' && (
+              <div className="space-y-8 animate-fadeIn">
+                <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 md:p-8 shadow-[0_15px_40px_rgba(94,168,255,0.03)] space-y-6">
+                  
+                  {/* Header & Controls */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#E6EEFF]">
+                    <div>
+                      <h3 className="text-lg font-black text-[#0F1E4A] tracking-tight">Contact Inquiries</h3>
+                      <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                        Manage student queries, admissions, and general inquiries.
+                      </p>
+                    </div>
+                    
+                    {/* Search & Filter Controls */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Search Input */}
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                          <Search className="w-4 h-4 text-slate-400" />
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Search inquiries..."
+                          value={inquirySearch}
+                          onChange={(e) => {
+                            setInquirySearch(e.target.value)
+                            setInquiryPage(1)
+                          }}
+                          className="pl-10 pr-4 py-2.5 bg-slate-50/55 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none transition-all w-full md:w-56"
+                        />
+                      </div>
+
+                      {/* Purpose Filter */}
+                      <div className="relative">
+                        <select
+                          value={inquiryPurposeFilter}
+                          onChange={(e) => {
+                            setInquiryPurposeFilter(e.target.value)
+                            setInquiryPage(1)
+                          }}
+                          className="pl-3 pr-8 py-2.5 bg-slate-50/55 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none transition-all appearance-none cursor-pointer"
+                        >
+                          <option value="">All Purposes</option>
+                          <option value="Admission">Admission</option>
+                          <option value="Music Classes">Music Classes</option>
+                          <option value="Instrument Inquiry">Instrument Inquiry</option>
+                          <option value="Workshop">Workshop</option>
+                          <option value="General Inquiry">General Inquiry</option>
+                        </select>
+                        <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <Filter className="w-3.5 h-3.5 text-slate-400" />
+                        </span>
+                      </div>
+
+                      {/* Status Filter */}
+                      <div className="relative">
+                        <select
+                          value={inquiryStatusFilter}
+                          onChange={(e) => {
+                            setInquiryStatusFilter(e.target.value)
+                            setInquiryPage(1)
+                          }}
+                          className="pl-3 pr-8 py-2.5 bg-slate-50/55 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none transition-all appearance-none cursor-pointer"
+                        >
+                          <option value="">All Statuses</option>
+                          <option value="New">New</option>
+                          <option value="Read">Read</option>
+                        </select>
+                        <span className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <Filter className="w-3.5 h-3.5 text-slate-400" />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Table View */}
+                  {(() => {
+                    // Filter logic
+                    const filtered = inquiries.filter(inq => {
+                      const matchesSearch = 
+                        inq.fullName.toLowerCase().includes(inquirySearch.toLowerCase()) ||
+                        inq.email.toLowerCase().includes(inquirySearch.toLowerCase()) ||
+                        inq.phone.toLowerCase().includes(inquirySearch.toLowerCase()) ||
+                        inq.message.toLowerCase().includes(inquirySearch.toLowerCase())
+                      
+                      const matchesPurpose = !inquiryPurposeFilter || inq.purpose === inquiryPurposeFilter
+                      const matchesStatus = !inquiryStatusFilter || inq.status === inquiryStatusFilter
+                      
+                      return matchesSearch && matchesPurpose && matchesStatus
+                    })
+
+                    // Pagination
+                    const totalInquiries = filtered.length
+                    const totalPages = Math.ceil(totalInquiries / inquiriesPerPage) || 1
+                    const startIdx = (inquiryPage - 1) * inquiriesPerPage
+                    const paginated = filtered.slice(startIdx, startIdx + inquiriesPerPage)
+
+                    return (
+                      <>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="border-b border-[#E6EEFF] text-[9px] font-black text-slate-400 uppercase tracking-wider">
+                                <th className="pb-3 pr-3">Submitted By</th>
+                                <th className="pb-3 pr-3">Purpose</th>
+                                <th className="pb-3 pr-3">Message Snippet</th>
+                                <th className="pb-3 pr-3">Date & Time</th>
+                                <th className="pb-3 pr-3">Status</th>
+                                <th className="pb-3 text-right">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50 text-xs font-bold text-[#0F1E4A]">
+                              {paginated.length === 0 ? (
+                                <tr>
+                                  <td colSpan={6} className="py-12 text-center text-slate-400 font-semibold">
+                                    No inquiries found matching current filters.
+                                  </td>
+                                </tr>
+                              ) : (
+                                paginated.map(inq => {
+                                  // Color tag helper for purpose
+                                  let purposeBg = 'bg-slate-50 text-slate-500'
+                                  if (inq.purpose === 'Admission') purposeBg = 'bg-blue-50 text-blue-600'
+                                  else if (inq.purpose === 'Music Classes') purposeBg = 'bg-purple-50 text-purple-600'
+                                  else if (inq.purpose === 'Instrument Inquiry') purposeBg = 'bg-orange-50 text-orange-600'
+                                  else if (inq.purpose === 'Workshop') purposeBg = 'bg-pink-50 text-pink-600'
+
+                                  return (
+                                    <tr 
+                                      key={inq.id} 
+                                      className={`hover:bg-slate-50/40 transition-colors ${
+                                        inq.status === 'New' ? 'bg-red-50/10' : ''
+                                      }`}
+                                    >
+                                      {/* Submitted By */}
+                                      <td className="py-4 pr-3">
+                                        <div className="flex flex-col gap-0.5">
+                                          <span className="font-extrabold text-slate-800">{inq.fullName}</span>
+                                          <span className="text-[10px] text-slate-400 font-medium select-all">{inq.email}</span>
+                                          <span className="text-[10px] text-slate-400 font-medium select-all">{inq.phone}</span>
+                                        </div>
+                                      </td>
+
+                                      {/* Purpose */}
+                                      <td className="py-4 pr-3">
+                                        <span className={`px-2 py-0.5 rounded-lg text-[9px] uppercase font-black tracking-wider ${purposeBg}`}>
+                                          {inq.purpose}
+                                        </span>
+                                      </td>
+
+                                      {/* Message Snippet */}
+                                      <td className="py-4 pr-3 max-w-[200px] xl:max-w-[280px]">
+                                        <p className="text-slate-500 font-semibold truncate" title={inq.message}>
+                                          {inq.message}
+                                        </p>
+                                      </td>
+
+                                      {/* Date & Time */}
+                                      <td className="py-4 pr-3 text-[10px] text-slate-400 font-medium">
+                                        {new Date(inq.createdAt).toLocaleString('en-US', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          year: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit'
+                                        })}
+                                      </td>
+
+                                      {/* Status Badge */}
+                                      <td className="py-4 pr-3">
+                                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                          inq.status === 'New' 
+                                            ? 'bg-red-50 text-red-650' 
+                                            : 'bg-green-50 text-green-655'
+                                        }`}>
+                                          {inq.status === 'New' && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
+                                          {inq.status}
+                                        </span>
+                                      </td>
+
+                                      {/* Actions */}
+                                      <td className="py-4 text-right">
+                                        <div className="flex items-center justify-end gap-1.5">
+                                          {/* View Details button */}
+                                          <button
+                                            onClick={() => {
+                                              setSelectedInquiry(inq)
+                                              if (inq.status === 'New') {
+                                                handleMarkInquiryRead(inq.id)
+                                              }
+                                            }}
+                                            className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition active:scale-95"
+                                            title="View Details"
+                                          >
+                                            <Eye className="w-3.5 h-3.5" />
+                                          </button>
+
+                                          {/* Mark as read button */}
+                                          {inq.status === 'New' ? (
+                                            <button
+                                              onClick={() => handleMarkInquiryRead(inq.id)}
+                                              className="p-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-100 transition active:scale-95"
+                                              title="Mark as read"
+                                            >
+                                              <Check className="w-3.5 h-3.5" />
+                                            </button>
+                                          ) : (
+                                            <div className="w-7.5 h-7.5" /> // spacing
+                                          )}
+
+                                          {/* Reply email button */}
+                                          <a
+                                            href={`mailto:${inq.email}?subject=Reply%2520to%2520your%2520inquiry`}
+                                            className="p-2 bg-purple-50 text-purple-600 rounded-xl hover:bg-purple-100 transition active:scale-95"
+                                            title="Reply"
+                                          >
+                                            <CornerUpLeft className="w-3.5 h-3.5" />
+                                          </a>
+
+                                          {/* Delete button */}
+                                          <button
+                                            onClick={() => handleDeleteInquiry(inq.id)}
+                                            className="p-2 bg-red-50 text-red-500 hover:text-red-700 rounded-xl hover:bg-red-100 transition active:scale-95"
+                                            title="Delete"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )
+                                })
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Pagination controls */}
+                        {totalPages > 1 && (
+                          <div className="flex items-center justify-between pt-4 border-t border-[#E6EEFF]">
+                            <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">
+                              Showing {startIdx + 1}-{Math.min(startIdx + inquiriesPerPage, totalInquiries)} of {totalInquiries} inquiries
+                            </span>
+                            
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => setInquiryPage(prev => Math.max(prev - 1, 1))}
+                                disabled={inquiryPage === 1}
+                                className="p-2 border border-[#E6EEFF] rounded-xl hover:bg-slate-50 transition active:scale-95 disabled:opacity-40"
+                              >
+                                <ChevronLeft className="w-3.5 h-3.5" />
+                              </button>
+                              <span className="text-xs font-black text-[#0F1E4A] px-2.5">{inquiryPage} / {totalPages}</span>
+                              <button
+                                onClick={() => setInquiryPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={inquiryPage === totalPages}
+                                className="p-2 border border-[#E6EEFF] rounded-xl hover:bg-slate-50 transition active:scale-95 disabled:opacity-40"
+                              >
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
+                </div>
+              </div>
+            )}
           </>
         )}
       </main>
+
+      {/* MODAL: VIEW INQUIRY DETAILS */}
+      {selectedInquiry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[28px] p-8 w-full max-w-lg border border-[#E6EEFF] shadow-2xl space-y-6 animate-scaleUp max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start pb-4 border-b border-[#E6EEFF]">
+              <div>
+                <h3 className="text-lg font-black text-[#0F1E4A] tracking-tight">Inquiry Details</h3>
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider mt-1.5 ${
+                  selectedInquiry.status === 'New' ? 'bg-red-50 text-red-650' : 'bg-green-50 text-green-655'
+                }`}>
+                  {selectedInquiry.status}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedInquiry(null)}
+                className="text-slate-400 hover:text-[#FF6FAF] font-black text-sm active:scale-90 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs font-bold text-[#0F1E4A]">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="block text-[9px] text-slate-450 font-extrabold uppercase tracking-wider mb-0.5">Full Name</span>
+                  <span className="text-slate-800 font-bold text-sm block">{selectedInquiry.fullName}</span>
+                </div>
+                <div>
+                  <span className="block text-[9px] text-slate-455 font-extrabold uppercase tracking-wider mb-0.5">Purpose / Subject</span>
+                  <span className="text-slate-800 font-bold block">{selectedInquiry.purpose}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="block text-[9px] text-slate-450 font-extrabold uppercase tracking-wider mb-0.5">Email Address</span>
+                  <span className="text-slate-800 font-semibold block select-all">{selectedInquiry.email}</span>
+                </div>
+                <div>
+                  <span className="block text-[9px] text-slate-450 font-extrabold uppercase tracking-wider mb-0.5">Phone Number</span>
+                  <span className="text-slate-800 font-semibold block select-all">{selectedInquiry.phone}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="block text-[9px] text-slate-450 font-extrabold uppercase tracking-wider mb-0.5">Submitted Date</span>
+                  <span className="text-slate-650 font-semibold block">
+                    {new Date(selectedInquiry.createdAt).toLocaleString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[9px] text-slate-450 font-extrabold uppercase tracking-wider mb-0.5">IP Address</span>
+                  <span className="text-slate-650 font-mono block select-all">{selectedInquiry.ipAddress || 'Unavailable'}</span>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <span className="block text-[9px] text-slate-450 font-extrabold uppercase tracking-wider mb-1">Message</span>
+                <div className="p-4 bg-slate-50 border border-[#E6EEFF] rounded-2xl text-slate-700 font-medium leading-relaxed max-h-40 overflow-y-auto whitespace-pre-wrap select-text">
+                  {selectedInquiry.message}
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-[#E6EEFF] flex items-center justify-between gap-3">
+              <button
+                onClick={() => handleDeleteInquiry(selectedInquiry.id)}
+                className="px-5 py-3 border border-red-150 hover:bg-red-50 text-red-500 rounded-xl text-xs font-bold transition active:scale-95"
+              >
+                Delete
+              </button>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setSelectedInquiry(null)}
+                  className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-650 rounded-xl text-xs font-bold transition active:scale-95"
+                >
+                  Close
+                </button>
+                
+                <a
+                  href={`mailto:${selectedInquiry.email}?subject=Reply%20to%20your%20inquiry`}
+                  className="px-5 py-3 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] hover:opacity-95 text-white rounded-xl text-xs font-black shadow-sm transition active:scale-95 flex items-center gap-1.5"
+                >
+                  <CornerUpLeft className="w-3.5 h-3.5" />
+                  <span>Reply via Email</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL: ADD SIMULATED COURSE */}
       {isAddCourseOpen && (

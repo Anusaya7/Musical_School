@@ -153,7 +153,7 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
                     className="h-[56px] w-full px-4 pr-10 border-2 border-[#B8D4FF] hover:border-[#5EA8FF] rounded-[14px] bg-white text-[#0F1E4A] font-medium text-sm transition-all duration-300 focus:outline-none focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/12 appearance-none cursor-pointer"
                   >
                     <option value="">Choose a class...</option>
-                    <option value="morning-piano">Morning Piano Class (3:00 AM - 12:00 PM)</option>
+                    <option value="morning-piano">Morning Piano Class (4:00 AM - 12:00 PM)</option>
                     <option value="evening-guitar">Evening Guitar Class (3:00 PM - 9:00 PM)</option>
                     <option value="vocal-training">Vocal Training (3:00 PM - 9:00 PM)</option>
                   </select>
