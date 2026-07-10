@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Header from '@/components/Header'
+import Image from 'next/image'
 import { 
   Award, 
   BookOpen, 
@@ -255,10 +256,13 @@ export default function InstructorProfile() {
             <div className="w-full lg:w-5/12 flex flex-col items-center">
               <div className="relative w-[280px] sm:w-[360px] h-[330px] sm:h-[420px] rounded-[32px] overflow-hidden group shadow-[0_20px_50px_rgba(37,99,235,0.08)] bg-slate-50 border-4 border-white/60">
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/20 via-transparent to-transparent z-10 opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
-                <img 
-                  src="/images/instructor_portrait.png" 
+                <Image 
+                  src="/images/instructor_ajinkya.jpg" 
                   alt="Ajinkya Uddhav Amrule" 
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                  fill
+                  sizes="(max-width: 640px) 280px, 360px"
+                  priority
+                  className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                 />
                 
                 {/* Floating Glassmorphic Badges */}
