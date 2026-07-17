@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Header from '@/components/Header'
 import MusicBackground from '@/components/MusicBackground'
 import MusicSparkle from '@/components/MusicSparkle'
@@ -20,6 +20,11 @@ import {
 
 export default function About() {
   const [email, setEmail] = useState('')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleEnroll = () => {
     console.log('Enrollment clicked')

@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <!-- Soft Blue background gradient -->
+    <linearGradient id="violin-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0F7FF" />
+      <stop offset="100%" stop-color="#DCEEFF" />
+    </linearGradient>
+    
+    <!-- Wooden body gradient -->
+    <linearGradient id="wood-body" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#CD853F" />
+      <stop offset="50%" stop-color="#8B5A2B" />
+      <stop offset="100%" stop-color="#5C4033" />
+    </linearGradient>
+    
+    <!-- Soft shadow -->
+    <filter id="soft-shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#485E90" flood-opacity="0.12" />
+    </filter>
+  </defs>
+
+  <!-- Soft Blue circular background -->
+  <circle cx="50" cy="50" r="42" fill="url(#violin-bg)" />
+
+  <!-- Violin Group with Soft Shadow -->
+  <g filter="url(#soft-shadow)">
+    <!-- Bow (Crosses behind the violin neck) -->
+    <line x1="24" y1="74" x2="76" y2="22" stroke="#E2E8F0" stroke-width="1.2" />
+    <!-- Bow Stick -->
+    <line x1="23.5" y1="75.5" x2="77.5" y2="21.5" stroke="#5C4033" stroke-width="1.8" />
+    <!-- Bow Frog and Tip -->
+    <rect x="23" y="73" width="2" height="4" fill="#1E293B" transform="rotate(45 23 73)" />
+    <path d="M 76 20 L 78 22" stroke="#E2E8F0" stroke-width="2" />
+
+    <!-- Fingerboard & Neck (angled) -->
+    <rect x="47.5" y="16" width="5" height="30" fill="#1E293B" transform="rotate(-15 50 30)" />
+    <!-- Pegbox & Scroll -->
+    <path d="M 45 16 C 45 12, 49 10, 49 10 C 49 10, 52 11, 51 16 Z" fill="#5C4033" transform="rotate(-15 50 30)" />
+    <!-- Pegs -->
+    <circle cx="43" cy="17" r="1.5" fill="#1E293B" />
+    <circle cx="44" cy="21" r="1.5" fill="#1E293B" />
+    <circle cx="54" cy="15" r="1.5" fill="#1E293B" />
+    <circle cx="55" cy="19" r="1.5" fill="#1E293B" />
+
+    <!-- Violin Body (Beautiful traditional double bout shape, slightly angled) -->
+    <g transform="rotate(-15 50 56)">
+      <path d="M 50 36 
+               C 42 36, 38 42, 41 48 
+               C 43 51, 37 53, 37 58 
+               C 37 66, 42 72, 50 72 
+               C 58 72, 63 66, 63 58 
+               C 63 53, 57 51, 59 48 
+               C 62 42, 58 36, 50 36 Z" 
+            fill="url(#wood-body)" 
+            stroke="#5C4033" 
+            stroke-width="0.8" />
+      
+      <!-- F-Holes -->
+      <path d="M 44 48 C 42 50, 43 56, 45 58" stroke="#1E293B" stroke-width="1.5" stroke-linecap="round" fill="none" />
+      <path d="M 56 48 C 58 50, 57 56, 55 58" stroke="#1E293B" stroke-width="1.5" stroke-linecap="round" fill="none" />
+      
+      <!-- Bridge (Light wood) -->
+      <rect x="46" y="55" width="8" height="2" fill="#FFDCA3" />
+      
+      <!-- Tailpiece (Black) -->
+      <path d="M 48 57 L 52 57 L 51 68 L 49 68 Z" fill="#1E293B" />
+      
+      <!-- Strings -->
+      <line x1="48.5" y1="36" x2="48.5" y2="57" stroke="#E2E8F0" stroke-width="0.5" />
+      <line x1="49.5" y1="36" x2="49.5" y2="57" stroke="#E2E8F0" stroke-width="0.5" />
+      <line x1="50.5" y1="36" x2="50.5" y2="57" stroke="#E2E8F0" stroke-width="0.5" />
+      <line x1="51.5" y1="36" x2="51.5" y2="57" stroke="#E2E8F0" stroke-width="0.5" />
+    </g>
+  </g>
+
+  <!-- Floating music notes -->
+  <path d="M 78 30 C 78 31.5, 76.8 32, 76 32 C 74.8 32, 74 31.5, 74 30 L 74 24 L 79 22 L 79 28 Z" fill="#5EA8FF" opacity="0.8" />
+  <path d="M 22 28 C 22 29, 21.2 29.5, 20.5 29.5 C 19.8 29.5, 19.2 29, 19.2 28 L 19.2 24 L 22.5 23 L 22.5 27 Z" fill="#8B5A2B" opacity="0.7" />
+</svg>

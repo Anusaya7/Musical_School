@@ -1,0 +1,319 @@
+generator client {
+  provider   = "prisma-client-js"
+  output     = "../lib/generated/prisma"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Course {
+  id                   String           @id
+  instrumentId         String
+  title                String
+  slug                 String
+  level                CourseLevel
+  description          String?
+  duration             String
+  price                Float
+  discountPrice        Float?
+  instructorId         String?
+  thumbnail            String?
+  banner               String?
+  maxStudents          Int?
+  enrolledStudents     Int              @default(0)
+  language             String           @default("English")
+  difficulty           CourseDifficulty @default(MEDIUM)
+  certificateAvailable Boolean          @default(false)
+  status               CourseStatus     @default(DRAFT)
+  publishDate          DateTime?
+  curriculum           String?
+  lessons              Int?
+  projects             Int?
+  assignments          Int?
+  isDisabled           Boolean          @default(false)
+  featured             Boolean          @default(false)
+  upcoming             Boolean          @default(false)
+  demoVideo            String?
+  galleryImages        String[]
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  Instrument           Instrument       @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  Instructor           Instructor?      @relation(fields: [instructorId], references: [id], onDelete: SetNull)
+
+  CourseContent        CourseContent?
+  Curriculum           Curriculum?
+  LearningOutcomes     LearningOutcome[]
+  Prerequisites        Prerequisite[]
+  TopicsCovered        TopicsCovered[]
+  Reviews              Review[]
+
+  @@unique([instrumentId, slug])
+  @@index([instrumentId])
+  @@index([level])
+  @@index([slug])
+  @@index([status])
+}
+
+model Instrument {
+  id            String   @id
+  name          String   @unique
+  slug          String   @unique
+  icon          String?
+  description   String?
+  image         String?
+  status        String   @default("ACTIVE")
+  isFeatured    Boolean  @default(false)
+  isUpcoming    Boolean  @default(false)
+  isVisible     Boolean  @default(true)
+  coursesCount  Int      @default(0)
+  startingPrice Float    @default(4999)
+  levels        String[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  Course        Course[]
+
+  @@index([slug])
+  @@index([status])
+}
+
+enum CourseDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Instructor {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  expertise    String?
+  rating       Float    @default(5.0)
+  students     Int      @default(0)
+  avatar       String?
+  isActive     Boolean  @default(true)
+  photo        String?
+  resume       String?
+  certificates String[]
+  role         String   @default("Senior Music Instructor")
+  experience   String   @default("10+ Years")
+  bio          String   @default("Professional music educator dedicated to Trinity, Guildhall and modern performance training.")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  Course       Course[]
+}
+
+model User {
+  id              String   @id @default(uuid())
+  name            String
+  email           String   @unique
+  passwordHash    String?
+  role            String   @default("STUDENT")
+  googleId        String?
+  isVerified      Boolean  @default(false)
+  status          String   @default("Active")
+  enrolledCourses String[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Booking {
+  id            String   @id @default(uuid())
+  courseId      String
+  courseName    String
+  instructor    String
+  date          String
+  timeSlot      String
+  batchTiming   String
+  studentName   String
+  studentEmail  String
+  status        String   @default("Pending")
+  amount        Float?
+  paymentMethod String?
+  studentId     String?
+  paymentId     String?
+  orderId       String?
+  paymentStatus String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model BatchSchedule {
+  id        String   @id @default(uuid())
+  name      String
+  startTime String
+  endTime   String
+  timeSlots String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Holiday {
+  id                String   @id @default(uuid())
+  date              String
+  reason            String
+  isRecurringWeekly Boolean  @default(false)
+  dayOfWeek         Int?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Workshop {
+  id          String   @id @default(uuid())
+  title       String
+  instructor  String
+  date        String
+  time        String
+  price       Float
+  description String
+  capacity    Int      @default(30)
+  images      String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RecordedSession {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  url         String
+  instrument  String
+  courseId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  studentEmail  String
+  studentName   String
+  courseId      String
+  courseName    String
+  amount        Float
+  paymentId     String
+  orderId       String
+  status        String
+  invoiceNumber String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userEmail String
+  action    String
+  details   String
+  createdAt DateTime @default(now())
+}
+
+model ContactInquiry {
+  id        String   @id @default(uuid())
+  fullName  String
+  email     String
+  phone     String
+  purpose   String
+  message   String
+  ipAddress String?
+  status    String   @default("New")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Student {
+  id          String       @id @default(uuid())
+  name        String
+  email       String       @unique
+  phone       String?
+  status      String       @default("Active")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  enrollments Enrollment[]
+}
+
+model Enrollment {
+  id         String   @id @default(uuid())
+  studentId  String
+  courseId   String
+  courseName String
+  amount     Float
+  status     String   @default("Active")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model CourseContent {
+  id        String   @id @default(uuid())
+  courseId  String   @unique
+  about     String
+  Course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model Curriculum {
+  id        String             @id @default(uuid())
+  courseId  String             @unique
+  Course    Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  modules   CurriculumModule[]
+}
+
+model CurriculumModule {
+  id           String     @id @default(uuid())
+  curriculumId String
+  moduleName   String
+  topics       String[]
+  Curriculum   Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+}
+
+model LearningOutcome {
+  id       String @id @default(uuid())
+  courseId String
+  outcome  String
+  Course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model Prerequisite {
+  id          String @id @default(uuid())
+  courseId    String
+  requirement String
+  Course      Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model TopicsCovered {
+  id       String @id @default(uuid())
+  courseId String
+  topic    String
+  Course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  courseId  String
+  name      String
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+  Course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}

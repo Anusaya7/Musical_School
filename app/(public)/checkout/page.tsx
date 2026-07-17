@@ -50,6 +50,7 @@ export default function CheckoutPage() {
 
     setIsProcessing(true)
 
+    let orderData: any = null
     try {
       // Create Razorpay order
       const response = await fetch('/api/create-order', {
@@ -70,7 +71,7 @@ export default function CheckoutPage() {
         })
       })
 
-      const orderData = await response.json()
+      orderData = await response.json()
 
       if (orderData.success) {
         // Initialize Razorpay
@@ -121,7 +122,39 @@ export default function CheckoutPage() {
               // Redirect to success page
               router.push('/payment-success')
             } else {
+              // Log failure if verification fails
+              await fetch('/api/payment/failed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  studentEmail: formData.email,
+                  studentName: `${formData.firstName} ${formData.lastName}`,
+                  courseId: items[0]?.id || 'unknown',
+                  courseName: items[0]?.title || 'Unknown Course',
+                  amount: total,
+                  errorDescription: 'Verification response failed status',
+                  orderId: orderData.id
+                })
+              }).catch(err => console.error(err))
               alert('Payment verification failed. Please contact support.')
+            }
+          },
+          modal: {
+            ondismiss: async function() {
+              // Log failure when user closes Razorpay dialog before paying
+              await fetch('/api/payment/failed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  studentEmail: formData.email,
+                  studentName: `${formData.firstName} ${formData.lastName}`,
+                  courseId: items[0]?.id || 'unknown',
+                  courseName: items[0]?.title || 'Unknown Course',
+                  amount: total,
+                  errorDescription: 'User closed checkout popup',
+                  orderId: orderData.id
+                })
+              }).catch(err => console.error(err))
             }
           },
           prefill: {
@@ -139,8 +172,21 @@ export default function CheckoutPage() {
       } else {
         alert('Failed to create payment order. Please try again.')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment error:', error)
+      await fetch('/api/payment/failed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentEmail: formData.email,
+          studentName: `${formData.firstName} ${formData.lastName}`,
+          courseId: items[0]?.id || 'unknown',
+          courseName: items[0]?.title || 'Unknown Course',
+          amount: total,
+          errorDescription: error.message || 'Payment launch exception',
+          orderId: orderData?.id || 'unknown'
+        })
+      }).catch(err => console.error(err))
       alert('Payment failed. Please try again.')
     } finally {
       setIsProcessing(false)

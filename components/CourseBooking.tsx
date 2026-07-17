@@ -147,6 +147,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('')
   const [studentName, setStudentName] = useState('')
   const [studentEmail, setStudentEmail] = useState('')
+  const [studentPhone, setStudentPhone] = useState('')
   const [isBooking, setIsBooking] = useState(false)
 
   // API State
@@ -257,59 +258,135 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
     setShowPayment(true)
   }
 
-  const handlePayment = () => {
-    if (!studentName || !studentEmail) {
-      alert('Please fill in your details')
+  const handlePayment = async () => {
+    if (!studentName || !studentEmail || !studentPhone) {
+      alert('Please fill in all your details including your phone number')
       return
     }
-    setShowPaymentOptions(true)
-  }
 
-  const processPayment = async (paymentMethod: string) => {
     setIsBooking(true)
 
     try {
-      const payload = {
-        courseId: course.id,
-        courseName: course.title,
-        instructor: course.instructor,
-        date: selectedDate,
-        timeSlot: selectedTimeSlot,
-        batchTiming: selectedBatch,
-        studentName,
-        studentEmail,
-        amount: course.price,
-        paymentMethod
-      }
-
-      const res = await fetch('/api/bookings', {
+      // 1. Create order on the backend
+      const orderRes = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          amount: Math.round(course.price * 100), // Razorpay amount in paise
+          currency: 'INR',
+          receipt: `receipt_${Date.now()}`,
+          notes: {
+            purchaseType: 'booking',
+            courseId: course.id,
+            courseName: course.title,
+            instructor: course.instructor,
+            date: selectedDate,
+            timeSlot: selectedTimeSlot,
+            batchTiming: selectedBatch,
+            studentName,
+            studentEmail,
+            studentPhone,
+            amount: course.price
+          }
+        })
       })
 
-      const result = await res.json()
-      if (!res.ok) {
-        throw new Error(result.error || 'Failed to submit booking')
+      const resData = await orderRes.json()
+      if (!resData.success) {
+        throw new Error(resData.error || 'Failed to initialize payment order')
       }
 
-      onBookingComplete(result.booking)
-      
-      alert(`Booking confirmed for ${course.title}! Payment method: ${paymentMethod}`)
-      
-      // Reset states
-      setShowPaymentOptions(false)
-      setShowPayment(false)
-      setShowBookingModal(false)
-      setSelectedDate('')
-      setSelectedBatch('')
-      setSelectedTimeSlot('')
-      setStudentName('')
-      setStudentEmail('')
-    } catch (error: any) {
-      console.error('Booking failed:', error)
-      alert(error.message || 'Booking failed. Please try again.')
-    } finally {
+      // 2. Open Razorpay Checkout Dialog
+      const Razorpay = (window as any).Razorpay
+      if (!Razorpay) {
+        throw new Error('Razorpay SDK failed to load. Please verify your internet connection.')
+      }
+
+      const options = {
+        key: resData.key,
+        amount: resData.amount,
+        currency: resData.currency,
+        name: '2nd Inversion Music School',
+        description: `Class Booking: ${course.title}`,
+        image: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?q=80&w=100&auto=format&fit=crop',
+        order_id: resData.id,
+        handler: async function (response: any) {
+          try {
+            // Verify payment signature
+            const verifyRes = await fetch('/api/payment/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderData: {
+                  amount: course.price,
+                  notes: {
+                    purchaseType: 'booking',
+                    courseId: course.id,
+                    courseName: course.title,
+                    instructor: course.instructor,
+                    date: selectedDate,
+                    timeSlot: selectedTimeSlot,
+                    batchTiming: selectedBatch,
+                    studentName,
+                    studentEmail,
+                    studentPhone,
+                    amount: course.price
+                  }
+                }
+              })
+            })
+
+            const verifyData = await verifyRes.json()
+            if (!verifyData.success) {
+              throw new Error(verifyData.error || 'Signature verification failed')
+            }
+
+            // Reset local inputs
+            setSelectedDate('')
+            setSelectedBatch('')
+            setSelectedTimeSlot('')
+            setStudentName('')
+            setStudentEmail('')
+            setStudentPhone('')
+            setShowPayment(false)
+            setShowBookingModal(false)
+
+            // Redirect to success page
+            window.location.href = `/payment/success?bookingId=${verifyData.bookingId}&courseName=${encodeURIComponent(course.title)}&paymentId=${response.razorpay_payment_id}&amount=${course.price}`
+          } catch (verifyErr: any) {
+            console.error('Signature verification failed:', verifyErr)
+            window.location.href = `/payment/failed?error=${encodeURIComponent(verifyErr.message || 'Signature verification failed')}`
+          }
+        },
+        prefill: {
+          name: studentName,
+          email: studentEmail,
+          contact: studentPhone
+        },
+        theme: {
+          color: '#2563EB'
+        },
+        modal: {
+          ondismiss: function () {
+            setIsBooking(false)
+            alert('Payment checkout was closed by the user.')
+          }
+        }
+      }
+
+      const rzp = new Razorpay(options)
+      rzp.on('payment.failed', function (resp: any) {
+        console.error('Razorpay payment failed:', resp.error)
+        window.location.href = `/payment/failed?error=${encodeURIComponent(resp.error.description || 'Payment transaction failed')}`
+      })
+      rzp.open()
+
+    } catch (err: any) {
+      console.error('Checkout launch error:', err)
+      alert(err.message || 'Could not launch Razorpay checkout.')
       setIsBooking(false)
     }
   }
@@ -493,7 +570,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                         <label className="block text-sm font-bold text-slate-500">
                           4. Enter Student Information
                         </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <input
                             type="text"
                             value={studentName}
@@ -506,6 +583,13 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                             value={studentEmail}
                             onChange={(e) => setStudentEmail(e.target.value)}
                             placeholder="Email Address"
+                            className={`w-full px-4 py-3 rounded-[20px] border-[1.5px] border-gray-200 text-sm focus:outline-none focus:ring-2 ${style.activeRing}`}
+                          />
+                          <input
+                            type="tel"
+                            value={studentPhone}
+                            onChange={(e) => setStudentPhone(e.target.value)}
+                            placeholder="Phone Number"
                             className={`w-full px-4 py-3 rounded-[20px] border-[1.5px] border-gray-200 text-sm focus:outline-none focus:ring-2 ${style.activeRing}`}
                           />
                         </div>
@@ -581,13 +665,14 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
               <div className="space-y-2">
                 <button
                   onClick={handlePayment}
-                  disabled={isBooking || !studentName || !studentEmail}
+                  disabled={isBooking || !studentName || !studentEmail || !studentPhone}
                   className={
-                    isBooking || !studentName || !studentEmail
-                      ? 'w-full h-12 rounded-[20px] text-xs font-bold text-gray-400 bg-gray-200 cursor-not-allowed shadow-none border-none'
-                      : 'btn-premium-base btn-premium-submit w-full h-12 text-xs font-bold text-white'
+                    isBooking || !studentName || !studentEmail || !studentPhone
+                      ? 'w-full h-12 rounded-[20px] text-xs font-bold text-gray-400 bg-gray-200 cursor-not-allowed shadow-none border-none flex items-center justify-center gap-2'
+                      : 'btn-premium-base btn-premium-submit w-full h-12 text-xs font-bold text-white flex items-center justify-center gap-2'
                   }
                 >
+                  {isBooking && <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />}
                   {isBooking ? 'Processing...' : 'Pay Now'}
                 </button>
                 <button
@@ -596,78 +681,6 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                   className="btn-premium-base btn-premium-secondary w-full py-2 text-xs font-bold"
                 >
                   Back to Details
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Payment Options Modal */}
-      {showPaymentOptions && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-md rounded-[24px] bg-white text-[#0F1E4A] shadow-2xl p-6">
-            <button
-              onClick={() => setShowPaymentOptions(false)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-extrabold mb-1">
-                  Select Payment Method
-                </h2>
-                <p className="text-xs text-slate-500 font-semibold">
-                  Complete your enrollment below
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {/* Credit/Debit Card */}
-                <button
-                  onClick={() => processPayment('Credit/Debit Card')}
-                  disabled={isBooking}
-                  className="btn-premium-base btn-premium-secondary w-full p-4 flex items-center gap-4"
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${style.pillBg}`}>
-                    <CreditCard className="w-5 h-5" style={{ color: style.iconColor }} />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-bold text-[#0F1E4A] text-sm">Credit/Debit Card</div>
-                    <div className="text-[11px] text-gray-400 font-semibold">Visa, Mastercard, RuPay</div>
-                  </div>
-                </button>
-
-                {/* UPI */}
-                <button
-                  onClick={() => processPayment('UPI')}
-                  disabled={isBooking}
-                  className="btn-premium-base btn-premium-secondary w-full p-4 flex items-center gap-4"
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${style.pillBg}`}>
-                    <Smartphone className="w-5 h-5" style={{ color: style.iconColor }} />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-bold text-[#0F1E4A] text-sm">UPI (BHIM)</div>
-                    <div className="text-[11px] text-gray-400 font-semibold">GPay, PhonePe, Paytm</div>
-                  </div>
-                </button>
-
-                {/* Net Banking */}
-                <button
-                  onClick={() => processPayment('Net Banking')}
-                  disabled={isBooking}
-                  className="btn-premium-base btn-premium-secondary w-full p-4 flex items-center gap-4"
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${style.pillBg}`}>
-                    <Building className="w-5 h-5" style={{ color: style.iconColor }} />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-bold text-[#0F1E4A] text-sm">Net Banking</div>
-                    <div className="text-[11px] text-gray-400 font-semibold">All major banks supported</div>
-                  </div>
                 </button>
               </div>
             </div>

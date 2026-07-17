@@ -16,8 +16,7 @@ import {
   Star,
   Piano,
   Guitar,
-  Mic,
-  Headphones
+  Mic
 } from 'lucide-react'
 
 export default function FooterPremium() {
@@ -47,8 +46,7 @@ export default function FooterPremium() {
   const topCourses = [
     { name: 'Piano Fundamentals', icon: Piano },
     { name: 'Guitar Mastery', icon: Guitar },
-    { name: 'Vocal Training', icon: Mic },
-    { name: 'Music Production', icon: Headphones }
+    { name: 'Vocal Training', icon: Mic }
   ]
 
   return (

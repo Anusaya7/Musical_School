@@ -30,10 +30,13 @@ import {
   Menu,
   X
 } from 'lucide-react'
+import CourseCard from '@/components/CourseCard'
 
 export default function InstructorDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [profileName, setProfileName] = useState('Ajinkya Amrule')
+  const [profileEmail, setProfileEmail] = useState('aamrule90@gmail.com')
 
   // Interactive Dynamic States
   const [courses, setCourses] = useState([
@@ -92,10 +95,62 @@ export default function InstructorDashboard() {
     ]
   })
 
+  useEffect(() => {
+    // Update instructor login status and notify admin
+    fetch('/api/instructors/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: profileEmail })
+    }).catch(err => console.error('Failed to log instructor login:', err))
+
+    Promise.all([
+      fetch('/api/courses').then(r => r.json()).catch(() => []),
+      fetch('/api/students').then(r => r.json()).catch(() => []),
+      fetch('/api/bookings').then(r => r.json()).catch(() => [])
+    ]).then(([crss, stds, bks]) => {
+      if (Array.isArray(crss) && crss.length > 0) {
+        setCourses(crss.map(c => ({
+          id: c.id,
+          title: c.title,
+          category: c.category || 'Piano',
+          price: c.price,
+          students: c.students || 0,
+          rating: c.rating || 4.8,
+          lessons: c.lessons || 24,
+          status: c.status || 'Published',
+          duration: c.duration || '3 Months'
+        })))
+      }
+      if (Array.isArray(stds) && stds.length > 0) {
+        setStudents(stds.map(s => ({
+          id: s.id,
+          name: s.name,
+          email: s.email,
+          course: s.enrolledCourses && s.enrolledCourses.length > 0 ? s.enrolledCourses[0] : 'Complete Piano Mastery',
+          progress: 75,
+          lastActive: 'Active recently',
+          status: s.status || 'Active'
+        })))
+      }
+      if (Array.isArray(bks)) {
+        setBookings(bks)
+      }
+    }).catch(err => console.error('Instructor load error:', err))
+  }, [profileEmail])
+
   // Quick Action Modal states
   const [isCreateCourseOpen, setIsCreateCourseOpen] = useState(false)
+  const [bookings, setBookings] = useState<any[]>([])
+  const [editingCourse, setEditingCourse] = useState<any>(null)
   const [isUploadLessonOpen, setIsUploadLessonOpen] = useState(false)
   const [isCreateAssignmentOpen, setIsCreateAssignmentOpen] = useState(false)
+  const [isRequestLeaveOpen, setIsRequestLeaveOpen] = useState(false)
+  const [leaveDate, setLeaveDate] = useState('')
+  const [leaveReason, setLeaveReason] = useState('')
+  const [isPublishWorkshopOpen, setIsPublishWorkshopOpen] = useState(false)
+  const [workshopTitle, setWorkshopTitle] = useState('')
+  const [workshopDate, setWorkshopDate] = useState('')
+  const [workshopTime, setWorkshopTime] = useState('')
 
   // Form input states
   const [courseTitle, setCourseTitle] = useState('')
@@ -114,8 +169,6 @@ export default function InstructorDashboard() {
   const [assignmentDueDate, setAssignmentDueDate] = useState('')
 
   // Profile Form states
-  const [profileName, setProfileName] = useState('Ajinkya Amrule')
-  const [profileEmail, setProfileEmail] = useState('aamrule90@gmail.com')
   const [profileBio, setProfileBio] = useState('Senior Music Instructor at 2nd Inversion. Over 10 years of experience teaching classical piano, acoustic guitar, and vocals. Trinity College London certified.')
   const [expertise, setExpertise] = useState('Piano, Guitar, Vocals')
   const [experience, setExperience] = useState('10+ Years')
@@ -154,28 +207,52 @@ export default function InstructorDashboard() {
   const handleCreateCourse = (e: React.FormEvent) => {
     e.preventDefault()
     if (!courseTitle) return
-    const newCourse = {
-      id: `course-${Date.now()}`,
-      title: courseTitle,
-      category: courseCategory,
-      price: Number(coursePrice),
-      students: 0,
-      rating: 5.0,
-      lessons: 0,
-      status: 'Draft',
-      duration: courseDuration
+
+    if (editingCourse) {
+      setCourses(prev => prev.map(c => c.id === editingCourse.id ? {
+        ...c,
+        title: courseTitle,
+        category: courseCategory,
+        price: Number(coursePrice),
+        duration: courseDuration
+      } : c))
+      setEditingCourse(null)
+    } else {
+      const newCourse = {
+        id: `course-${Date.now()}`,
+        title: courseTitle,
+        category: courseCategory,
+        price: Number(coursePrice),
+        students: 0,
+        rating: 5.0,
+        lessons: 0,
+        status: 'Draft',
+        duration: courseDuration
+      }
+      setCourses(prev => [...prev, newCourse])
     }
-    setCourses(prev => [...prev, newCourse])
     
     // Add to recent activity
     const newAct = {
       id: `act-${Date.now()}`,
-      desc: 'Course Created',
-      detail: `New course draft: "${courseTitle}" created`,
+      desc: editingCourse ? 'Course Updated' : 'Course Created',
+      detail: editingCourse ? `Course "${courseTitle}" details updated` : `New course draft: "${courseTitle}" created`,
       time: 'Just now',
       icon: '📚'
     }
     setRecentActivities(prev => [newAct, ...prev.slice(0, 4)])
+
+    // Notify admin
+    fetch('/api/instructor/actions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        instructorEmail: profileEmail,
+        instructorName: profileName,
+        action: editingCourse ? 'Update Course' : 'Create Course',
+        details: editingCourse ? `Updated details for "${courseTitle}"` : `Created draft course "${courseTitle}"`
+      })
+    }).catch(err => console.error(err))
 
     setIsCreateCourseOpen(false)
     setCourseTitle('')
@@ -198,6 +275,18 @@ export default function InstructorDashboard() {
       icon: '🎥'
     }
     setRecentActivities(prev => [newAct, ...prev.slice(0, 4)])
+
+    // Notify admin
+    fetch('/api/instructor/actions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        instructorEmail: profileEmail,
+        instructorName: profileName,
+        action: 'Upload Recording',
+        details: `Uploaded video tutorial "${lessonTitle}" to course "${targetCourse?.title || 'Course'}"`
+      })
+    }).catch(err => console.error(err))
 
     setIsUploadLessonOpen(false)
     setLessonTitle('')
@@ -231,10 +320,99 @@ export default function InstructorDashboard() {
     }
     setRecentActivities(prev => [newAct, ...prev.slice(0, 4)])
 
+    // Notify admin
+    fetch('/api/instructor/actions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        instructorEmail: profileEmail,
+        instructorName: profileName,
+        action: 'Create Assignment',
+        details: `Assigned new homework "${assignmentTitle}" (Due: ${assignmentDueDate}) to "${targetCourse?.title || 'Course'}"`
+      })
+    }).catch(err => console.error(err))
+
     setIsCreateAssignmentOpen(false)
     setAssignmentTitle('')
     setAssignmentDueDate('')
     setActiveTab('assignments')
+  }
+
+  // Request Leave Action
+  const handleRequestLeave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!leaveDate || !leaveReason) return
+
+    try {
+      const res = await fetch('/api/instructor/actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instructorEmail: profileEmail,
+          instructorName: profileName,
+          action: 'Request Leave',
+          details: `Requested leave for ${leaveDate}. Reason: ${leaveReason}`
+        })
+      })
+
+      if (res.ok) {
+        const newAct = {
+          id: `act-${Date.now()}`,
+          desc: 'Leave Requested',
+          detail: `Leave request for ${leaveDate} submitted`,
+          time: 'Just now',
+          icon: '📅'
+        }
+        setRecentActivities(prev => [newAct, ...prev.slice(0, 4)])
+        alert('Leave request submitted to Admin successfully!')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Failed to request leave.')
+    } finally {
+      setIsRequestLeaveOpen(false)
+      setLeaveDate('')
+      setLeaveReason('')
+    }
+  }
+
+  // Publish Workshop Action
+  const handlePublishWorkshop = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!workshopTitle || !workshopDate || !workshopTime) return
+
+    try {
+      const res = await fetch('/api/instructor/actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instructorEmail: profileEmail,
+          instructorName: profileName,
+          action: 'Publish Workshop',
+          details: `Published live workshop "${workshopTitle}" on ${workshopDate} at ${workshopTime}`
+        })
+      })
+
+      if (res.ok) {
+        const newAct = {
+          id: `act-${Date.now()}`,
+          desc: 'Workshop Published',
+          detail: `Workshop "${workshopTitle}" published for ${workshopDate}`,
+          time: 'Just now',
+          icon: '🚀'
+        }
+        setRecentActivities(prev => [newAct, ...prev.slice(0, 4)])
+        alert('Workshop published and Admin notified successfully!')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Failed to publish workshop.')
+    } finally {
+      setIsPublishWorkshopOpen(false)
+      setWorkshopTitle('')
+      setWorkshopDate('')
+      setWorkshopTime('')
+    }
   }
 
   // Send Chat message
@@ -450,30 +628,41 @@ export default function InstructorDashboard() {
             {/* SECONDARY ROW GRID */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               
-              {/* Today's Classes */}
-              <div className="lg:col-span-5 bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)]">
+              {/* Paid Class Bookings & Schedule */}
+              <div className="lg:col-span-5 bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)] font-sans">
                 <h3 className="text-base font-extrabold text-[#0F1E4A] mb-2 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-[#5EA8FF]" /> Today's Classes
+                  <Clock className="w-5 h-5 text-[#5EA8FF]" /> Paid Bookings & Schedule
                 </h3>
-                <p className="text-xs text-slate-400 font-medium mb-6">Your teaching sessions scheduled for today.</p>
-                <div className="space-y-4">
-                  {todayClasses.map((item) => (
-                    <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-[#FAFBFF] border border-[#E6EEFF] rounded-2xl hover:border-[#5EA8FF] transition-all gap-4">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl p-2 bg-white rounded-xl border border-[#E6EEFF] shadow-sm select-none">{item.instrument}</span>
-                        <div>
-                          <h4 className="text-xs font-extrabold text-[#0F1E4A]">{item.course}</h4>
-                          <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{item.time}</p>
+                <p className="text-xs text-slate-400 font-medium mb-6">Your active booking roster and student batches.</p>
+                <div className="space-y-4 max-h-[320px] overflow-y-auto pr-1">
+                  {bookings.length === 0 ? (
+                    <p className="text-xs text-slate-400 py-6 text-center">No paid class bookings recorded yet.</p>
+                  ) : (
+                    bookings.map((item) => {
+                      const isPiano = item.courseName?.toLowerCase().includes('piano')
+                      const emoji = isPiano ? '🎹' : '🎸'
+                      return (
+                        <div key={item.id} className="p-4 bg-[#FAFBFF] border border-[#E6EEFF] rounded-2xl hover:border-[#5EA8FF] transition-all space-y-3">
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-3">
+                              <span className="text-xl p-1.5 bg-white rounded-lg border border-[#E6EEFF] shadow-sm select-none">{emoji}</span>
+                              <div>
+                                <h4 className="text-xs font-extrabold text-[#0F1E4A]">{item.courseName}</h4>
+                                <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                                  {item.date} • {item.timeSlot}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-[9px] bg-green-50 text-green-700 font-extrabold px-2 py-0.5 rounded uppercase">Paid</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 pt-2 border-t border-[#E6EEFF]">
+                            <span>Learner: {item.studentName}</span>
+                            <span className="capitalize">{item.batchTiming} Batch</span>
+                          </div>
                         </div>
-                      </div>
-                      <button
-                        onClick={() => alert(`Launching virtual classroom for ${item.course}...`)}
-                        className="px-4 py-2 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] hover:shadow-[0_4px_12px_rgba(94,168,255,0.15)] text-white text-[10px] font-black rounded-xl transition-all self-end sm:self-center shrink-0"
-                      >
-                        Join Class &rarr;
-                      </button>
-                    </div>
-                  ))}
+                      )
+                    })
+                  )}
                 </div>
               </div>
 
@@ -485,7 +674,7 @@ export default function InstructorDashboard() {
                   </h3>
                   <p className="text-xs text-slate-400 font-medium mb-6">Shortcuts to manage your courses and tasks.</p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <button
                     onClick={() => setIsCreateCourseOpen(true)}
                     className="flex flex-col items-center justify-center p-5 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] hover:shadow-[0_8px_20px_rgba(94,168,255,0.2)] hover:-translate-y-0.5 active:scale-[0.98] transition-all text-white rounded-[16px] gap-2"
@@ -513,6 +702,20 @@ export default function InstructorDashboard() {
                   >
                     <span className="text-lg">👨‍🎓</span>
                     <span className="text-[11px] font-extrabold">View Students</span>
+                  </button>
+                  <button
+                    onClick={() => setIsRequestLeaveOpen(true)}
+                    className="flex flex-col items-center justify-center p-5 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] hover:shadow-[0_8px_20px_rgba(94,168,255,0.2)] hover:-translate-y-0.5 active:scale-[0.98] transition-all text-white rounded-[16px] gap-2"
+                  >
+                    <span className="text-lg">📅</span>
+                    <span className="text-[11px] font-extrabold">Request Leave</span>
+                  </button>
+                  <button
+                    onClick={() => setIsPublishWorkshopOpen(true)}
+                    className="flex flex-col items-center justify-center p-5 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] hover:shadow-[0_8px_20px_rgba(94,168,255,0.2)] hover:-translate-y-0.5 active:scale-[0.98] transition-all text-white rounded-[16px] gap-2"
+                  >
+                    <span className="text-lg">🚀</span>
+                    <span className="text-[11px] font-extrabold">Publish Workshop</span>
                   </button>
                 </div>
               </div>
@@ -582,7 +785,7 @@ export default function InstructorDashboard() {
 
         {/* TAB: MY COURSES */}
         {activeTab === 'courses' && (
-          <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)] space-y-6 animate-fadeIn">
+          <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)] space-y-6 animate-fadeIn font-sans">
             <div className="flex justify-between items-center border-b border-[#E6EEFF] pb-4">
               <div>
                 <h2 className="text-lg font-extrabold text-[#0F1E4A]">My Teaching Courses</h2>
@@ -596,37 +799,43 @@ export default function InstructorDashboard() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {courses.map((course) => (
-                <div key={course.id} className="border border-[#E6EEFF] rounded-[20px] overflow-hidden hover:border-[#5EA8FF] transition-all bg-[#FAFBFF]">
-                  <div className="h-2 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF]" />
-                  <div className="p-5 space-y-4">
-                    <span className="px-2.5 py-1 text-[9px] font-extrabold bg-[#E6EEFF] text-[#5EA8FF] rounded-lg uppercase">{course.category}</span>
-                    <h3 className="font-extrabold text-sm text-[#0F1E4A] leading-snug">{course.title}</h3>
-                    <div className="flex justify-between items-center text-xs font-bold text-slate-500 pt-2 border-t border-[#E6EEFF]">
-                      <span>👥 {course.students} Learners</span>
-                      <span>⭐ {course.rating}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs font-bold text-slate-500">
-                      <span>🎥 {course.lessons} Lessons</span>
-                      <span className="text-[#FF6FAF] font-black">₹{course.price.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="flex justify-between items-center pt-2">
-                      <span className={`px-2.5 py-0.5 text-[9px] font-extrabold rounded-lg ${
-                        course.status === 'Published' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'
-                      }`}>{course.status}</span>
-                      <button
-                        onClick={() => {
-                          setLessonCourseId(course.id)
-                          setIsUploadLessonOpen(true)
-                        }}
-                        className="text-[10px] font-black text-[#5EA8FF] hover:underline"
-                      >
-                        + Upload Lesson
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <CourseCard
+                  key={course.id}
+                  course={{
+                    ...course,
+                    instructor: (course as any).instructor || 'Ajinkya Amrule',
+                    level: (course as any).level || 'Beginner',
+                    duration: (course as any).duration || '3 Months'
+                  } as any}
+                  mode="instructor"
+                  onEdit={(c) => {
+                    setEditingCourse(c)
+                    setCourseTitle(c.title)
+                    setCourseCategory(c.category)
+                    setCoursePrice(c.price)
+                    setCourseDuration(c.duration || '3 Months')
+                    setIsCreateCourseOpen(true)
+                  }}
+                  onUploadVideos={(c) => {
+                    setLessonCourseId(c.id)
+                    setIsUploadLessonOpen(true)
+                  }}
+                  onManageAssignments={(c) => {
+                    setAssignmentCourseId(c.id)
+                    setIsCreateAssignmentOpen(true)
+                  }}
+                  onQuizzes={(c) => {
+                    alert(`Manage Quizzes for course: ${c.title}`)
+                  }}
+                  onAttendance={(c) => {
+                    alert(`Attendance roster for course: ${c.title}`)
+                  }}
+                  onPerformance={(c) => {
+                    alert(`Performance Analytics dashboard for: ${c.title}`)
+                  }}
+                />
               ))}
             </div>
           </div>
@@ -1193,6 +1402,103 @@ export default function InstructorDashboard() {
                 className="w-full py-3 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white font-extrabold text-xs rounded-xl"
               >
                 Assign to Students
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Request Leave Modal */}
+      {isRequestLeaveOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#E6EEFF] rounded-[24px] max-w-md w-full p-6 space-y-6 shadow-2xl animate-scaleUp">
+            <div className="flex justify-between items-center border-b border-[#E6EEFF] pb-3">
+              <h3 className="font-black text-base text-[#0F1E4A]">Request Leave</h3>
+              <button onClick={() => setIsRequestLeaveOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleRequestLeave} className="space-y-4">
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 uppercase mb-1">Leave Date</label>
+                <input
+                  type="date"
+                  value={leaveDate}
+                  onChange={(e) => setLeaveDate(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 uppercase mb-1">Reason for Leave</label>
+                <textarea
+                  placeholder="Explain why you are requesting leave..."
+                  value={leaveReason}
+                  onChange={(e) => setLeaveReason(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none h-24 resize-none"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full py-3 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white font-extrabold text-xs rounded-xl"
+              >
+                Submit Leave Request
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Publish Workshop Modal */}
+      {isPublishWorkshopOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-[#E6EEFF] rounded-[24px] max-w-md w-full p-6 space-y-6 shadow-2xl animate-scaleUp">
+            <div className="flex justify-between items-center border-b border-[#E6EEFF] pb-3">
+              <h3 className="font-black text-base text-[#0F1E4A]">Publish Live Workshop</h3>
+              <button onClick={() => setIsPublishWorkshopOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handlePublishWorkshop} className="space-y-4">
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 uppercase mb-1">Workshop Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Masterclass on Chord Progressions"
+                  value={workshopTitle}
+                  onChange={(e) => setWorkshopTitle(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 uppercase mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={workshopDate}
+                    onChange={(e) => setWorkshopDate(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 uppercase mb-1">Time</label>
+                  <input
+                    type="time"
+                    value={workshopTime}
+                    onChange={(e) => setWorkshopTime(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="w-full py-3 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white font-extrabold text-xs rounded-xl"
+              >
+                Publish Workshop
               </button>
             </form>
           </div>

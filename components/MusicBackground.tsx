@@ -2,11 +2,58 @@
 
 import { useEffect, useState } from 'react'
 
+interface Particle {
+  id: number
+  left: number
+  top: number
+  width: number
+  height: number
+  color: string
+  duration: number
+  delay: number
+}
+
+interface Sparkle {
+  id: number
+  left: number
+  top: number
+  delay: number
+  duration: number
+}
+
 export default function MusicBackground() {
   const [waves, setWaves] = useState<number[]>([])
+  const [mounted, setMounted] = useState(false)
+  const [particles, setParticles] = useState<Particle[]>([])
+  const [sparkles, setSparkles] = useState<Sparkle[]>([])
 
   useEffect(() => {
     setWaves(Array.from({ length: 5 }, (_, i) => i))
+    
+    // Generate particles with deterministic values
+    const newParticles: Particle[] = Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      left: (i * 3.33) % 100,
+      top: (i * 3.33) % 100,
+      width: 1 + (i % 3),
+      height: 1 + (i % 3),
+      color: ['#fbbf24', '#f87171', '#60a5fa', '#a78bfa', '#f472b6', '#34d399'][i % 6],
+      duration: 4 + (i % 4),
+      delay: (i % 4)
+    }))
+    setParticles(newParticles)
+    
+    // Generate sparkles with deterministic values
+    const newSparkles: Sparkle[] = Array.from({ length: 15 }, (_, i) => ({
+      id: i,
+      left: (i * 6.67) % 100,
+      top: (i * 6.67) % 100,
+      delay: (i % 3),
+      duration: 2 + (i % 2)
+    }))
+    setSparkles(newSparkles)
+    
+    setMounted(true)
   }, [])
 
   return (
@@ -50,32 +97,32 @@ export default function MusicBackground() {
       </div>
 
       {/* Enhanced Particle Effects */}
-      {[...Array(30)].map((_, i) => (
+      {mounted && particles.map((particle) => (
         <div
-          key={`particle-${i}`}
+          key={`particle-${particle.id}`}
           className="absolute rounded-full"
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            width: `${Math.random() * 3 + 1}px`,
-            height: `${Math.random() * 3 + 1}px`,
-            backgroundColor: ['#fbbf24', '#f87171', '#60a5fa', '#a78bfa', '#f472b6', '#34d399'][i % 6],
-            animation: `particle ${4 + Math.random() * 4}s linear infinite`,
-            animationDelay: `${Math.random() * 4}s`,
+            left: `${particle.left}%`,
+            top: `${particle.top}%`,
+            width: `${particle.width}px`,
+            height: `${particle.height}px`,
+            backgroundColor: particle.color,
+            animation: `particle ${particle.duration}s linear infinite`,
+            animationDelay: `${particle.delay}s`,
           }}
         />
       ))}
       
       {/* Additional Sparkle Elements */}
-      {[...Array(15)].map((_, i) => (
+      {mounted && sparkles.map((sparkle) => (
         <div
-          key={`sparkle-bg-${i}`}
+          key={`sparkle-bg-${sparkle.id}`}
           className="absolute w-2 h-2 bg-white rounded-full animate-ping"
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 3}s`,
-            animationDuration: `${2 + Math.random() * 2}s`,
+            left: `${sparkle.left}%`,
+            top: `${sparkle.top}%`,
+            animationDelay: `${sparkle.delay}s`,
+            animationDuration: `${sparkle.duration}s`,
           }}
         />
       ))}

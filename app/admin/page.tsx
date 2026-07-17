@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
 import {
@@ -32,8 +32,39 @@ import {
   Eye,
   Check,
   CheckSquare,
-  CornerUpLeft
+  CornerUpLeft,
+  Layers,
+  User
 } from 'lucide-react'
+import CourseCard from '@/components/CourseCard'
+import AdminCourses from '@/components/AdminCourses';
+
+// Reusable Admin Avatar component
+function AdminAvatar({ className, size }: { className?: string; size: number }) {
+  const [imageError, setImageError] = useState(false)
+
+  if (imageError) {
+    return (
+      <div 
+        className={`bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200 shadow-sm ${className}`}
+        style={{ width: size, height: size, borderRadius: '9999px' }}
+      >
+        <User size={size * 0.5} />
+      </div>
+    )
+  }
+
+  return (
+    <img
+      src="/images/instructor_portrait.jpg"
+      alt="Ajinkya Amrule - Super Admin"
+      loading="lazy"
+      onError={() => setImageError(true)}
+      className={`object-cover object-center shadow-sm ${className}`}
+      style={{ width: size, height: size, borderRadius: '9999px' }}
+    />
+  )
+}
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -47,19 +78,228 @@ export default function AdminDashboard() {
   const [recordedSessions, setRecordedSessions] = useState<any[]>([])
   const [holidays, setHolidays] = useState<any[]>([])
   const [schedules, setSchedules] = useState<any[]>([])
+  const [students, setStudents] = useState<any[]>([])
+  const [instructors, setInstructors] = useState<any[]>([])
+  const [payments, setPayments] = useState<any[]>([])
+  const [auditLogs, setAuditLogs] = useState<any[]>([])
+  const [paymentSearch, setPaymentSearch] = useState('')
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('All')
 
   // Modal Toggles
   const [isAddCourseOpen, setIsAddCourseOpen] = useState(false)
   const [isAddWorkshopOpen, setIsAddWorkshopOpen] = useState(false)
+  const [isAddInstructorOpen, setIsAddInstructorOpen] = useState(false)
   const [editingCourse, setEditingCourse] = useState<any>(null)
   const [newPrice, setNewPrice] = useState<number>(0)
+  const [instruments, setInstruments] = useState<any[]>([])
+  const [expandedInstrument, setExpandedInstrument] = useState<string | null>('piano')
+  const [isAddInstrumentOpen, setIsAddInstrumentOpen] = useState(false)
+  const [newInstrumentName, setNewInstrumentName] = useState('')
+  const [newInstrumentStatus, setNewInstrumentStatus] = useState<'Active' | 'Upcoming'>('Active')
 
-  // Add Course simulated form state
+  // Category states
+  const [categorySearch, setCategorySearch] = useState('')
+  const [categoryStatusFilter, setCategoryStatusFilter] = useState('all')
+  const [categorySort, setCategorySort] = useState('name-asc')
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([])
+  
+  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<any>(null)
+  
+  const [catId, setCatId] = useState('')
+  const [catName, setCatName] = useState('')
+  const [catDescription, setCatDescription] = useState('')
+  const [catImage, setCatImage] = useState('')
+  const [catIcon, setCatIcon] = useState('')
+  const [catStatus, setCatStatus] = useState<'Active' | 'Upcoming' | 'Inactive'>('Active')
+  const [catIsVisible, setCatIsVisible] = useState(true)
+  const [catStartingPrice, setCatStartingPrice] = useState<number>(4999)
+  const [catLevels, setCatLevels] = useState<string[]>(['Beginner', 'Intermediate', 'Advanced'])
+  
+  // Helper for AuditLog relative time format
+  const getRelativeTime = (dateString: string) => {
+    const now = new Date()
+    const past = new Date(dateString)
+    const diffMs = now.getTime() - past.getTime()
+    const diffMins = Math.floor(diffMs / (60 * 1000))
+    const diffHours = Math.floor(diffMs / (60 * 60 * 1000))
+    const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000))
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins} mins ago`
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
+    if (diffDays === 1) return '1 day ago'
+    return `${diffDays} days ago`
+  }
+
+  // Helper for AuditLog icon mapping
+  const getActivityIcon = (action: string, details: string) => {
+    const term = `${action} ${details}`.toLowerCase()
+    if (term.includes('booking') || term.includes('booked')) return '📅'
+    if (term.includes('workshop') || term.includes('masterclass')) return '🎤'
+    if (term.includes('recording') || term.includes('video') || term.includes('session')) return '🎥'
+    if (term.includes('student') || term.includes('registered')) return '👨‍🎓'
+    if (term.includes('price') || term.includes('payment') || term.includes('adjusted')) return '💰'
+    return '🎵'
+  }
+  
+  // Full Course Form states (for both add and edit)
   const [courseTitle, setCourseTitle] = useState('')
   const [courseCategory, setCourseCategory] = useState('piano')
   const [courseLevel, setCourseLevel] = useState('Beginner')
   const [coursePrice, setCoursePrice] = useState<number>(4999)
   const [courseDuration, setCourseDuration] = useState('3 Months')
+  const [courseDescription, setCourseDescription] = useState('')
+  const [courseInstructorName, setCourseInstructorName] = useState('Ajinkya Amrule')
+  const [courseDiscountPrice, setCourseDiscountPrice] = useState<number>(0)
+  const [courseLessons, setCourseLessons] = useState<number>(24)
+  const [courseProjects, setCourseProjects] = useState<number>(3)
+  const [courseAssignments, setCourseAssignments] = useState<number>(5)
+  const [courseHasCertificate, setCourseHasCertificate] = useState(true)
+  const [courseFeatured, setCourseFeatured] = useState(false)
+  const [courseUpcoming, setCourseUpcoming] = useState(false)
+  const [courseDemoVideo, setCourseDemoVideo] = useState('')
+  const [courseSeoTitle, setCourseSeoTitle] = useState('')
+  const [courseSeoDescription, setCourseSeoDescription] = useState('')
+  const [courseMaxStudents, setCourseMaxStudents] = useState<number>(30)
+  const [courseDifficulty, setCourseDifficulty] = useState('Medium')
+  const [courseLanguage, setCourseLanguage] = useState('English')
+  const [courseStatus, setCourseStatus] = useState('Published')
+  const [courseThumbnail, setCourseThumbnail] = useState('')
+
+  // Course List Search, Filter, Sort and Pagination states
+  const [courseSearch, setCourseSearch] = useState('')
+  const [courseFilterActive, setCourseFilterActive] = useState('all')
+  const [courseFilterLevel, setCourseFilterLevel] = useState('all')
+  const [courseFilterCategory, setCourseFilterCategory] = useState('all')
+  const [courseSort, setCourseSort] = useState('newest')
+  const [coursePage, setCoursePage] = useState(1)
+
+  // Course filtering, sorting, and pagination logic
+  const filteredAndSortedCourses = useMemo(() => {
+    let result = [...courses]
+
+    if (courseSearch.trim()) {
+      const q = courseSearch.toLowerCase()
+      result = result.filter(c => 
+        (c.title || '').toLowerCase().includes(q) ||
+        (c.instructor || '').toLowerCase().includes(q) ||
+        (c.category || '').toLowerCase().includes(q) ||
+        (c.level || '').toLowerCase().includes(q)
+      )
+    }
+
+    if (courseFilterActive === 'active') {
+      result = result.filter(c => !c.isDisabled)
+    } else if (courseFilterActive === 'inactive') {
+      result = result.filter(c => c.isDisabled)
+    }
+
+    if (courseFilterLevel !== 'all') {
+      result = result.filter(c => c.level === courseFilterLevel)
+    }
+
+    if (courseFilterCategory !== 'all') {
+      result = result.filter(c => (c.category || '').toLowerCase() === courseFilterCategory.toLowerCase())
+    }
+
+    result.sort((a, b) => {
+      if (courseSort === 'newest') {
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      }
+      if (courseSort === 'oldest') {
+        return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+      }
+      if (courseSort === 'price-asc') {
+        return (a.price || 0) - (b.price || 0)
+      }
+      if (courseSort === 'price-desc') {
+        return (b.price || 0) - (a.price || 0)
+      }
+      if (courseSort === 'az') {
+        return (a.title || '').localeCompare(b.title || '')
+      }
+      return 0
+    })
+
+    return result
+  }, [courses, courseSearch, courseFilterActive, courseFilterLevel, courseFilterCategory, courseSort])
+
+  const displayRows = useMemo(() => {
+    // Start with the filtered courses
+    let rows: any[] = filteredAndSortedCourses.map(c => ({
+      ...c,
+      isCourse: true
+    }))
+
+    // Get upcoming instruments
+    const upcomingInstruments = (instruments || []).filter(inst => inst.status === 'Upcoming' || inst.isUpcoming || inst.status === 'COMING_SOON')
+
+    // Apply level filter to upcoming instruments:
+    // If the level filter is 'Upcoming', we show upcoming instruments.
+    // If the level filter is 'Beginner'/'Intermediate'/'Advanced', we do NOT show upcoming instruments.
+    // If the level filter is 'all', we show them.
+    let showUpcoming = false
+    if (courseFilterLevel === 'all' || courseFilterLevel === 'Upcoming') {
+      showUpcoming = true
+    }
+
+    if (showUpcoming) {
+      let filteredUpcoming = upcomingInstruments
+      if (courseSearch.trim()) {
+        const q = courseSearch.toLowerCase()
+        filteredUpcoming = filteredUpcoming.filter(inst => 
+          (inst.name || '').toLowerCase().includes(q)
+        )
+      }
+      rows = [...rows, ...filteredUpcoming.map(inst => ({
+        id: inst.id,
+        title: `${inst.name} (Upcoming)`,
+        category: inst.name,
+        level: '—',
+        price: 0,
+        duration: '—',
+        instructor: '—',
+        maxStudents: 0,
+        status: 'Coming Soon',
+        publishDate: null,
+        isCourse: false
+      }))]
+    }
+
+    return rows
+  }, [filteredAndSortedCourses, instruments, courseFilterLevel, courseSearch])
+
+  const paginatedRows = useMemo(() => {
+    const start = (coursePage - 1) * 10
+    return displayRows.slice(start, start + 10)
+  }, [displayRows, coursePage])
+
+  const totalCoursePages = Math.ceil(displayRows.length / 10)
+
+  // Instructor Form states
+  const [editingInstructor, setEditingInstructor] = useState<any>(null)
+  const [instName, setInstName] = useState('')
+  const [instEmail, setInstEmail] = useState('')
+  const [instExpertise, setInstExpertise] = useState('')
+  const [instActive, setInstActive] = useState(true)
+
+  // Reschedule Form states
+  const [reschedulingBooking, setReschedulingBooking] = useState<any>(null)
+  const [rescheduleDate, setRescheduleDate] = useState('')
+  const [rescheduleTimeSlot, setRescheduleTimeSlot] = useState('')
+
+  // Workshop Edit states
+  const [editingWorkshop, setEditingWorkshop] = useState<any>(null)
+  const [editWorkshopTitle, setEditWorkshopTitle] = useState('')
+  const [editWorkshopInstructor, setEditWorkshopInstructor] = useState('')
+  const [editWorkshopDate, setEditWorkshopDate] = useState('')
+  const [editWorkshopTime, setEditWorkshopTime] = useState('')
+  const [editWorkshopPrice, setEditWorkshopPrice] = useState(0)
+  const [editWorkshopDesc, setEditWorkshopDesc] = useState('')
+
+  // Additional Recorded session state
+  const [videoCourseId, setVideoCourseId] = useState('')
 
   // Workshop form state
   const [workshopTitle, setWorkshopTitle] = useState('')
@@ -109,15 +349,20 @@ export default function AdminDashboard() {
   const loadDatabaseData = async () => {
     setLoading(true)
     try {
-      const [coursesRes, bookingsRes, workshopsRes, videosRes, holidaysRes, schedulesRes, inquiriesRes, notificationsRes] = await Promise.all([
-        fetch('/api/courses').then(r => r.json()),
-        fetch('/api/bookings').then(r => r.json()),
-        fetch('/api/workshops').then(r => r.json()),
-        fetch('/api/recorded-sessions').then(r => r.json()),
-        fetch('/api/holidays').then(r => r.json()),
-        fetch('/api/schedules').then(r => r.json()),
-        fetch('/api/inquiries').then(r => r.json()),
-        fetch('/api/notifications').then(r => r.json())
+      const [coursesRes, bookingsRes, workshopsRes, videosRes, holidaysRes, schedulesRes, inquiriesRes, notificationsRes, studentsRes, instructorsRes, paymentsRes, logsRes, instrumentsRes] = await Promise.all([
+        fetch('/api/courses').then(r => r.json()).catch(() => []),
+        fetch('/api/bookings').then(r => r.json()).catch(() => []),
+        fetch('/api/workshops').then(r => r.json()).catch(() => []),
+        fetch('/api/recorded-sessions').then(r => r.json()).catch(() => []),
+        fetch('/api/holidays').then(r => r.json()).catch(() => []),
+        fetch('/api/schedules').then(r => r.json()).catch(() => []),
+        fetch('/api/inquiries').then(r => r.json()).catch(() => []),
+        fetch('/api/notifications').then(r => r.json()).catch(() => null),
+        fetch('/api/students').then(r => r.json()).catch(() => []),
+        fetch('/api/instructors').then(r => r.json()).catch(() => []),
+        fetch('/api/payments').then(r => r.json()).catch(() => []),
+        fetch('/api/audit-logs').then(r => r.json()).catch(() => []),
+        fetch('/api/categories?paginated=false').then(r => r.json()).catch(() => [])
       ])
 
       if (Array.isArray(coursesRes)) setCourses(coursesRes)
@@ -125,6 +370,12 @@ export default function AdminDashboard() {
       if (Array.isArray(workshopsRes)) setWorkshops(workshopsRes)
       if (Array.isArray(videosRes)) setRecordedSessions(videosRes)
       if (Array.isArray(holidaysRes)) setHolidays(holidaysRes)
+      if (Array.isArray(studentsRes)) setStudents(studentsRes)
+      if (Array.isArray(instructorsRes)) setInstructors(instructorsRes)
+      if (Array.isArray(paymentsRes)) setPayments(paymentsRes)
+      if (Array.isArray(logsRes)) setAuditLogs(logsRes)
+      if (Array.isArray(instrumentsRes)) setInstruments(instrumentsRes)
+
       if (Array.isArray(inquiriesRes?.inquiries || inquiriesRes)) {
         setInquiries(inquiriesRes?.inquiries || inquiriesRes)
       }
@@ -210,49 +461,226 @@ export default function AdminDashboard() {
     loadDatabaseData()
   }, [])
 
-  // 1. Update Course Price
-  const handleUpdatePrice = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!editingCourse) {
+      if (courseLevel === 'Beginner') {
+        setCourseDuration('3 Months')
+        setCoursePrice(4999)
+        setCourseMaxStudents(30)
+        setCourseDifficulty('Easy')
+        setCourseStatus('Published')
+        setCourseInstructorName('Ajinkya Amrule')
+      } else if (courseLevel === 'Intermediate') {
+        setCourseDuration('4 Months')
+        setCoursePrice(6999)
+        setCourseMaxStudents(25)
+        setCourseDifficulty('Medium')
+        setCourseStatus('Published')
+        setCourseInstructorName('Ajinkya Amrule')
+      } else if (courseLevel === 'Advanced') {
+        setCourseDuration('6 Months')
+        setCoursePrice(9999)
+        setCourseMaxStudents(20)
+        setCourseDifficulty('Hard')
+        setCourseStatus('Published')
+        setCourseInstructorName('Ajinkya Amrule')
+      }
+    }
+  }, [courseLevel, editingCourse])
+
+  // 1. Add Course
+  const handleAddCourse = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!editingCourse) return
+    if (!courseTitle || !coursePrice) return
+
+    const payload = {
+      title: courseTitle,
+      category: courseCategory,
+      level: courseLevel,
+      price: Number(coursePrice),
+      instructor: courseInstructorName || 'Ajinkya Amrule',
+      duration: courseDuration || '3 Months',
+      description: courseDescription || '',
+      discountPrice: Number(courseDiscountPrice),
+      lessons: Number(courseLessons),
+      projects: Number(courseProjects),
+      assignments: Number(courseAssignments),
+      hasCertificate: courseHasCertificate,
+      featured: courseFeatured,
+      upcoming: courseUpcoming,
+      demoVideo: courseDemoVideo,
+      seoTitle: courseSeoTitle,
+      seoDescription: courseSeoDescription,
+      maxStudents: Number(courseMaxStudents),
+      difficulty: courseDifficulty,
+      language: courseLanguage,
+      status: courseStatus,
+      thumbnail: courseThumbnail || `/courses/${courseCategory}-${courseLevel.toLowerCase()}.jpg`
+    }
+
     try {
       const res = await fetch('/api/courses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: editingCourse.id, price: Number(newPrice) })
+        body: JSON.stringify(payload)
       })
       if (res.ok) {
-        setEditingCourse(null)
+        setIsAddCourseOpen(false)
+        setCourseTitle('')
+        setCoursePrice(4999)
+        setCourseDescription('')
+        setCourseDiscountPrice(0)
+        setCourseLessons(24)
+        setCourseProjects(3)
+        setCourseAssignments(5)
+        setCourseHasCertificate(true)
+        setCourseFeatured(false)
+        setCourseUpcoming(false)
+        setCourseDemoVideo('')
+        setCourseSeoTitle('')
+        setCourseSeoDescription('')
+        setCourseMaxStudents(30)
+        setCourseDifficulty('Medium')
+        setCourseLanguage('English')
+        setCourseStatus('Published')
+        setCourseThumbnail('')
         loadDatabaseData()
       } else {
-        alert('Failed to update pricing')
+        alert('Failed to add course')
       }
     } catch (err) {
       console.error(err)
     }
   }
 
-  // 2. Add Simulated Course
-  const handleAddCourse = (e: React.FormEvent) => {
+  // 2. Save Course Edit (PUT)
+  const handleSaveCourseEdit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!courseTitle) return
+    if (!editingCourse) return
 
-    const simulatedCourse = {
-      id: `course-${Date.now()}`,
+    const payload = {
+      id: editingCourse.id,
       title: courseTitle,
       category: courseCategory,
       level: courseLevel,
       price: Number(coursePrice),
-      instructor: 'Ajinkya Amrule',
-      duration: courseDuration
+      instructor: courseInstructorName,
+      duration: courseDuration,
+      description: courseDescription,
+      isDisabled: editingCourse.isDisabled,
+      discountPrice: Number(courseDiscountPrice),
+      lessons: Number(courseLessons),
+      projects: Number(courseProjects),
+      assignments: Number(courseAssignments),
+      hasCertificate: courseHasCertificate,
+      featured: courseFeatured,
+      upcoming: courseUpcoming,
+      demoVideo: courseDemoVideo,
+      seoTitle: courseSeoTitle,
+      seoDescription: courseSeoDescription,
+      maxStudents: Number(courseMaxStudents),
+      difficulty: courseDifficulty,
+      language: courseLanguage,
+      status: courseStatus,
+      thumbnail: courseThumbnail
     }
 
-    setCourses(prev => [simulatedCourse, ...prev])
-    setIsAddCourseOpen(false)
-    setCourseTitle('')
-    setCoursePrice(4999)
+    try {
+      const res = await fetch('/api/courses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (res.ok) {
+        setEditingCourse(null)
+        setCourseTitle('')
+        setCourseDescription('')
+        setCourseDiscountPrice(0)
+        setCourseLessons(24)
+        setCourseProjects(3)
+        setCourseAssignments(5)
+        setCourseHasCertificate(true)
+        setCourseFeatured(false)
+        setCourseUpcoming(false)
+        setCourseDemoVideo('')
+        setCourseSeoTitle('')
+        setCourseSeoDescription('')
+        setCourseMaxStudents(30)
+        setCourseDifficulty('Medium')
+        setCourseLanguage('English')
+        setCourseStatus('Published')
+        setCourseThumbnail('')
+        loadDatabaseData()
+      } else {
+        alert('Failed to update course')
+      }
+    } catch (err) {
+      console.error(err)
+    }
   }
 
-  // 3. Create Workshop
+  // 3. Delete Course
+  const handleDeleteCourse = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this course?')) return
+    try {
+      const res = await fetch(`/api/courses?id=${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        loadDatabaseData()
+      } else {
+        alert('Failed to delete course')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // 3b. Duplicate Course
+  const handleDuplicateCourse = async (course: any) => {
+    try {
+      const copyId = `${course.category}-${course.level.toLowerCase()}-copy-${Date.now()}`
+      const duplicated = {
+        ...course,
+        id: copyId,
+        title: `${course.title} (Copy)`,
+        status: 'Draft'
+      }
+      const res = await fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(duplicated)
+      })
+      if (res.ok) {
+        alert('Course duplicated successfully!')
+        loadDatabaseData()
+      } else {
+        const err = await res.json()
+        alert(`Failed to duplicate course: ${err.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error(error)
+      alert('Failed to duplicate course.')
+    }
+  }
+
+  // 4. Toggle Course Disabled Status
+  const handleToggleCourseStatus = async (id: string, currentStatus: boolean) => {
+    try {
+      const res = await fetch('/api/courses', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, isDisabled: !currentStatus })
+      })
+      if (res.ok) {
+        loadDatabaseData()
+      } else {
+        alert('Failed to toggle course status')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // 5. Add Special Workshop
   const handleAddWorkshop = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!workshopTitle || !workshopDate || !workshopTime) return
@@ -289,7 +717,54 @@ export default function AdminDashboard() {
     }
   }
 
-  // 4. Upload Recording (YouTube embed link)
+  // 6. Save Workshop Edit (PUT)
+  const handleSaveWorkshopEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingWorkshop) return
+
+    const payload = {
+      id: editingWorkshop.id,
+      title: editWorkshopTitle,
+      instructor: editWorkshopInstructor,
+      date: editWorkshopDate,
+      time: editWorkshopTime,
+      price: Number(editWorkshopPrice),
+      description: editWorkshopDesc
+    }
+
+    try {
+      const res = await fetch('/api/workshops', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (res.ok) {
+        setEditingWorkshop(null)
+        loadDatabaseData()
+      } else {
+        alert('Failed to update workshop')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // 7. Delete Workshop
+  const handleDeleteWorkshop = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this workshop?')) return
+    try {
+      const res = await fetch(`/api/workshops?id=${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        loadDatabaseData()
+      } else {
+        alert('Failed to delete workshop')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // 8. Upload Recording (YouTube embed link)
   const handleAddVideo = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!videoTitle || !videoUrl) return
@@ -307,7 +782,8 @@ export default function AdminDashboard() {
       title: videoTitle,
       description: videoDesc,
       url: embedUrl,
-      instrument: videoInstrument
+      instrument: videoInstrument,
+      courseId: videoCourseId || undefined
     }
 
     try {
@@ -320,9 +796,201 @@ export default function AdminDashboard() {
         setVideoTitle('')
         setVideoDesc('')
         setVideoUrl('')
+        setVideoCourseId('')
         loadDatabaseData()
       } else {
         alert('Failed to upload video')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // 9. Delete Recorded Session Video
+  const handleDeleteRecordedSession = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this recorded session video?')) return
+    try {
+      const res = await fetch(`/api/recorded-sessions?id=${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        loadDatabaseData()
+      } else {
+        alert('Failed to delete video')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // 10. Toggle Student Status (Suspend / Activate)
+  const handleToggleStudentStatus = async (email: string, currentStatus: string) => {
+    const nextStatus = currentStatus === 'Suspended' ? 'Active' : 'Suspended'
+    try {
+      const res = await fetch('/api/students', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, status: nextStatus })
+      })
+      if (res.ok) {
+        loadDatabaseData()
+      } else {
+        alert('Failed to update student status')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // 11. Delete Student Account
+  const handleDeleteStudent = async (email: string) => {
+    if (!confirm(`Are you sure you want to delete student account: ${email}?`)) return
+    try {
+      const res = await fetch(`/api/students?email=${email}`, { method: 'DELETE' })
+      if (res.ok) {
+        loadDatabaseData()
+      } else {
+        alert('Failed to delete student')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // 12. Save New Instructor
+  const handleSaveInstructor = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!instName || !instEmail || !instExpertise) return
+
+    const payload = {
+      name: instName,
+      email: instEmail,
+      expertise: instExpertise,
+      avatar: instName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
+    }
+
+    try {
+      const res = await fetch('/api/instructors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (res.ok) {
+        setIsAddInstructorOpen(false)
+        setInstName('')
+        setInstEmail('')
+        setInstExpertise('')
+        loadDatabaseData()
+      } else {
+        alert('Failed to add instructor')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // 13. Save Instructor Profile Edits
+  const handleSaveInstructorEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingInstructor) return
+
+    const payload = {
+      id: editingInstructor.id,
+      name: instName,
+      email: instEmail,
+      expertise: instExpertise,
+      avatar: editingInstructor.avatar,
+      isActive: instActive
+    }
+
+    try {
+      const res = await fetch('/api/instructors', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (res.ok) {
+        setEditingInstructor(null)
+        setInstName('')
+        setInstEmail('')
+        setInstExpertise('')
+        loadDatabaseData()
+      } else {
+        alert('Failed to update instructor')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // 14. Delete Instructor Profile
+  const handleDeleteInstructor = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this instructor?')) return
+    try {
+      const res = await fetch(`/api/instructors?id=${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        loadDatabaseData()
+      } else {
+        alert('Failed to delete instructor')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // 15. Update Booking Status (Accept / Reject / Cancel)
+  const handleUpdateBookingStatus = async (id: string, status: string) => {
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status })
+      })
+      if (res.ok) {
+        loadDatabaseData()
+      } else {
+        alert('Failed to update booking status')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // 16. Reschedule Booking Submit
+  const handleRescheduleBookingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!reschedulingBooking || !rescheduleDate || !rescheduleTimeSlot) return
+
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: reschedulingBooking.id,
+          date: rescheduleDate,
+          timeSlot: rescheduleTimeSlot
+        })
+      })
+      if (res.ok) {
+        setReschedulingBooking(null)
+        setRescheduleDate('')
+        setRescheduleTimeSlot('')
+        loadDatabaseData()
+      } else {
+        alert('Failed to reschedule booking')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // 17. Delete Booking Slot
+  const handleDeleteBooking = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this booking record?')) return
+    try {
+      const res = await fetch(`/api/bookings?id=${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        loadDatabaseData()
+      } else {
+        alert('Failed to delete booking slot')
       }
     } catch (err) {
       console.error(err)
@@ -416,32 +1084,199 @@ export default function AdminDashboard() {
     }
   }
 
+  // Category Handlers
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!catId || !catName) {
+      alert('ID and Name are required.')
+      return
+    }
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: catId,
+          name: catName,
+          description: catDescription,
+          image: catImage || `/instruments/${catId}.jpg`,
+          icon: catIcon || 'M9 19V6l12-3v13',
+          status: catStatus,
+          isVisible: catIsVisible,
+          startingPrice: Number(catStartingPrice),
+          levels: catLevels
+        })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setIsAddCategoryOpen(false)
+        setCatId('')
+        setCatName('')
+        setCatDescription('')
+        setCatImage('')
+        setCatIcon('')
+        setCatStatus('Active')
+        setCatIsVisible(true)
+        setCatStartingPrice(4999)
+        setCatLevels(['Beginner', 'Intermediate', 'Advanced'])
+        loadDatabaseData()
+      } else {
+        alert(data.error || 'Failed to add category')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Internal error adding category')
+    }
+  }
+
+  const handleSaveCategoryEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingCategory) return
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingCategory.id,
+          name: catName,
+          description: catDescription,
+          image: catImage,
+          icon: catIcon,
+          status: catStatus,
+          isVisible: catIsVisible,
+          startingPrice: Number(catStartingPrice),
+          levels: catLevels
+        })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setEditingCategory(null)
+        setCatName('')
+        setCatDescription('')
+        setCatImage('')
+        setCatIcon('')
+        setCatStatus('Active')
+        setCatIsVisible(true)
+        setCatStartingPrice(4999)
+        setCatLevels(['Beginner', 'Intermediate', 'Advanced'])
+        loadDatabaseData()
+      } else {
+        alert(data.error || 'Failed to update category')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Internal error updating category')
+    }
+  }
+
+  const handleDeleteCategory = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this category? All courses under it will be lost.')) return
+    try {
+      const res = await fetch(`/api/categories?id=${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        loadDatabaseData()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to delete category')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleToggleCategoryVisibility = async (category: any) => {
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: category.id,
+          name: category.name,
+          description: category.description,
+          image: category.image,
+          icon: category.icon,
+          status: category.status,
+          isVisible: !category.isVisible,
+          startingPrice: category.startingPrice,
+          levels: category.levels
+        })
+      })
+      if (res.ok) {
+        loadDatabaseData()
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleBulkCategoryAction = async (action: 'delete' | 'publish' | 'disable') => {
+    if (selectedCategoryIds.length === 0) return
+    if (action === 'delete' && !confirm(`Are you sure you want to delete these ${selectedCategoryIds.length} categories?`)) return
+    try {
+      const res = await fetch('/api/categories/bulk', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids: selectedCategoryIds,
+          action
+        })
+      })
+      if (res.ok) {
+        setSelectedCategoryIds([])
+        loadDatabaseData()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to execute bulk action')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   // 8. Logout Security
   const handleLogout = async () => {
     localStorage.removeItem('user')
     await signOut({ redirect: true, callbackUrl: '/login' })
   }
 
-  // Unique list of students derived from bookings + mock data
+  // Derive list of students from the live database students state + unique student booking requests
   const enrolledStudents = [
-    { name: 'Aarav Mehta', email: 'aarav.mehta@gmail.com', course: 'Piano Beginner', joined: '2026-05-10', status: 'Active' },
-    { name: 'Isha Sharma', email: 'isha.sharma@yahoo.com', course: 'Guitar Mastery', joined: '2026-05-15', status: 'Active' },
-    { name: 'Kabir Kapoor', email: 'kabir.k@gmail.com', course: 'Vocal Training', joined: '2026-05-20', status: 'Active' },
-    { name: 'Diya Patel', email: 'diya.patel@outlook.com', course: 'Piano Intermediate', joined: '2026-06-01', status: 'Active' },
-    { name: 'Rohan Sen', email: 'rohan.sen@gmail.com', course: 'Guitar Beginner', joined: '2026-06-05', status: 'Active' },
-    ...Array.from(new Map(bookings.map(b => [b.studentEmail, { name: b.studentName, email: b.studentEmail, course: b.courseName, joined: b.createdAt ? b.createdAt.substring(0, 10) : '2026-06-18', status: 'Active' }])).values())
+    ...students.map(s => {
+      const enrolledNames = s.enrolledCourses?.map((cid: string) => {
+        const found = courses.find((c: any) => c.id === cid)
+        return found ? found.title : cid
+      }).join(', ') || 'Trial Class'
+      return {
+        name: s.name,
+        email: s.email,
+        course: enrolledNames,
+        joined: s.createdAt ? s.createdAt.substring(0, 10) : '2026-06-18',
+        status: s.status || 'Active'
+      }
+    }),
+    ...bookings
+      .filter(b => !students.some(s => s.email === b.studentEmail))
+      .map(b => ({
+        name: b.studentName,
+        email: b.studentEmail,
+        course: `${b.courseName} (Trial)`,
+        joined: b.createdAt ? b.createdAt.substring(0, 10) : '2026-06-18',
+        status: 'Pending'
+      }))
   ]
 
   // Menu Navigation configuration
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'courses', label: 'Courses', icon: BookOpen },
+    { id: 'categories', label: 'Categories', icon: Layers },
     { id: 'students', label: 'Students', icon: Users },
     { id: 'instructors', label: 'Instructors', icon: UserCheck },
     { id: 'bookings', label: 'Bookings', icon: CalendarDays },
     { id: 'workshops', label: 'Workshops', icon: Sparkles },
     { id: 'recorded', label: 'Recorded Sessions', icon: Video },
     { id: 'inquiries', label: 'Contact Inquiries', icon: Mail },
+    { id: 'payments', label: 'Payments', icon: Sliders },
     { id: 'settings', label: 'Settings', icon: Settings },
   ]
 
@@ -497,9 +1332,7 @@ export default function AdminDashboard() {
           <div className="bg-white border-2 border-[#E6EEFF] rounded-[20px] p-4 shadow-[0_10px_30px_rgba(94,168,255,0.04)] relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF]" />
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-[#5EA8FF] to-[#FF6FAF] flex items-center justify-center text-white font-black text-sm shadow-sm select-none">
-                AA
-              </div>
+              <AdminAvatar size={56} className="flex-shrink-0" />
               <div>
                 <h4 className="font-extrabold text-sm text-[#0F1E4A] leading-tight">Ajinkya Amrule</h4>
                 <p className="text-[10px] font-bold text-slate-400 mt-0.5">Super Admin</p>
@@ -660,24 +1493,21 @@ export default function AdminDashboard() {
                 <span className="text-xs font-extrabold text-slate-500">
                   {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#5EA8FF] to-[#FF6FAF] flex items-center justify-center text-white font-extrabold text-xs shadow-sm">
-                  AA
-                </div>
+                <AdminAvatar size={44} className="flex-shrink-0" />
               </div>
             </div>
 
             {/* TAB: DASHBOARD */}
             {activeTab === 'dashboard' && (
               <div className="space-y-8 animate-fadeIn">
-                
-                {/* 4 OVERVIEW CARDS */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* 6 OVERVIEW CARDS */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                   {/* Card 1: Courses */}
                   <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)] hover:-translate-y-1 transition-all duration-300">
                     <div className="flex justify-between items-center mb-4">
                       <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">📚 Courses</span>
                     </div>
-                    <h3 className="text-3xl font-black text-[#0F1E4A] tracking-tight">25</h3>
+                    <h3 className="text-2xl font-black text-[#0F1E4A] tracking-tight">{courses.filter(c => !c.isDisabled).length}</h3>
                   </div>
 
                   {/* Card 2: Students */}
@@ -685,23 +1515,44 @@ export default function AdminDashboard() {
                     <div className="flex justify-between items-center mb-4">
                       <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">👨‍🎓 Students</span>
                     </div>
-                    <h3 className="text-3xl font-black text-[#0F1E4A] tracking-tight">120</h3>
+                    <h3 className="text-2xl font-black text-[#0F1E4A] tracking-tight">{students.length}</h3>
                   </div>
 
-                  {/* Card 3: Bookings */}
+                  {/* Card 3: Instructors */}
+                  <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)] hover:-translate-y-1 transition-all duration-300">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">👩‍🏫 Instructors</span>
+                    </div>
+                    <h3 className="text-2xl font-black text-[#0F1E4A] tracking-tight">{instructors.length}</h3>
+                  </div>
+
+                  {/* Card 4: Bookings */}
                   <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)] hover:-translate-y-1 transition-all duration-300">
                     <div className="flex justify-between items-center mb-4">
                       <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">📅 Bookings</span>
                     </div>
-                    <h3 className="text-3xl font-black text-[#0F1E4A] tracking-tight">35</h3>
+                    <h3 className="text-2xl font-black text-[#0F1E4A] tracking-tight">
+                      {bookings.length}
+                      <span className="text-[10px] text-slate-400 block font-normal mt-0.5">({bookings.filter(b => b.status === 'Pending').length} Pending)</span>
+                    </h3>
                   </div>
 
-                  {/* Card 4: Workshops */}
+                  {/* Card 5: Revenue */}
                   <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)] hover:-translate-y-1 transition-all duration-300">
                     <div className="flex justify-between items-center mb-4">
-                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">🎤 Workshops</span>
+                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">💰 Revenue</span>
                     </div>
-                    <h3 className="text-3xl font-black text-[#0F1E4A] tracking-tight">8</h3>
+                    <h3 className="text-2xl font-black text-[#0F1E4A] tracking-tight">
+                      ₹{payments.filter(p => ['Success', 'SUCCESS', 'Completed', 'COMPLETED', 'Paid', 'PAID'].includes(p.status)).reduce((acc, p) => acc + (p.amount || 0), 0).toLocaleString('en-IN')}
+                    </h3>
+                  </div>
+
+                  {/* Card 6: Inquiries */}
+                  <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)] hover:-translate-y-1 transition-all duration-300">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">✉️ Inquiries</span>
+                    </div>
+                    <h3 className="text-2xl font-black text-[#0F1E4A] tracking-tight">{inquiries.length}</h3>
                   </div>
                 </div>
 
@@ -750,89 +1601,338 @@ export default function AdminDashboard() {
                     <h3 className="text-base font-extrabold text-[#0F1E4A] mb-2">⏱️ Recent Activity</h3>
                     <p className="text-xs text-slate-400 font-medium mb-6">Latest events in the music school.</p>
                     <div className="space-y-4">
-                      {[
-                        { desc: 'New Piano Booking registered', detail: 'Aarav Mehta booked Piano Beginner', time: '10 mins ago', icon: '📅' },
-                        { desc: 'Workshop Created successfully', detail: 'Classical Piano Masterclass initialized', time: '1 hour ago', icon: '🎤' },
-                        { desc: 'Recording Uploaded to library', detail: 'Piano Posture alignment video published', time: '3 hours ago', icon: '🎥' },
-                        { desc: 'New Student Registered', detail: 'Kabir Kapoor registered for Vocals', time: '1 day ago', icon: '👨‍🎓' },
-                        { desc: 'Course Price Updated', detail: 'Guitar Beginner price adjusted to ₹4,999', time: '2 days ago', icon: '💰' }
-                      ].map((act, i) => (
-                        <div key={i} className="flex gap-4 items-start text-xs border-b border-slate-50 pb-3 last:border-0 last:pb-0">
-                          <span className="text-base shrink-0 bg-slate-50 p-2.5 rounded-xl">{act.icon}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-extrabold text-[#0F1E4A] leading-tight">{act.desc}</p>
-                            <p className="text-[11px] text-slate-400 font-medium mt-0.5 truncate">{act.detail}</p>
-                          </div>
-                          <span className="text-[10px] text-slate-400 font-bold text-right shrink-0 mt-0.5">{act.time}</span>
+                      {auditLogs.length === 0 ? (
+                        <div className="text-center py-6 text-slate-400 text-xs font-semibold">
+                          No recent activities logged.
                         </div>
-                      ))}
+                      ) : (
+                        auditLogs.slice(0, 5).map((log, i) => (
+                          <div key={log.id || i} className="flex gap-4 items-start text-xs border-b border-slate-50 pb-3 last:border-0 last:pb-0">
+                            <span className="text-base shrink-0 bg-slate-50 p-2.5 rounded-xl">
+                              {getActivityIcon(log.action, log.details)}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-extrabold text-[#0F1E4A] leading-tight">{log.action}</p>
+                              <p className="text-[11px] text-slate-400 font-medium mt-0.5 truncate">{log.details}</p>
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-bold text-right shrink-0 mt-0.5">
+                              {getRelativeTime(log.createdAt)}
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
+            {/* TAB: CATEGORIES */}
+            {activeTab === 'categories' && (() => {
+              // Client-side search, filter and sort categories
+              const sortedCategories = instruments.filter(cat => {
+                const matchesSearch = 
+                  (cat.name?.toLowerCase() || '').includes(categorySearch.toLowerCase()) ||
+                  (cat.description?.toLowerCase() || '').includes(categorySearch.toLowerCase()) ||
+                  (cat.id?.toLowerCase() || '').includes(categorySearch.toLowerCase())
+
+                const matchesStatus = 
+                  categoryStatusFilter === 'all' ||
+                  (categoryStatusFilter === 'Active' && cat.status === 'Active') ||
+                  (categoryStatusFilter === 'Upcoming' && cat.status === 'Upcoming') ||
+                  (categoryStatusFilter === 'Inactive' && cat.status === 'Inactive')
+
+                return matchesSearch && matchesStatus
+              }).sort((a, b) => {
+                if (categorySort === 'name-asc') return a.name.localeCompare(b.name)
+                if (categorySort === 'name-desc') return b.name.localeCompare(a.name)
+                if (categorySort === 'newest') return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+                if (categorySort === 'oldest') return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+                if (categorySort === 'price-asc') return (a.startingPrice || 0) - (b.startingPrice || 0)
+                if (categorySort === 'price-desc') return (b.startingPrice || 0) - (a.startingPrice || 0)
+                if (categorySort === 'courses-desc') return (b.coursesCount || 0) - (a.coursesCount || 0)
+                return 0
+              })
+
+              return (
+                <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)] space-y-6 animate-fadeIn font-sans">
+                  <div className="flex justify-between items-center border-b border-[#E6EEFF] pb-4">
+                    <div>
+                      <h2 className="text-lg font-extrabold text-[#0F1E4A]">Course Categories Management</h2>
+                      <p className="text-xs text-slate-400 font-medium mt-0.5">Manage instruments categories, starting prices, levels, and visibility status.</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setCatId('')
+                        setCatName('')
+                        setCatDescription('')
+                        setCatImage('')
+                        setCatIcon('')
+                        setCatStatus('Active')
+                        setCatIsVisible(true)
+                        setCatStartingPrice(4999)
+                        setCatLevels(['Beginner', 'Intermediate', 'Advanced'])
+                        setIsAddCategoryOpen(true)
+                      }}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-[#0F1E4A] text-white hover:bg-[#1a2d61] active:scale-[0.98] transition-all text-xs font-bold rounded-2xl shadow-sm"
+                    >
+                      <Plus className="w-4 h-4" /> Add Category
+                    </button>
+                  </div>
+
+                  {/* Search, Filter and Sort bar */}
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-[#FAFBFF] p-4 rounded-2xl border border-[#E6EEFF]">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Search</label>
+                      <input
+                        type="text"
+                        placeholder="Search category name..."
+                        value={categorySearch}
+                        onChange={(e) => setCategorySearch(e.target.value)}
+                        className="w-full px-3 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold text-[#0F1E4A] focus:outline-none focus:border-[#5EA8FF] bg-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Status</label>
+                      <select
+                        value={categoryStatusFilter}
+                        onChange={(e) => setCategoryStatusFilter(e.target.value)}
+                        className="w-full px-3 py-2 border border-[#E6EEFF] rounded-xl text-xs font-extrabold text-[#0F1E4A] focus:outline-none bg-white cursor-pointer"
+                      >
+                        <option value="all">All Statuses</option>
+                        <option value="Active">Active</option>
+                        <option value="Upcoming">Coming Soon</option>
+                        <option value="Inactive">Hidden / Inactive</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Sort By</label>
+                      <select
+                        value={categorySort}
+                        onChange={(e) => setCategorySort(e.target.value)}
+                        className="w-full px-3 py-2 border border-[#E6EEFF] rounded-xl text-xs font-extrabold text-[#0F1E4A] focus:outline-none bg-white cursor-pointer"
+                      >
+                        <option value="name-asc">Name: A-Z</option>
+                        <option value="name-desc">Name: Z-A</option>
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="price-asc">Price: Low to High</option>
+                        <option value="price-desc">Price: High to Low</option>
+                        <option value="courses-desc">Course Count: High to Low</option>
+                      </select>
+                    </div>
+                    <div className="flex items-end">
+                      {selectedCategoryIds.length > 0 && (
+                        <div className="flex gap-2 w-full">
+                          <button
+                            onClick={() => handleBulkCategoryAction('publish')}
+                            className="flex-1 py-2 bg-green-50 hover:bg-green-100 text-green-700 text-[10px] font-black rounded-xl border border-green-200 transition-all"
+                          >
+                            Publish ({selectedCategoryIds.length})
+                          </button>
+                          <button
+                            onClick={() => handleBulkCategoryAction('disable')}
+                            className="flex-1 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10px] font-black rounded-xl border border-amber-200 transition-all"
+                          >
+                            Disable ({selectedCategoryIds.length})
+                          </button>
+                          <button
+                            onClick={() => handleBulkCategoryAction('delete')}
+                            className="flex-1 py-2 bg-red-50 hover:bg-red-100 text-red-700 text-[10px] font-black rounded-xl border border-red-200 transition-all"
+                          >
+                            Delete ({selectedCategoryIds.length})
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Categories Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-[#FAFBFF] border-b border-[#E6EEFF] text-slate-400 text-[10px] font-extrabold uppercase tracking-wider">
+                          <th className="p-4 w-12 text-center">
+                            <input
+                              type="checkbox"
+                              checked={selectedCategoryIds.length === sortedCategories.length && sortedCategories.length > 0}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedCategoryIds(sortedCategories.map(c => c.id))
+                                } else {
+                                  setSelectedCategoryIds([])
+                                }
+                              }}
+                              className="rounded border-[#E6EEFF] text-[#0F1E4A] focus:ring-[#5EA8FF]"
+                            />
+                          </th>
+                          <th className="p-4">Category</th>
+                          <th className="p-4">Courses</th>
+                          <th className="p-4">Starting Price</th>
+                          <th className="p-4">Levels</th>
+                          <th className="p-4">Status</th>
+                          <th className="p-4">Visibility</th>
+                          <th className="p-4">Created Date</th>
+                          <th className="p-4 text-center">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedCategories.length === 0 ? (
+                          <tr>
+                            <td colSpan={9} className="p-8 text-center text-slate-400 text-xs font-bold">
+                              No course categories found matching the filters.
+                            </td>
+                          </tr>
+                        ) : (
+                          sortedCategories.map((cat, idx) => {
+                            const isSelected = selectedCategoryIds.includes(cat.id)
+                            return (
+                              <tr key={idx} className={`border-b border-slate-50 hover:bg-[#FAFBFF] text-xs font-bold text-slate-600 transition-colors ${isSelected ? 'bg-[#F4F9FF]' : ''}`}>
+                                <td className="p-4 text-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedCategoryIds([...selectedCategoryIds, cat.id])
+                                      } else {
+                                        setSelectedCategoryIds(selectedCategoryIds.filter(id => id !== cat.id))
+                                      }
+                                    }}
+                                    className="rounded border-[#E6EEFF] text-[#0F1E4A] focus:ring-[#5EA8FF]"
+                                  />
+                                </td>
+                                <td className="p-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full overflow-hidden border border-[#E6EEFF] bg-slate-50 flex items-center justify-center shrink-0">
+                                      {cat.image ? (
+                                        <img src={cat.image} alt={cat.name} className="w-full h-full object-cover" onError={(e) => { (e.target as any).src = `https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&q=80` }} />
+                                      ) : (
+                                        <span className="text-lg">🎵</span>
+                                      )}
+                                    </div>
+                                    <div>
+                                      <p className="font-extrabold text-[#0F1E4A] leading-tight capitalize">{cat.name}</p>
+                                      <p className="text-[10px] text-slate-400 font-medium mt-0.5 truncate max-w-[200px]">{cat.description || 'No description provided.'}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="p-4 text-[#0F1E4A] font-black">{cat.coursesCount || 0}</td>
+                                <td className="p-4 text-[#5EA8FF] font-black">₹{(cat.startingPrice || 4999).toLocaleString('en-IN')}</td>
+                                <td className="p-4">
+                                  <div className="flex flex-wrap gap-1">
+                                    {(cat.levels && cat.levels.length > 0 ? cat.levels : ['Beginner', 'Intermediate', 'Advanced']).map((lvl: string, i: number) => (
+                                      <span key={i} className="bg-slate-50 border border-[#E6EEFF] px-2 py-0.5 rounded-lg text-[9px] font-extrabold text-slate-500">
+                                        {lvl}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td className="p-4">
+                                  <span className={`px-2.5 py-0.5 rounded-full text-[9px] uppercase font-black tracking-wider border ${
+                                    cat.status === 'Active' ? 'bg-green-50 text-green-600 border-green-200' : 
+                                    cat.status === 'Upcoming' ? 'bg-amber-50 text-amber-600 border-amber-200' : 
+                                    'bg-red-50 text-red-600 border-red-200'
+                                  }`}>
+                                    {cat.status === 'Active' ? 'Active' : (cat.status === 'Upcoming' ? 'Coming Soon' : 'Inactive')}
+                                  </span>
+                                </td>
+                                <td className="p-4">
+                                  <button
+                                    onClick={() => handleToggleCategoryVisibility(cat)}
+                                    className={`px-3 py-1.5 rounded-xl border text-[10px] font-bold transition-all ${
+                                      cat.isVisible ? 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100' : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
+                                    }`}
+                                  >
+                                    {cat.isVisible ? 'Visible' : 'Hidden'}
+                                  </button>
+                                </td>
+                                <td className="p-4 text-slate-400 text-[11px]">
+                                  {cat.createdAt ? new Date(cat.createdAt).toLocaleDateString('en-IN') : '09-07-2026'}
+                                </td>
+                                <td className="p-4 text-center">
+                                  <div className="flex gap-2 justify-center">
+                                    <button
+                                      onClick={() => {
+                                        setCatName(cat.name)
+                                        setCatDescription(cat.description || '')
+                                        setCatImage(cat.image || '')
+                                        setCatIcon(cat.icon || '')
+                                        setCatStatus(cat.status)
+                                        setCatIsVisible(cat.isVisible ?? true)
+                                        setCatStartingPrice(cat.startingPrice || 4999)
+                                        setCatLevels(cat.levels || ['Beginner', 'Intermediate', 'Advanced'])
+                                        setEditingCategory(cat)
+                                      }}
+                                      className="p-1.5 hover:bg-[#E6EEFF] text-[#0F1E4A] hover:text-[#5EA8FF] rounded-lg transition-all"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteCategory(cat.id)}
+                                      className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-all"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )
+            })()}
+
             {/* TAB: COURSES */}
             {activeTab === 'courses' && (
-              <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)] space-y-6 animate-fadeIn">
-                <div className="flex justify-between items-center border-b border-[#E6EEFF] pb-4">
-                  <div>
-                    <h2 className="text-lg font-extrabold text-[#0F1E4A]">Active Instruments & Pricing</h2>
-                    <p className="text-xs text-slate-400 font-medium mt-0.5">Manage active instruments and pricing configurations</p>
-                  </div>
-                  <button
-                    onClick={() => setIsAddCourseOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-[#0F1E4A] text-white hover:bg-[#1a2d61] active:scale-[0.98] transition-all text-xs font-bold rounded-2xl shadow-sm"
-                  >
-                    <Plus className="w-4 h-4" /> Add Course
-                  </button>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-[#FAFBFF] border-b border-[#E6EEFF] text-slate-400 text-[10px] font-extrabold uppercase tracking-wider">
-                        <th className="p-4">Course Name</th>
-                        <th className="p-4">Category</th>
-                        <th className="p-4">Level</th>
-                        <th className="p-4">Price</th>
-                        <th className="p-4">Instructor</th>
-                        <th className="p-4">Duration</th>
-                        <th className="p-4">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {courses.map(course => (
-                        <tr key={course.id} className="border-b border-slate-50 hover:bg-[#FAFBFF] text-xs font-bold text-slate-600 transition-colors">
-                          <td className="p-4 text-[#0F1E4A] font-extrabold">{course.title}</td>
-                          <td className="p-4 capitalize">{course.category}</td>
-                          <td className="p-4">
-                            <span className="bg-[#EFF6FF] text-[#5EA8FF] px-2.5 py-0.5 rounded-lg text-[9px] uppercase font-black">
-                              {course.level}
-                            </span>
-                          </td>
-                          <td className="p-4 text-[#5EA8FF] font-black">₹{course.price.toLocaleString('en-IN')}</td>
-                          <td className="p-4">{course.instructor}</td>
-                          <td className="p-4 text-slate-400">{course.duration}</td>
-                          <td className="p-4">
-                            <button
-                              onClick={() => {
-                                setEditingCourse(course)
-                                setNewPrice(course.price)
-                              }}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 hover:bg-[#E6EEFF] border border-[#E6EEFF] rounded-xl text-[11px] font-extrabold text-[#0F1E4A] transition-all"
-                            >
-                              <Edit className="w-3.5 h-3.5" /> Edit Price
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <AdminCourses
+                courses={courses}
+                instruments={instruments}
+                students={students}
+                loadDatabaseData={loadDatabaseData}
+                handleDuplicateCourse={handleDuplicateCourse}
+                handleDeleteCourse={handleDeleteCourse}
+                setIsAddCourseOpen={setIsAddCourseOpen}
+                setEditingCourse={setEditingCourse}
+                setCourseTitle={setCourseTitle}
+                setCourseCategory={setCourseCategory}
+                setCourseLevel={setCourseLevel}
+                setCoursePrice={setCoursePrice}
+                setCourseDuration={setCourseDuration}
+                setCourseDescription={setCourseDescription}
+                setCourseInstructorName={setCourseInstructorName}
+                setCourseDiscountPrice={setCourseDiscountPrice}
+                setCourseLessons={setCourseLessons}
+                setCourseProjects={setCourseProjects}
+                setCourseAssignments={setCourseAssignments}
+                setCourseHasCertificate={setCourseHasCertificate}
+                setCourseFeatured={setCourseFeatured}
+                setCourseUpcoming={setCourseUpcoming}
+                setCourseDemoVideo={setCourseDemoVideo}
+                setCourseSeoTitle={setCourseSeoTitle}
+                setCourseSeoDescription={setCourseSeoDescription}
+                setCourseMaxStudents={setCourseMaxStudents}
+                setCourseDifficulty={setCourseDifficulty}
+                setCourseLanguage={setCourseLanguage}
+                setCourseStatus={setCourseStatus}
+                setCourseThumbnail={setCourseThumbnail}
+                setCatId={setCatId}
+                setCatName={setCatName}
+                setCatDescription={setCatDescription}
+                setCatImage={setCatImage}
+                setCatIcon={setCatIcon}
+                setCatStatus={setCatStatus}
+                setCatIsVisible={setCatIsVisible}
+                setCatStartingPrice={setCatStartingPrice}
+                setCatLevels={setCatLevels}
+                setEditingCategory={setEditingCategory}
+                setIsAddCategoryOpen={setIsAddCategoryOpen}
+              />
             )}
-
             {/* TAB: STUDENTS */}
             {activeTab === 'students' && (
               <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)] space-y-6 animate-fadeIn">
@@ -850,6 +1950,7 @@ export default function AdminDashboard() {
                         <th className="p-4">Course Enrolled</th>
                         <th className="p-4">Date Joined</th>
                         <th className="p-4">Status</th>
+                        <th className="p-4">Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -860,9 +1961,29 @@ export default function AdminDashboard() {
                           <td className="p-4 text-[#0F1E4A]">{stud.course}</td>
                           <td className="p-4 text-slate-400">{stud.joined}</td>
                           <td className="p-4">
-                            <span className="bg-green-50 text-green-700 px-2.5 py-0.5 rounded-full text-[9px] uppercase font-black">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[9px] uppercase font-black ${
+                              stud.status === 'Suspended' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'
+                            }`}>
                               {stud.status}
                             </span>
+                          </td>
+                          <td className="p-4 flex gap-2">
+                            <button
+                              onClick={() => handleToggleStudentStatus(stud.email, stud.status)}
+                              className={`px-2.5 py-1 rounded-xl text-[10px] font-extrabold border transition-all ${
+                                stud.status === 'Suspended'
+                                  ? 'bg-green-50 hover:bg-green-100 border-green-200 text-green-700'
+                                  : 'bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-700'
+                              }`}
+                            >
+                              {stud.status === 'Suspended' ? 'Activate' : 'Suspend'}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteStudent(stud.email)}
+                              className="px-2.5 py-1 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl text-[10px] font-extrabold text-red-600 transition-all"
+                            >
+                              Delete
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -875,23 +1996,80 @@ export default function AdminDashboard() {
             {/* TAB: INSTRUCTORS */}
             {activeTab === 'instructors' && (
               <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)] space-y-6 animate-fadeIn">
-                <div>
-                  <h2 className="text-lg font-extrabold text-[#0F1E4A]">Instructor Registry</h2>
-                  <p className="text-xs text-slate-400 font-medium mt-0.5">Assigned educators and course directors</p>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-lg font-extrabold text-[#0F1E4A]">Instructor Registry</h2>
+                    <p className="text-xs text-slate-400 font-medium mt-0.5">Assigned educators and course directors</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditingInstructor(null)
+                      setInstName('')
+                      setInstEmail('')
+                      setInstExpertise('')
+                      setIsAddInstructorOpen(true)
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#0F1E4A] text-white hover:bg-[#1a2d61] active:scale-[0.98] transition-all text-xs font-bold rounded-2xl shadow-sm"
+                  >
+                    Add Instructor
+                  </button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="border border-[#E6EEFF] rounded-[20px] p-6 bg-[#FAFBFF] flex items-center gap-4 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF]" />
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#5EA8FF] to-[#FF6FAF] flex items-center justify-center text-white font-extrabold text-lg shadow">
-                      AA
+                  {instructors.length === 0 ? (
+                    <div className="border border-[#E6EEFF] rounded-[20px] p-6 bg-[#FAFBFF] flex items-center gap-4 relative overflow-hidden">
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF]" />
+                      <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#5EA8FF] to-[#FF6FAF] flex items-center justify-center text-white font-extrabold text-lg shadow">
+                        AA
+                      </div>
+                      <div>
+                        <span className="bg-[#FFD6E8] text-[#FF6FAF] text-[9px] font-black px-2 py-0.5 rounded-lg">Director</span>
+                        <h3 className="font-extrabold text-base text-[#0F1E4A] mt-1">Ajinkya Amrule</h3>
+                        <p className="text-xs font-bold text-slate-500">Super Admin & Master Instructor</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-2">Specialties: Piano, Guitar, Vocals</p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="bg-[#FFD6E8] text-[#FF6FAF] text-[9px] font-black px-2 py-0.5 rounded-lg">Director</span>
-                      <h3 className="font-extrabold text-base text-[#0F1E4A] mt-1">Ajinkya Amrule</h3>
-                      <p className="text-xs font-bold text-slate-500">Super Admin & Master Instructor</p>
-                      <p className="text-[10px] font-bold text-slate-400 mt-2">Specialties: Piano, Guitar, Vocals</p>
-                    </div>
-                  </div>
+                  ) : (
+                    instructors.map((inst) => (
+                      <div key={inst.id} className="border border-[#E6EEFF] rounded-[20px] p-6 bg-[#FAFBFF] flex items-center justify-between gap-4 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF]" />
+                        <div className="flex items-center gap-4">
+                          <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#5EA8FF] to-[#FF6FAF] flex items-center justify-center text-white font-extrabold text-lg shadow">
+                            {inst.avatar || inst.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg ${
+                              inst.isActive === false ? 'bg-amber-100 text-amber-800' : 'bg-[#FFD6E8] text-[#FF6FAF]'
+                            }`}>
+                              {inst.isActive === false ? 'Inactive' : 'Active'}
+                            </span>
+                            <h3 className="font-extrabold text-base text-[#0F1E4A] mt-1">{inst.name}</h3>
+                            <p className="text-xs font-bold text-slate-400">{inst.email}</p>
+                            <p className="text-[10px] font-bold text-slate-500 mt-2">Specialties: {inst.expertise}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2 shrink-0">
+                          <button
+                            onClick={() => {
+                              setEditingInstructor(inst)
+                              setInstName(inst.name)
+                              setInstEmail(inst.email)
+                              setInstExpertise(inst.expertise)
+                              setInstActive(inst.isActive !== false)
+                            }}
+                            className="px-3 py-1 bg-slate-50 hover:bg-[#E6EEFF] border border-[#E6EEFF] text-[10px] font-extrabold rounded-lg text-slate-600 transition-all"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteInstructor(inst.id)}
+                            className="px-3 py-1 bg-red-50 hover:bg-red-100 border border-red-200 text-[10px] font-extrabold rounded-lg text-red-600 transition-all"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
@@ -915,6 +2093,7 @@ export default function AdminDashboard() {
                         <th className="p-4">Batch</th>
                         <th className="p-4">Time Slot</th>
                         <th className="p-4">Status</th>
+                        <th className="p-4">Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -933,9 +2112,45 @@ export default function AdminDashboard() {
                           </td>
                           <td className="p-4 text-[#5EA8FF]">{b.timeSlot}</td>
                           <td className="p-4">
-                            <span className="bg-green-50 text-green-700 px-2.5 py-0.5 rounded-full text-[9px] uppercase font-black">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[9px] uppercase font-black ${
+                              b.status === 'Booked' ? 'bg-green-50 text-green-700' : b.status === 'Cancelled' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
+                            }`}>
                               {b.status}
                             </span>
+                          </td>
+                          <td className="p-4 flex gap-2">
+                            {b.status === 'Pending' && (
+                              <>
+                                <button
+                                  onClick={() => handleUpdateBookingStatus(b.id, 'Booked')}
+                                  className="px-2 py-1 bg-green-50 hover:bg-green-100 border border-green-200 text-[10px] font-extrabold rounded-lg text-green-700 transition-all"
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateBookingStatus(b.id, 'Cancelled')}
+                                  className="px-2 py-1 bg-amber-50 hover:bg-amber-100 border-amber-200 text-[10px] font-extrabold rounded-lg text-amber-700 transition-all"
+                                >
+                                  Reject
+                                </button>
+                              </>
+                            )}
+                            <button
+                              onClick={() => {
+                                setReschedulingBooking(b)
+                                setRescheduleDate(b.date)
+                                setRescheduleTimeSlot(b.timeSlot)
+                              }}
+                              className="px-2 py-1 bg-slate-50 hover:bg-[#E6EEFF] border border-[#E6EEFF] text-[10px] font-extrabold rounded-lg text-slate-600 transition-all"
+                            >
+                              Reschedule
+                            </button>
+                            <button
+                              onClick={() => handleDeleteBooking(b.id)}
+                              className="px-2 py-1 bg-red-50 hover:bg-red-100 border border-red-200 text-[10px] font-extrabold rounded-lg text-red-600 transition-all"
+                            >
+                              Delete
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -1028,16 +2243,40 @@ export default function AdminDashboard() {
                   <h2 className="text-base font-extrabold text-[#0F1E4A] border-b border-[#E6EEFF] pb-2">Upcoming Special Workshops</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {workshops.map(w => (
-                      <div key={w.id} className="p-5 border border-[#E6EEFF] bg-[#FAFBFF] rounded-[20px] space-y-3 hover:shadow-md transition-shadow relative overflow-hidden">
+                      <div key={w.id} className="p-5 border border-[#E6EEFF] bg-[#FAFBFF] rounded-[20px] space-y-3 hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between">
                         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF]" />
-                        <h3 className="font-extrabold text-[#0F1E4A] text-sm leading-tight">{w.title}</h3>
-                        <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Instructor: {w.instructor}</p>
-                        <div className="flex justify-between text-[11px] font-bold text-slate-500">
-                          <span>{w.date}</span>
-                          <span>{w.time}</span>
+                        <div className="space-y-2">
+                          <h3 className="font-extrabold text-[#0F1E4A] text-sm leading-tight">{w.title}</h3>
+                          <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Instructor: {w.instructor}</p>
+                          <div className="flex justify-between text-[11px] font-bold text-slate-500">
+                            <span>{w.date}</span>
+                            <span>{w.time}</span>
+                          </div>
+                          <p className="text-base font-black text-[#5EA8FF]">₹{w.price.toLocaleString('en-IN')}</p>
+                          <p className="text-xs text-slate-500 font-medium leading-relaxed mt-2">{w.description}</p>
                         </div>
-                        <p className="text-base font-black text-[#5EA8FF]">₹{w.price.toLocaleString('en-IN')}</p>
-                        <p className="text-xs text-slate-500 font-medium leading-relaxed mt-2">{w.description}</p>
+                        <div className="flex gap-2 pt-3 border-t border-slate-100 mt-2">
+                          <button
+                            onClick={() => {
+                              setEditingWorkshop(w)
+                              setEditWorkshopTitle(w.title)
+                              setEditWorkshopInstructor(w.instructor)
+                              setEditWorkshopDate(w.date)
+                              setEditWorkshopTime(w.time)
+                              setEditWorkshopPrice(w.price)
+                              setEditWorkshopDesc(w.description || '')
+                            }}
+                            className="flex-1 py-1.5 bg-slate-50 hover:bg-[#E6EEFF] border border-[#E6EEFF] text-[10px] font-extrabold rounded-lg text-slate-600 transition-all text-center"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteWorkshop(w.id)}
+                            className="flex-1 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 text-[10px] font-extrabold rounded-lg text-red-600 transition-all text-center"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1088,6 +2327,19 @@ export default function AdminDashboard() {
                       </select>
                     </div>
                     <div>
+                      <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Course Restriction</label>
+                      <select
+                        value={videoCourseId}
+                        onChange={(e) => setVideoCourseId(e.target.value)}
+                        className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                      >
+                        <option value="">Public (All Students)</option>
+                        {courses.map(c => (
+                          <option key={c.id} value={c.id}>{c.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
                       <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Brief Description</label>
                       <textarea
                         value={videoDesc}
@@ -1119,7 +2371,7 @@ export default function AdminDashboard() {
                             allowFullScreen
                           ></iframe>
                         </div>
-                        <div className="p-4 space-y-1.5">
+                        <div className="p-4 space-y-2">
                           <div className="flex justify-between items-center">
                             <h4 className="font-extrabold text-sm text-[#0F1E4A] leading-tight truncate mr-2">{v.title}</h4>
                             <span className="bg-[#EFF6FF] text-[#5EA8FF] text-[8px] uppercase font-black px-2 py-0.5 rounded-lg shrink-0">
@@ -1127,6 +2379,21 @@ export default function AdminDashboard() {
                             </span>
                           </div>
                           <p className="text-xs text-slate-500 font-medium leading-relaxed line-clamp-2">{v.description}</p>
+                          <div className="flex justify-between items-center pt-2 border-t border-slate-100/50 mt-1">
+                            {v.courseId ? (
+                              <span className="text-[9px] font-bold text-slate-400 truncate max-w-[120px]">
+                                Limit: {courses.find(c => c.id === v.courseId)?.title || v.courseId}
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-bold text-green-500">Public</span>
+                            )}
+                            <button
+                              onClick={() => handleDeleteRecordedSession(v.id)}
+                              className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-extrabold rounded-lg transition-all"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -1134,6 +2401,198 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
+
+            {/* TAB: PAYMENTS */}
+            {activeTab === 'payments' && (() => {
+              const filteredPayments = payments.filter(p => {
+                const matchesSearch = 
+                  (p.studentName?.toLowerCase() || '').includes(paymentSearch.toLowerCase()) ||
+                  (p.studentEmail?.toLowerCase() || '').includes(paymentSearch.toLowerCase()) ||
+                  (p.courseName?.toLowerCase() || '').includes(paymentSearch.toLowerCase()) ||
+                  (p.paymentId?.toLowerCase() || '').includes(paymentSearch.toLowerCase()) ||
+                  (p.orderId?.toLowerCase() || '').includes(paymentSearch.toLowerCase()) ||
+                  (p.invoiceNumber?.toLowerCase() || '').includes(paymentSearch.toLowerCase())
+
+                const matchesStatus = 
+                  paymentStatusFilter === 'All' || 
+                  (p.status?.toLowerCase() === paymentStatusFilter.toLowerCase())
+
+                return matchesSearch && matchesStatus
+              })
+
+              return (
+                <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)] space-y-6 animate-fadeIn font-sans">
+                  <div className="flex justify-between items-center border-b border-[#E6EEFF] pb-4">
+                    <div>
+                      <h2 className="text-lg font-extrabold text-[#0F1E4A]">Payment & Revenue History</h2>
+                      <p className="text-xs text-slate-400 font-medium mt-0.5">Manage transaction receipts and view revenue breakdowns.</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          const csvContent = "data:text/csv;charset=utf-8," 
+                            + ["Invoice No,Student,Course,Amount,Payment ID,Order ID,Booking Status,Date,Status"].join(",") + "\n"
+                            + filteredPayments.map(p => {
+                              const booking = bookings.find(b => b.orderId === p.orderId || b.paymentId === p.paymentId)
+                              const bookingStatus = booking ? booking.status : 'N/A'
+                              return `"${p.invoiceNumber || p.id}","${p.studentName}","${p.courseName}",${p.amount},"${p.paymentId}","${p.orderId}","${bookingStatus}","${p.createdAt}",Success`
+                            }).join("\n");
+                          const encodedUri = encodeURI(csvContent);
+                          const link = document.createElement("a");
+                          link.setAttribute("href", encodedUri);
+                          link.setAttribute("download", `payment_history_${Date.now()}.csv`);
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}
+                        className="px-4 py-2.5 bg-[#0F1E4A] hover:bg-[#1a2d61] text-white text-xs font-bold rounded-xl transition-all"
+                      >
+                        Export CSV
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Revenue Metrics Panel */}
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-[#FAFBFF] p-5 rounded-2xl border border-[#E6EEFF] text-xs font-bold">
+                    <div className="p-4 bg-white border border-[#E6EEFF] rounded-xl text-center space-y-1">
+                      <span className="block text-[10px] text-slate-400 uppercase font-extrabold">Today's Revenue</span>
+                      <span className="text-lg font-black text-[#0F1E4A]">
+                        ₹{filteredPayments
+                          .filter(p => p.createdAt && p.createdAt.startsWith(new Date().toISOString().substring(0, 10)))
+                          .reduce((sum, p) => sum + p.amount, 0)
+                          .toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div className="p-4 bg-white border border-[#E6EEFF] rounded-xl text-center space-y-1">
+                      <span className="block text-[10px] text-slate-400 uppercase font-extrabold">Monthly Revenue</span>
+                      <span className="text-lg font-black text-[#0F1E4A]">
+                        ₹{filteredPayments
+                          .filter(p => p.createdAt && p.createdAt.startsWith(new Date().toISOString().substring(0, 7)))
+                          .reduce((sum, p) => sum + p.amount, 0)
+                          .toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div className="p-4 bg-white border border-[#E6EEFF] rounded-xl text-center space-y-1">
+                      <span className="block text-[10px] text-slate-400 uppercase font-extrabold">Total Revenue</span>
+                      <span className="text-lg font-black text-[#0F1E4A]">
+                        ₹{filteredPayments
+                          .reduce((sum, p) => sum + p.amount, 0)
+                          .toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div className="p-4 bg-white border border-[#E6EEFF] rounded-xl text-center space-y-1">
+                      <span className="block text-[10px] text-slate-400 uppercase font-extrabold">Total Transactions</span>
+                      <span className="text-lg font-black text-[#0F1E4A]">
+                        {filteredPayments.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Search and Filters Bar */}
+                  <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-[#FAFBFF] p-4 rounded-2xl border border-[#E6EEFF]">
+                    <div className="relative w-full sm:max-w-xs">
+                      <input
+                        type="text"
+                        placeholder="Search student, course, payment ID, order ID..."
+                        value={paymentSearch}
+                        onChange={(e) => setPaymentSearch(e.target.value)}
+                        className="w-full pl-4 pr-10 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold text-[#0F1E4A] focus:outline-none focus:border-[#5EA8FF]"
+                      />
+                    </div>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                      <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Status:</label>
+                      <select
+                        value={paymentStatusFilter}
+                        onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                        className="px-3 py-2 border border-[#E6EEFF] rounded-xl text-xs font-extrabold text-[#0F1E4A] focus:outline-none bg-white cursor-pointer"
+                      >
+                        <option value="All">All Statuses</option>
+                        <option value="Success">Success</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Failed">Failed</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-[#FAFBFF] border-b border-[#E6EEFF] text-slate-400 text-[10px] font-extrabold uppercase tracking-wider">
+                          <th className="p-4">Invoice No</th>
+                          <th className="p-4">Student</th>
+                          <th className="p-4">Course</th>
+                          <th className="p-4">Amount</th>
+                          <th className="p-4">Payment ID</th>
+                          <th className="p-4">Order ID</th>
+                          <th className="p-4">Refund Status</th>
+                          <th className="p-4">Booking Status</th>
+                          <th className="p-4">Date</th>
+                          <th className="p-4">Status</th>
+                          <th className="p-4">Receipt</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredPayments.length === 0 ? (
+                          <tr>
+                            <td colSpan={11} className="p-8 text-center text-slate-400 text-xs font-bold">
+                              No payment transactions found.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredPayments.map((p, idx) => {
+                            const booking = bookings.find(b => b.orderId === p.orderId || b.paymentId === p.paymentId)
+                            const bookingStatus = booking ? booking.status : 'N/A (Direct Course)'
+                            const refundStatus = p.status === 'Refunded' ? 'Refunded' : 'No Refund'
+
+                            return (
+                              <tr key={idx} className="border-b border-slate-50 hover:bg-[#FAFBFF] text-xs font-bold text-slate-600 transition-colors">
+                                <td className="p-4 text-[#0F1E4A] font-extrabold">{p.invoiceNumber || `INV-${p.id}`}</td>
+                                <td className="p-4">
+                                  <div>
+                                    <p className="font-extrabold text-[#0F1E4A] leading-tight">{p.studentName}</p>
+                                    <p className="text-[10px] text-slate-400 font-medium mt-0.5 truncate max-w-[150px]">{p.studentEmail}</p>
+                                  </div>
+                                </td>
+                                <td className="p-4">{p.courseName}</td>
+                                <td className="p-4 text-[#5EA8FF] font-black">₹{p.amount.toLocaleString('en-IN')}</td>
+                                <td className="p-4 text-slate-400 font-mono select-all text-[11px]">{p.paymentId}</td>
+                                <td className="p-4 text-slate-400 font-mono select-all text-[11px]">{p.orderId}</td>
+                                <td className="p-4">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] ${refundStatus === 'Refunded' ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-500'}`}>
+                                    {refundStatus}
+                                  </span>
+                                </td>
+                                <td className="p-4">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] ${bookingStatus === 'Booked' ? 'bg-green-50 text-green-600' : 'bg-slate-50 text-slate-500'}`}>
+                                    {bookingStatus}
+                                  </span>
+                                </td>
+                                <td className="p-4 text-slate-400">{p.createdAt ? p.createdAt.substring(0, 10) : '2026-06-18'}</td>
+                                <td className="p-4">
+                                  <span className="bg-green-50 text-green-700 px-2.5 py-0.5 rounded-lg text-[9px] uppercase font-black">
+                                    {p.status || 'Success'}
+                                  </span>
+                                </td>
+                                <td className="p-4">
+                                  <a
+                                    href={`/api/payment/invoice?id=${p.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-[#E6EEFF] border border-[#E6EEFF] rounded-xl text-[10px] font-extrabold text-[#0F1E4A] transition-all"
+                                  >
+                                    View Invoice
+                                  </a>
+                                </td>
+                              </tr>
+                            )
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* TAB: SETTINGS (Includes Integrations, Operating Hours, and Holidays Planner) */}
             {activeTab === 'settings' && (
@@ -1716,18 +3175,303 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* MODAL: ADD CATEGORY */}
+      {isAddCategoryOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[28px] p-8 w-full max-w-lg border border-[#E6EEFF] shadow-2xl space-y-6 animate-scaleUp max-h-[90vh] overflow-y-auto font-sans">
+            <div>
+              <h3 className="text-lg font-black text-[#0F1E4A]">Add New Category</h3>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">Register a new instrument category in the registry.</p>
+            </div>
+            
+            <form onSubmit={handleAddCategory} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Category ID (Slug)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. guitar"
+                    value={catId}
+                    onChange={(e) => setCatId(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                    className="w-full px-4 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Category Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Guitar"
+                    value={catName}
+                    onChange={(e) => setCatName(e.target.value)}
+                    className="w-full px-4 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Description</label>
+                <textarea
+                  placeholder="Master beautiful acoustic, electric, and bass guitar techniques..."
+                  value={catDescription}
+                  onChange={(e) => setCatDescription(e.target.value)}
+                  className="w-full px-4 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF] h-20 resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Category Image URL</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. /instruments/guitar.jpg"
+                    value={catImage}
+                    onChange={(e) => setCatImage(e.target.value)}
+                    className="w-full px-4 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Icon SVG Path (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. M9 19V6l12-3v13"
+                    value={catIcon}
+                    onChange={(e) => setCatIcon(e.target.value)}
+                    className="w-full px-4 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Starting Price (₹)</label>
+                  <input
+                    type="number"
+                    value={catStartingPrice}
+                    onChange={(e) => setCatStartingPrice(Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Status</label>
+                  <select
+                    value={catStatus}
+                    onChange={(e) => setCatStatus(e.target.value as any)}
+                    className="w-full px-4 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none bg-white cursor-pointer"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Upcoming">Coming Soon</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-2 uppercase tracking-wider">Available Levels</label>
+                <div className="flex gap-4">
+                  {['Beginner', 'Intermediate', 'Advanced'].map((lvl) => {
+                    const exists = catLevels.includes(lvl)
+                    return (
+                      <label key={lvl} className="flex items-center gap-2 text-xs font-bold text-[#0F1E4A] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={exists}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setCatLevels([...catLevels, lvl])
+                            } else {
+                              setCatLevels(catLevels.filter(x => x !== lvl))
+                            }
+                          }}
+                          className="rounded border-[#E6EEFF] text-[#0F1E4A] focus:ring-[#5EA8FF]"
+                        />
+                        {lvl}
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs font-bold text-[#0F1E4A] pt-2">
+                <input
+                  type="checkbox"
+                  id="catIsVisible"
+                  checked={catIsVisible}
+                  onChange={(e) => setCatIsVisible(e.target.checked)}
+                  className="rounded border-[#E6EEFF] text-[#0F1E4A] focus:ring-[#5EA8FF]"
+                />
+                <label htmlFor="catIsVisible" className="cursor-pointer">Make category visible on website</label>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-[#E6EEFF]">
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-[#0F1E4A] hover:bg-[#1a2d61] active:scale-[0.98] text-white text-xs font-black rounded-xl transition-all shadow-md"
+                >
+                  Create Category
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAddCategoryOpen(false)}
+                  className="flex-1 py-3 bg-slate-50 hover:bg-slate-100 text-slate-400 text-xs font-bold rounded-xl border border-[#E6EEFF] transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EDIT CATEGORY */}
+      {editingCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[28px] p-8 w-full max-w-lg border border-[#E6EEFF] shadow-2xl space-y-6 animate-scaleUp max-h-[90vh] overflow-y-auto font-sans">
+            <div>
+              <h3 className="text-lg font-black text-[#0F1E4A]">Edit Category: {editingCategory.name}</h3>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">Modify category parameters and starting specs.</p>
+            </div>
+            
+            <form onSubmit={handleSaveCategoryEdit} className="space-y-4">
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Category Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Guitar"
+                  value={catName}
+                  onChange={(e) => setCatName(e.target.value)}
+                  className="w-full px-4 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Description</label>
+                <textarea
+                  placeholder="Master beautiful acoustic, electric, and bass guitar techniques..."
+                  value={catDescription}
+                  onChange={(e) => setCatDescription(e.target.value)}
+                  className="w-full px-4 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF] h-20 resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Category Image URL</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. /instruments/guitar.jpg"
+                    value={catImage}
+                    onChange={(e) => setCatImage(e.target.value)}
+                    className="w-full px-4 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Icon SVG Path (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. M9 19V6l12-3v13"
+                    value={catIcon}
+                    onChange={(e) => setCatIcon(e.target.value)}
+                    className="w-full px-4 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Starting Price (₹)</label>
+                  <input
+                    type="number"
+                    value={catStartingPrice}
+                    onChange={(e) => setCatStartingPrice(Number(e.target.value))}
+                    className="w-full px-4 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Status</label>
+                  <select
+                    value={catStatus}
+                    onChange={(e) => setCatStatus(e.target.value as any)}
+                    className="w-full px-4 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none bg-white cursor-pointer"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Upcoming">Coming Soon</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-2 uppercase tracking-wider">Available Levels</label>
+                <div className="flex gap-4">
+                  {['Beginner', 'Intermediate', 'Advanced'].map((lvl) => {
+                    const exists = catLevels.includes(lvl)
+                    return (
+                      <label key={lvl} className="flex items-center gap-2 text-xs font-bold text-[#0F1E4A] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={exists}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setCatLevels([...catLevels, lvl])
+                            } else {
+                              setCatLevels(catLevels.filter(x => x !== lvl))
+                            }
+                          }}
+                          className="rounded border-[#E6EEFF] text-[#0F1E4A] focus:ring-[#5EA8FF]"
+                        />
+                        {lvl}
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs font-bold text-[#0F1E4A] pt-2">
+                <input
+                  type="checkbox"
+                  id="catIsVisibleEdit"
+                  checked={catIsVisible}
+                  onChange={(e) => setCatIsVisible(e.target.checked)}
+                  className="rounded border-[#E6EEFF] text-[#0F1E4A] focus:ring-[#5EA8FF]"
+                />
+                <label htmlFor="catIsVisibleEdit" className="cursor-pointer">Make category visible on website</label>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-[#E6EEFF]">
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-[#0F1E4A] hover:bg-[#1a2d61] active:scale-[0.98] text-white text-xs font-black rounded-xl transition-all shadow-md"
+                >
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingCategory(null)}
+                  className="flex-1 py-3 bg-slate-50 hover:bg-slate-100 text-slate-400 text-xs font-bold rounded-xl border border-[#E6EEFF] transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* MODAL: ADD SIMULATED COURSE */}
       {isAddCourseOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-[28px] p-8 w-full max-w-md border border-[#E6EEFF] shadow-2xl space-y-6 animate-scaleUp">
+          <div className="bg-white rounded-[28px] p-8 w-full max-w-lg border border-[#E6EEFF] shadow-2xl space-y-6 animate-scaleUp max-h-[90vh] overflow-y-auto">
             <div>
-              <h3 className="text-lg font-black text-[#0F1E4A]">Add New Course</h3>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">Register a new instrument and starting price parameters.</p>
+              <h3 className="text-lg font-black text-[#0F1E4A]">Add New Course Level</h3>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">Register a new instrument level and advanced parameters.</p>
             </div>
             
             <form onSubmit={handleAddCourse} className="space-y-4">
               <div>
-                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Course Title</label>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Course / Level Title</label>
                 <input
                   type="text"
                   value={courseTitle}
@@ -1739,17 +3483,15 @@ export default function AdminDashboard() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Category</label>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Category (Slug)</label>
                   <select
                     value={courseCategory}
                     onChange={(e) => setCourseCategory(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold"
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold capitalize bg-white"
                   >
-                    <option value="piano">Piano</option>
-                    <option value="guitar">Guitar</option>
-                    <option value="drums">Drums</option>
-                    <option value="vocals">Vocals</option>
-                    <option value="violin">Violin</option>
+                    {instruments.map(inst => (
+                      <option key={inst.id} value={inst.id}>{inst.name}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -1757,7 +3499,7 @@ export default function AdminDashboard() {
                   <select
                     value={courseLevel}
                     onChange={(e) => setCourseLevel(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold"
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold bg-white"
                   >
                     <option value="Beginner">Beginner</option>
                     <option value="Intermediate">Intermediate</option>
@@ -1777,6 +3519,46 @@ export default function AdminDashboard() {
                   />
                 </div>
                 <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Discount Price (INR)</label>
+                  <input
+                    type="number"
+                    value={courseDiscountPrice}
+                    onChange={(e) => setCourseDiscountPrice(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Lessons</label>
+                  <input
+                    type="number"
+                    value={courseLessons}
+                    onChange={(e) => setCourseLessons(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Projects</label>
+                  <input
+                    type="number"
+                    value={courseProjects}
+                    onChange={(e) => setCourseProjects(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Assignments</label>
+                  <input
+                    type="number"
+                    value={courseAssignments}
+                    onChange={(e) => setCourseAssignments(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Duration</label>
                   <input
                     type="text"
@@ -1786,9 +3568,150 @@ export default function AdminDashboard() {
                     required
                   />
                 </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Instructor</label>
+                  <input
+                    type="text"
+                    value={courseInstructorName}
+                    onChange={(e) => setCourseInstructorName(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Demo Video URL</label>
+                <input
+                  type="text"
+                  value={courseDemoVideo}
+                  onChange={(e) => setCourseDemoVideo(e.target.value)}
+                  placeholder="e.g. https://www.youtube.com/watch?v=..."
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Max Students</label>
+                  <input
+                    type="number"
+                    value={courseMaxStudents}
+                    onChange={(e) => setCourseMaxStudents(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Difficulty</label>
+                  <select
+                    value={courseDifficulty}
+                    onChange={(e) => setCourseDifficulty(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold bg-white"
+                  >
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Language</label>
+                  <input
+                    type="text"
+                    value={courseLanguage}
+                    onChange={(e) => setCourseLanguage(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Status</label>
+                  <select
+                    value={courseStatus}
+                    onChange={(e) => setCourseStatus(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold bg-white"
+                  >
+                    <option value="Published">Published</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Archived">Archived</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Thumbnail Path / URL</label>
+                <input
+                  type="text"
+                  value={courseThumbnail}
+                  onChange={(e) => setCourseThumbnail(e.target.value)}
+                  placeholder="e.g. /courses/piano-beginner.jpg"
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4 pt-2">
+                <label className="flex items-center gap-2 text-xs font-bold text-[#0F1E4A] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={courseHasCertificate}
+                    onChange={(e) => setCourseHasCertificate(e.target.checked)}
+                    className="rounded border-[#E6EEFF] text-[#5EA8FF]"
+                  />
+                  Certificate
+                </label>
+                <label className="flex items-center gap-2 text-xs font-bold text-[#0F1E4A] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={courseFeatured}
+                    onChange={(e) => setCourseFeatured(e.target.checked)}
+                    className="rounded border-[#E6EEFF] text-[#5EA8FF]"
+                  />
+                  Featured
+                </label>
+                <label className="flex items-center gap-2 text-xs font-bold text-[#0F1E4A] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={courseUpcoming}
+                    onChange={(e) => setCourseUpcoming(e.target.checked)}
+                    className="rounded border-[#E6EEFF] text-[#5EA8FF]"
+                  />
+                  Upcoming
+                </label>
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Description</label>
+                <textarea
+                  value={courseDescription}
+                  onChange={(e) => setCourseDescription(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  rows={2}
+                />
+              </div>
+              <div className="border-t border-slate-100 pt-4 space-y-4">
+                <h4 className="text-xs font-extrabold text-[#0F1E4A]">SEO Parameters</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">SEO Title</label>
+                    <input
+                      type="text"
+                      value={courseSeoTitle}
+                      onChange={(e) => setCourseSeoTitle(e.target.value)}
+                      placeholder="Custom browser tab title"
+                      className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">SEO Description</label>
+                    <textarea
+                      value={courseSeoDescription}
+                      onChange={(e) => setCourseSeoDescription(e.target.value)}
+                      placeholder="Meta snippet description"
+                      className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                      rows={2}
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="flex space-x-3 pt-4">
+              <div className="flex space-x-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsAddCourseOpen(false)}
@@ -1902,28 +3825,254 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* MODAL: CHANGE COURSE PRICE */}
+      {/* MODAL: EDIT COURSE DETAILS */}
       {editingCourse && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-[28px] p-8 w-full max-w-md border border-[#E6EEFF] shadow-2xl space-y-6 animate-scaleUp">
+          <div className="bg-white rounded-[28px] p-8 w-full max-w-lg border border-[#E6EEFF] shadow-2xl space-y-6 animate-scaleUp max-h-[90vh] overflow-y-auto">
             <div>
-              <h3 className="text-lg font-black text-[#0F1E4A]">Edit Course Price</h3>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">Update pricing parameters for: <strong className="text-[#5EA8FF]">{editingCourse.title}</strong></p>
+              <h3 className="text-lg font-black text-[#0F1E4A]">Edit Course details</h3>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">Modify parameters for: <strong className="text-[#5EA8FF]">{editingCourse.title}</strong></p>
             </div>
             
-            <form onSubmit={handleUpdatePrice} className="space-y-4">
+            <form onSubmit={handleSaveCourseEdit} className="space-y-4">
               <div>
-                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Price (INR)</label>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Course Title</label>
                 <input
-                  type="number"
-                  value={newPrice}
-                  onChange={(e) => setNewPrice(Number(e.target.value))}
+                  type="text"
+                  value={courseTitle}
+                  onChange={(e) => setCourseTitle(e.target.value)}
                   className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl focus:outline-none focus:border-[#5EA8FF] text-xs font-bold"
                   required
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Category (Slug)</label>
+                  <select
+                    value={courseCategory}
+                    onChange={(e) => setCourseCategory(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold capitalize bg-white"
+                  >
+                    {instruments.map(inst => (
+                      <option key={inst.id} value={inst.id}>{inst.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Level</label>
+                  <select
+                    value={courseLevel}
+                    onChange={(e) => setCourseLevel(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold bg-white"
+                  >
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Price (INR)</label>
+                  <input
+                    type="number"
+                    value={coursePrice}
+                    onChange={(e) => setCoursePrice(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Discount Price (INR)</label>
+                  <input
+                    type="number"
+                    value={courseDiscountPrice}
+                    onChange={(e) => setCourseDiscountPrice(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Lessons</label>
+                  <input
+                    type="number"
+                    value={courseLessons}
+                    onChange={(e) => setCourseLessons(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Projects</label>
+                  <input
+                    type="number"
+                    value={courseProjects}
+                    onChange={(e) => setCourseProjects(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Assignments</label>
+                  <input
+                    type="number"
+                    value={courseAssignments}
+                    onChange={(e) => setCourseAssignments(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Duration</label>
+                  <input
+                    type="text"
+                    value={courseDuration}
+                    onChange={(e) => setCourseDuration(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Instructor</label>
+                  <input
+                    type="text"
+                    value={courseInstructorName}
+                    onChange={(e) => setCourseInstructorName(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Demo Video URL</label>
+                <input
+                  type="text"
+                  value={courseDemoVideo}
+                  onChange={(e) => setCourseDemoVideo(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Max Students</label>
+                  <input
+                    type="number"
+                    value={courseMaxStudents}
+                    onChange={(e) => setCourseMaxStudents(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Difficulty</label>
+                  <select
+                    value={courseDifficulty}
+                    onChange={(e) => setCourseDifficulty(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold bg-white"
+                  >
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Language</label>
+                  <input
+                    type="text"
+                    value={courseLanguage}
+                    onChange={(e) => setCourseLanguage(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Status</label>
+                  <select
+                    value={courseStatus}
+                    onChange={(e) => setCourseStatus(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold bg-white"
+                  >
+                    <option value="Published">Published</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Archived">Archived</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Thumbnail Path / URL</label>
+                <input
+                  type="text"
+                  value={courseThumbnail}
+                  onChange={(e) => setCourseThumbnail(e.target.value)}
+                  placeholder="e.g. /courses/piano-beginner.jpg"
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-4 pt-2">
+                <label className="flex items-center gap-2 text-xs font-bold text-[#0F1E4A] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={courseHasCertificate}
+                    onChange={(e) => setCourseHasCertificate(e.target.checked)}
+                    className="rounded border-[#E6EEFF] text-[#5EA8FF]"
+                  />
+                  Certificate
+                </label>
+                <label className="flex items-center gap-2 text-xs font-bold text-[#0F1E4A] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={courseFeatured}
+                    onChange={(e) => setCourseFeatured(e.target.checked)}
+                    className="rounded border-[#E6EEFF] text-[#5EA8FF]"
+                  />
+                  Featured
+                </label>
+                <label className="flex items-center gap-2 text-xs font-bold text-[#0F1E4A] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={courseUpcoming}
+                    onChange={(e) => setCourseUpcoming(e.target.checked)}
+                    className="rounded border-[#E6EEFF] text-[#5EA8FF]"
+                  />
+                  Upcoming
+                </label>
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Description</label>
+                <textarea
+                  value={courseDescription}
+                  onChange={(e) => setCourseDescription(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  rows={2}
+                />
+              </div>
+              <div className="border-t border-slate-100 pt-4 space-y-4">
+                <h4 className="text-xs font-extrabold text-[#0F1E4A]">SEO Parameters</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">SEO Title</label>
+                    <input
+                      type="text"
+                      value={courseSeoTitle}
+                      onChange={(e) => setCourseSeoTitle(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">SEO Description</label>
+                    <textarea
+                      value={courseSeoDescription}
+                      onChange={(e) => setCourseSeoDescription(e.target.value)}
+                      className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+              </div>
 
-              <div className="flex space-x-3 pt-4">
+              <div className="flex space-x-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setEditingCourse(null)}
@@ -1933,9 +4082,299 @@ export default function AdminDashboard() {
                 </button>
                 <button
                   type="submit"
+                  className="flex-1 py-2.5 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white text-xs font-bold rounded-xl hover:shadow-lg transition-all"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EDIT WORKSHOP DETAILS */}
+      {editingWorkshop && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[28px] p-8 w-full max-w-md border border-[#E6EEFF] shadow-2xl space-y-6 animate-scaleUp">
+            <div>
+              <h3 className="text-lg font-black text-[#0F1E4A]">Edit Workshop details</h3>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">Modify parameters for: <strong className="text-[#5EA8FF]">{editingWorkshop.title}</strong></p>
+            </div>
+            
+            <form onSubmit={handleSaveWorkshopEdit} className="space-y-4">
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Workshop Title</label>
+                <input
+                  type="text"
+                  value={editWorkshopTitle}
+                  onChange={(e) => setEditWorkshopTitle(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl focus:outline-none focus:border-[#5EA8FF] text-xs font-bold"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Instructor</label>
+                <input
+                  type="text"
+                  value={editWorkshopInstructor}
+                  onChange={(e) => setEditWorkshopInstructor(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Date</label>
+                  <input
+                    type="date"
+                    value={editWorkshopDate}
+                    onChange={(e) => setEditWorkshopDate(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Price (INR)</label>
+                  <input
+                    type="number"
+                    value={editWorkshopPrice}
+                    onChange={(e) => setEditWorkshopPrice(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Time Slot</label>
+                <input
+                  type="text"
+                  value={editWorkshopTime}
+                  onChange={(e) => setEditWorkshopTime(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Description</label>
+                <textarea
+                  value={editWorkshopDesc}
+                  onChange={(e) => setEditWorkshopDesc(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  rows={2}
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditingWorkshop(null)}
+                  className="flex-1 py-2.5 border border-[#E6EEFF] text-slate-500 hover:bg-slate-50 text-xs font-bold rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white text-xs font-bold rounded-xl hover:shadow-lg transition-all"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: RESCHEDULE BOOKING SLOT */}
+      {reschedulingBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[28px] p-8 w-full max-w-md border border-[#E6EEFF] shadow-2xl space-y-6 animate-scaleUp">
+            <div>
+              <h3 className="text-lg font-black text-[#0F1E4A]">Reschedule Booking</h3>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">Select a new date and batch slot for: <strong className="text-[#5EA8FF]">{reschedulingBooking.studentName}</strong></p>
+            </div>
+            
+            <form onSubmit={handleRescheduleBookingSubmit} className="space-y-4">
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Date</label>
+                <input
+                  type="date"
+                  value={rescheduleDate}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Time Slot</label>
+                <select
+                  value={rescheduleTimeSlot}
+                  onChange={(e) => setRescheduleTimeSlot(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                  required
+                >
+                  <option value="">Select Time Slot</option>
+                  <option value="09:00 AM - 10:00 AM">09:00 AM - 10:00 AM</option>
+                  <option value="10:00 AM - 11:00 AM">10:00 AM - 11:00 AM</option>
+                  <option value="11:00 AM - 12:00 PM">11:00 AM - 12:00 PM</option>
+                  <option value="04:00 PM - 05:00 PM">04:00 PM - 05:00 PM</option>
+                  <option value="05:00 PM - 06:00 PM">05:00 PM - 06:00 PM</option>
+                  <option value="06:00 PM - 07:00 PM">06:00 PM - 07:00 PM</option>
+                  <option value="07:00 PM - 08:00 PM">07:00 PM - 08:00 PM</option>
+                </select>
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setReschedulingBooking(null)}
+                  className="flex-1 py-2.5 border border-[#E6EEFF] text-slate-500 hover:bg-slate-50 text-xs font-bold rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
                   className="flex-1 py-2.5 bg-[#0F1E4A] hover:bg-[#1a2d61] text-white text-xs font-bold rounded-xl transition-all"
                 >
-                  Save Price
+                  Confirm Reschedule
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ADD INSTRUCTOR */}
+      {isAddInstructorOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[28px] p-8 w-full max-w-md border border-[#E6EEFF] shadow-2xl space-y-6 animate-scaleUp">
+            <div>
+              <h3 className="text-lg font-black text-[#0F1E4A]">Add New Instructor</h3>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">Register a new masterclass instructor profile.</p>
+            </div>
+            
+            <form onSubmit={handleSaveInstructor} className="space-y-4">
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Full Name</label>
+                <input
+                  type="text"
+                  value={instName}
+                  onChange={(e) => setInstName(e.target.value)}
+                  placeholder="e.g. John Doe"
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl focus:outline-none focus:border-[#5EA8FF] text-xs font-bold"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Email Address</label>
+                <input
+                  type="email"
+                  value={instEmail}
+                  onChange={(e) => setInstEmail(e.target.value)}
+                  placeholder="john.doe@gmail.com"
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl focus:outline-none focus:border-[#5EA8FF] text-xs font-bold"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Expertise / Specialties</label>
+                <input
+                  type="text"
+                  value={instExpertise}
+                  onChange={(e) => setInstExpertise(e.target.value)}
+                  placeholder="e.g. Piano, Guitar, Ear Training"
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl focus:outline-none focus:border-[#5EA8FF] text-xs font-bold"
+                  required
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsAddInstructorOpen(false)}
+                  className="flex-1 py-2.5 border border-[#E6EEFF] text-slate-500 hover:bg-slate-50 text-xs font-bold rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white text-xs font-bold rounded-xl hover:shadow-lg transition-all"
+                >
+                  Add Profile
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EDIT INSTRUCTOR */}
+      {editingInstructor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[28px] p-8 w-full max-w-md border border-[#E6EEFF] shadow-2xl space-y-6 animate-scaleUp">
+            <div>
+              <h3 className="text-lg font-black text-[#0F1E4A]">Edit Instructor Profile</h3>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">Modify settings for: <strong className="text-[#5EA8FF]">{editingInstructor.name}</strong></p>
+            </div>
+            
+            <form onSubmit={handleSaveInstructorEdit} className="space-y-4">
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Full Name</label>
+                <input
+                  type="text"
+                  value={instName}
+                  onChange={(e) => setInstName(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl focus:outline-none focus:border-[#5EA8FF] text-xs font-bold"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Email Address</label>
+                <input
+                  type="email"
+                  value={instEmail}
+                  onChange={(e) => setInstEmail(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl focus:outline-none focus:border-[#5EA8FF] text-xs font-bold"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Expertise / Specialties</label>
+                <input
+                  type="text"
+                  value={instExpertise}
+                  onChange={(e) => setInstExpertise(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl focus:outline-none focus:border-[#5EA8FF] text-xs font-bold"
+                  required
+                />
+              </div>
+              <div className="flex items-center justify-between py-2 border-t border-[#E6EEFF]">
+                <span className="text-xs font-bold text-slate-600">Active Profile Status</span>
+                <button
+                  type="button"
+                  onClick={() => setInstActive(!instActive)}
+                  className={`w-12 h-6 rounded-full p-1 transition-all duration-300 ${
+                    instActive ? 'bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF]' : 'bg-slate-200'
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300 transform ${
+                    instActive ? 'translate-x-6' : 'translate-x-0'
+                  }`} />
+                </button>
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditingInstructor(null)}
+                  className="flex-1 py-2.5 border border-[#E6EEFF] text-slate-500 hover:bg-slate-50 text-xs font-bold rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-[#0F1E4A] hover:bg-[#1a2d61] text-white text-xs font-bold rounded-xl transition-all"
+                >
+                  Save Profile
                 </button>
               </div>
             </form>

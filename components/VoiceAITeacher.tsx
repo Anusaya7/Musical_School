@@ -8,9 +8,15 @@ export default function VoiceAITeacher() {
   const [transcript, setTranscript] = useState('')
   const [aiResponse, setAiResponse] = useState('')
   const [conversation, setConversation] = useState<Array<{role: string, text: string}>>([])
+  const [mounted, setMounted] = useState(false)
   const recognitionRef = useRef<any>(null)
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
     // Initialize speech recognition
     if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
       const recognition = new (window as any).webkitSpeechRecognition()
@@ -40,7 +46,7 @@ export default function VoiceAITeacher() {
 
       recognitionRef.current = recognition
     }
-  }, [])
+  }, [mounted])
 
   const processVoiceCommand = async (command: string) => {
     const lowerCommand = command.toLowerCase()

@@ -1,7 +1,7 @@
-import { MongoClient, Db } from 'mongodb'
-import fs from 'fs'
-import path from 'path'
+import { prisma } from './prisma'
+import { CourseLevel, CourseDifficulty, CourseStatus } from '@/lib/generated/prisma'
 import bcrypt from 'bcryptjs'
+import { DEFAULT_CATEGORIES, DEFAULT_COURSES } from './fallback-data'
 
 // Database interfaces
 export interface Course {
@@ -10,11 +10,17 @@ export interface Course {
   category: string
   level: string
   price: number
+  discountPrice?: number
+  lessons?: number
+  projects?: number
+  assignments?: number
+  hasCertificate?: boolean
   instructor: string
   duration: string
   rating: number
   students: number
   image: string
+  bannerImage?: string
   description: string
   aboutCourse: string
   curriculum: string[]
@@ -22,6 +28,29 @@ export interface Course {
   prerequisites: string[]
   topicsCovered: string[]
   highlights: string[]
+  isDisabled?: boolean
+  featured?: boolean
+  upcoming?: boolean
+  demoVideo?: string
+  galleryImages?: string[]
+  faq?: { q: string, a: string }[]
+  seoTitle?: string
+  seoDescription?: string
+}
+
+export interface Instrument {
+  id: string
+  name: string
+  status: 'Active' | 'Upcoming' | 'Inactive'
+  icon?: string
+  image?: string
+  description?: string
+  isVisible?: boolean
+  coursesCount?: number
+  startingPrice?: number
+  levels?: string[]
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 export interface Instructor {
@@ -32,6 +61,10 @@ export interface Instructor {
   rating: number
   students: number
   avatar: string
+  isActive?: boolean
+  photo?: string
+  resume?: string
+  certificates?: string[]
 }
 
 export interface BatchSchedule {
@@ -64,6 +97,10 @@ export interface Booking {
   createdAt: string
   paymentMethod?: string
   amount?: number
+  studentId?: string
+  paymentId?: string
+  orderId?: string
+  paymentStatus?: string
 }
 
 export interface Workshop {
@@ -74,6 +111,8 @@ export interface Workshop {
   time: string
   price: number
   description: string
+  capacity?: number
+  images?: string[]
 }
 
 export interface RecordedSession {
@@ -82,409 +121,29 @@ export interface RecordedSession {
   description: string
   url: string // YouTube or video URL
   instrument: string
+  courseId?: string // restricted by purchased course id
 }
 
-// Database Connection URI
-const MONGODB_URI = process.env.MONGODB_URI || process.env.DATABASE_URL || "mongodb://localhost:27017/musical_school"
-const MONGODB_DB = process.env.MONGODB_DB || "musical_school"
-
-let cachedClient: MongoClient | null = null
-let cachedDb: Db | null = null
-let useLocalFallback = false
-
-async function getMongoClient(): Promise<Db | null> {
-  if (useLocalFallback) return null
-  if (cachedDb) return cachedDb
-
-  const isUriPlaceholder = MONGODB_URI.includes("username:password") || MONGODB_URI.includes("username");
-  if (isUriPlaceholder) {
-    console.log("MongoDB connection URI is placeholder. Falling back to local JSON database.")
-    useLocalFallback = true
-    return null
-  }
-
-  try {
-    const client = new MongoClient(MONGODB_URI, {
-      connectTimeoutMS: 2000,
-      serverSelectionTimeoutMS: 2000
-    })
-    await client.connect()
-    const db = client.db(MONGODB_DB)
-    cachedClient = client
-    cachedDb = db
-    console.log("Connected to MongoDB successfully.")
-
-    // Seed default demo users in MongoDB if empty
-    try {
-      const usersCollection = db.collection('users')
-      const count = await usersCollection.countDocuments()
-      if (count === 0) {
-        console.log("Seeding default demo users in MongoDB...")
-        const adminHash = await bcrypt.hash("Admin@123", 10)
-        const instHash = await bcrypt.hash("Instructor@123", 10)
-        const studHash = await bcrypt.hash("Student@123", 10)
-        await usersCollection.insertMany([
-          {
-            id: "admin-1",
-            name: "Ajinkya Amrule",
-            email: "admin@2ndinversion.com",
-            passwordHash: adminHash,
-            role: "SUPER_ADMIN",
-            createdAt: new Date().toISOString(),
-            isVerified: true
-          },
-          {
-            id: "inst-3",
-            name: "Ajinkya Amrule",
-            email: "instructor@2ndinversion.com",
-            passwordHash: instHash,
-            role: "INSTRUCTOR",
-            createdAt: new Date().toISOString(),
-            isVerified: true
-          },
-          {
-            id: "stud-1",
-            name: "John Doe",
-            email: "student@2ndinversion.com",
-            passwordHash: studHash,
-            role: "STUDENT",
-            createdAt: new Date().toISOString(),
-            isVerified: true
-          }
-        ])
-      }
-    } catch (err) {
-      console.warn("Failed to check/seed users collection in MongoDB:", err)
-    }
-
-    return db
-  } catch (error) {
-    console.warn("MongoDB connection failed. Falling back to local JSON database.", error)
-    useLocalFallback = true
-    return null
-  }
+export interface Payment {
+  id: string
+  studentEmail: string
+  studentName: string
+  courseId: string
+  courseName: string
+  amount: number
+  paymentId: string
+  orderId: string
+  status: 'Success' | 'Failed'
+  createdAt: string
+  invoiceNumber?: string
 }
 
-// Fallback JSON DB path
-const FALLBACK_DB_PATH = path.join(process.cwd(), 'data', 'db_fallback.json')
-
-// Helper to initialize fallback database
-function initFallbackDB() {
-  if (fs.existsSync(FALLBACK_DB_PATH)) return
-
-  // Create data folder if not exist
-  const dir = path.dirname(FALLBACK_DB_PATH)
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true })
-  }
-
-  // Prepopulate courses list from default data
-  const defaultCourses: Course[] = [
-    {
-      id: "piano-beginner",
-      title: "Piano Beginner",
-      category: "piano",
-      level: "Beginner",
-      price: 4999,
-      instructor: "Ajinkya Amrule",
-      duration: "3 Months",
-      rating: 4.8,
-      students: 1240,
-      image: "/courses/piano-beginner.jpg",
-      description: "Build a strong piano foundation with posture, note reading, scales, and your first performance pieces.",
-      aboutCourse: "Develop basic piano habits and start reading notes.",
-      curriculum: ["Intro to Keys", "Posture", "Reading Sheets"],
-      learningOutcomes: ["Play simple tunes", "Correct posture"],
-      prerequisites: ["None"],
-      topicsCovered: ["Scales", "Chords"],
-      highlights: ["Practical exercises"]
-    },
-    {
-      id: "guitar-beginner",
-      title: "Guitar Beginner",
-      category: "guitar",
-      level: "Beginner",
-      price: 4999,
-      instructor: "Ajinkya Amrule",
-      duration: "3 Months",
-      rating: 4.7,
-      students: 1100,
-      image: "/courses/guitar-beginner.jpg",
-      description: "Learn fundamental chords, tuning, basic strumming, and play your first songs.",
-      aboutCourse: "Develop guitar playing skills from scratch.",
-      curriculum: ["Tuning and Posture", "Open Chords", "Strumming Patterns"],
-      learningOutcomes: ["Play basic chord progressions", "Tune your guitar"],
-      prerequisites: ["None"],
-      topicsCovered: ["Open Chords", "Strumming"],
-      highlights: ["Fun practice tracks"]
-    }
-  ]
-
-  const defaultInstructors: Instructor[] = [
-    { id: "inst-1", name: "Sarah Johnson", email: "sarah@example.com", expertise: "Piano", rating: 4.8, students: 45, avatar: "SJ" },
-    { id: "inst-2", name: "Alex Brown", email: "alex@example.com", expertise: "Guitar", rating: 4.9, students: 62, avatar: "AB" },
-    { id: "inst-3", name: "Ajinkya Amrule", email: "aamrule90@gmail.com", expertise: "Piano, Guitar, Vocals", rating: 5.0, students: 120, avatar: "AA" }
-  ]
-
-  const defaultSchedules: BatchSchedule[] = [
-    {
-      id: "morning",
-      name: "Morning Batch",
-      startTime: "04:00 AM",
-      endTime: "12:00 PM",
-      timeSlots: ["04:00 AM", "05:00 AM", "06:00 AM", "07:00 AM", "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM"]
-    },
-    {
-      id: "evening",
-      name: "Evening Batch",
-      startTime: "03:00 PM",
-      endTime: "09:00 PM",
-      timeSlots: ["03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM", "08:00 PM", "09:00 PM"]
-    }
-  ]
-
-  const defaultHolidays: Holiday[] = [
-    { id: "h-monday", date: "", reason: "Weekly Holiday", isRecurringWeekly: true, dayOfWeek: 1 }
-  ]
-
-  const data = {
-    courses: defaultCourses,
-    instructors: defaultInstructors,
-    schedules: defaultSchedules,
-    holidays: defaultHolidays,
-    bookings: [],
-    workshops: [
-      { id: "w1", title: "Classical Piano Masterclass", instructor: "Ajinkya Amrule", date: "2026-06-25", time: "10:00 AM - 12:00 PM", price: 499, description: "Master the art of classical piano performance." }
-    ],
-    recordedSessions: [
-      { id: "v1", title: "Piano Posture and Hand Alignment", description: "An essential guide to correct physical approach to piano keys.", url: "https://www.youtube.com/embed/dQw4w9WgXcQ", instrument: "piano" }
-    ],
-    users: []
-  }
-
-  fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(data, null, 2))
-}
-
-function readFallbackDB(): any {
-  initFallbackDB()
-  try {
-    const content = fs.readFileSync(FALLBACK_DB_PATH, 'utf-8')
-    const data = JSON.parse(content)
-    
-    // Seed default demo users in JSON DB if empty
-    if (!data.users || data.users.length === 0) {
-      data.users = [
-        {
-          id: "admin-1",
-          name: "Ajinkya Amrule",
-          email: "admin@2ndinversion.com",
-          passwordHash: "$2b$10$QHlryK78hYYdrcNRrJhndOmGneDzSO69xbA23yAXCRqt2pY4CM3TS", // Admin@123
-          role: "SUPER_ADMIN",
-          createdAt: new Date().toISOString(),
-          isVerified: true
-        },
-        {
-          id: "inst-3",
-          name: "Ajinkya Amrule",
-          email: "instructor@2ndinversion.com",
-          passwordHash: "$2b$10$6AXkYN2VwIGLcAZ80XEdLO4MctNGfWDTt5MGt5XaTPup5SdPkdi/i", // Instructor@123
-          role: "INSTRUCTOR",
-          createdAt: new Date().toISOString(),
-          isVerified: true
-        },
-        {
-          id: "stud-1",
-          name: "John Doe",
-          email: "student@2ndinversion.com",
-          passwordHash: "$2b$10$.ebMdO0g9rhQ36EeziodEO5Z0M3Tb2T3fD/NyN6w.ckCQE39jNuSG", // Student@123
-          role: "STUDENT",
-          createdAt: new Date().toISOString(),
-          isVerified: true
-        }
-      ]
-      writeFallbackDB(data)
-    }
-    
-    return data
-  } catch (error) {
-    console.error("Error reading fallback JSON DB", error)
-    return { courses: [], instructors: [], schedules: [], holidays: [], bookings: [], workshops: [], recordedSessions: [], users: [] }
-  }
-}
-
-function writeFallbackDB(data: any) {
-  try {
-    fs.writeFileSync(FALLBACK_DB_PATH, JSON.stringify(data, null, 2))
-  } catch (error) {
-    console.error("Error writing fallback JSON DB", error)
-  }
-}
-
-// Database helper functions
-
-export async function getCourses(): Promise<Course[]> {
-  const db = await getMongoClient()
-  if (db) {
-    return db.collection<Course>('courses').find({}).toArray()
-  }
-  return readFallbackDB().courses
-}
-
-export async function updateCoursePrice(id: string, price: number): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const res = await db.collection('courses').updateOne({ id }, { $set: { price } })
-    return res.modifiedCount > 0
-  }
-  const data = readFallbackDB()
-  const index = data.courses.findIndex((c: Course) => c.id === id)
-  if (index !== -1) {
-    data.courses[index].price = price
-    writeFallbackDB(data)
-    return true
-  }
-  return false
-}
-
-export async function getInstructors(): Promise<Instructor[]> {
-  const db = await getMongoClient()
-  if (db) {
-    return db.collection<Instructor>('instructors').find({}).toArray()
-  }
-  return readFallbackDB().instructors
-}
-
-export async function getSchedules(): Promise<BatchSchedule[]> {
-  const db = await getMongoClient()
-  if (db) {
-    return db.collection<BatchSchedule>('schedules').find({}).toArray()
-  }
-  return readFallbackDB().schedules
-}
-
-export async function updateSchedules(schedules: BatchSchedule[]): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    await db.collection('schedules').deleteMany({})
-    const res = await db.collection('schedules').insertMany(schedules)
-    return res.acknowledged
-  }
-  const data = readFallbackDB()
-  data.schedules = schedules
-  writeFallbackDB(data)
-  return true
-}
-
-export async function getHolidays(): Promise<Holiday[]> {
-  const db = await getMongoClient()
-  if (db) {
-    return db.collection<Holiday>('holidays').find({}).toArray()
-  }
-  return readFallbackDB().holidays
-}
-
-export async function addHoliday(holiday: Holiday): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const res = await db.collection('holidays').insertOne(holiday)
-    return res.acknowledged
-  }
-  const data = readFallbackDB()
-  data.holidays.push(holiday)
-  writeFallbackDB(data)
-  return true
-}
-
-export async function deleteHoliday(id: string): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const res = await db.collection('holidays').deleteOne({ id })
-    return res.deletedCount > 0
-  }
-  const data = readFallbackDB()
-  const filtered = data.holidays.filter((h: Holiday) => h.id !== id)
-  if (filtered.length !== data.holidays.length) {
-    data.holidays = filtered
-    writeFallbackDB(data)
-    return true
-  }
-  return false
-}
-
-export async function getBookings(): Promise<Booking[]> {
-  const db = await getMongoClient()
-  if (db) {
-    return db.collection<Booking>('bookings').find({}).toArray()
-  }
-  return readFallbackDB().bookings
-}
-
-export async function addBooking(booking: Booking): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const res = await db.collection('bookings').insertOne(booking)
-    return res.acknowledged
-  }
-  const data = readFallbackDB()
-  data.bookings.push(booking)
-  writeFallbackDB(data)
-  return true
-}
-
-export async function updateBookingStatus(id: string, status: 'Booked' | 'Pending' | 'Cancelled'): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const res = await db.collection('bookings').updateOne({ id }, { $set: { status } })
-    return res.modifiedCount > 0
-  }
-  const data = readFallbackDB()
-  const index = data.bookings.findIndex((b: Booking) => b.id === id)
-  if (index !== -1) {
-    data.bookings[index].status = status
-    writeFallbackDB(data)
-    return true
-  }
-  return false
-}
-
-export async function getWorkshops(): Promise<Workshop[]> {
-  const db = await getMongoClient()
-  if (db) {
-    return db.collection<Workshop>('workshops').find({}).toArray()
-  }
-  return readFallbackDB().workshops
-}
-
-export async function addWorkshop(workshop: Workshop): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const res = await db.collection('workshops').insertOne(workshop)
-    return res.acknowledged
-  }
-  const data = readFallbackDB()
-  data.workshops.push(workshop)
-  writeFallbackDB(data)
-  return true
-}
-
-export async function getRecordedSessions(): Promise<RecordedSession[]> {
-  const db = await getMongoClient()
-  if (db) {
-    return db.collection<RecordedSession>('recordedSessions').find({}).toArray()
-  }
-  return readFallbackDB().recordedSessions
-}
-
-export async function addRecordedSession(session: RecordedSession): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const res = await db.collection('recordedSessions').insertOne(session)
-    return res.acknowledged
-  }
-  const data = readFallbackDB()
-  data.recordedSessions.push(session)
-  writeFallbackDB(data)
-  return true
+export interface AuditLog {
+  id: string
+  userEmail: string
+  action: string
+  details: string
+  createdAt: string
 }
 
 export interface DbUser {
@@ -496,67 +155,10 @@ export interface DbUser {
   createdAt: string
   googleId?: string
   isVerified?: boolean
+  status?: 'Active' | 'Suspended' | 'Pending'
+  enrolledCourses?: string[]
 }
 
-export async function getUserByEmail(email: string): Promise<DbUser | null> {
-  const db = await getMongoClient()
-  if (db) {
-    return db.collection<DbUser>('users').findOne({ email })
-  }
-  const data = readFallbackDB()
-  const users = data.users || []
-  const user = users.find((u: DbUser) => u.email === email)
-  return user || null
-}
-
-export async function createUser(user: DbUser): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const res = await db.collection('users').insertOne(user)
-    return res.acknowledged
-  }
-  const data = readFallbackDB()
-  if (!data.users) data.users = []
-  data.users.push(user)
-  writeFallbackDB(data)
-  return true
-}
-
-export async function updateUserPassword(email: string, passwordHash: string): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const res = await db.collection('users').updateOne({ email }, { $set: { passwordHash } })
-    return res.modifiedCount > 0
-  }
-  const data = readFallbackDB()
-  if (!data.users) return false
-  const index = data.users.findIndex((u: DbUser) => u.email === email)
-  if (index !== -1) {
-    data.users[index].passwordHash = passwordHash
-    writeFallbackDB(data)
-    return true
-  }
-  return false
-}
-
-export async function verifyUserEmail(email: string): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const res = await db.collection('users').updateOne({ email }, { $set: { isVerified: true } })
-    return res.modifiedCount > 0
-  }
-  const data = readFallbackDB()
-  if (!data.users) return false
-  const index = data.users.findIndex((u: DbUser) => u.email === email)
-  if (index !== -1) {
-    data.users[index].isVerified = true
-    writeFallbackDB(data)
-    return true
-  }
-  return false
-}
-
-// Contact Inquiry and Admin Notification System
 export interface ContactInquiry {
   id: string
   fullName: string
@@ -577,115 +179,1104 @@ export interface AdminNotification {
   isRead: boolean
 }
 
-export async function getInquiries(): Promise<ContactInquiry[]> {
-  const db = await getMongoClient()
-  if (db) {
-    return db.collection<ContactInquiry>('inquiries').find({}).toArray()
+// Mapper functions to handle mapping between Frontend Capitalized properties and DB Enums
+export function mapCourseToFrontend(c: any, instructorMap?: Map<string, string>) {
+  if (!c) return null
+  
+  let levelStr = 'Beginner'
+  if (c.level === 'BEGINNER') levelStr = 'Beginner'
+  else if (c.level === 'INTERMEDIATE') levelStr = 'Intermediate'
+  else if (c.level === 'ADVANCED') levelStr = 'Advanced'
+
+  let diffStr = 'Medium'
+  if (c.difficulty === 'EASY') diffStr = 'Easy'
+  else if (c.difficulty === 'MEDIUM') diffStr = 'Medium'
+  else if (c.difficulty === 'HARD') diffStr = 'Hard'
+
+  let statusStr = 'Draft'
+  if (c.status === 'PUBLISHED') statusStr = 'Published'
+  else if (c.status === 'ARCHIVED') statusStr = 'Archived'
+
+  let curriculumArr: string[] = []
+  if (c.curriculum) {
+    try {
+      curriculumArr = JSON.parse(c.curriculum)
+    } catch {
+      curriculumArr = [c.curriculum]
+    }
   }
-  const data = readFallbackDB()
-  return data.inquiries || []
+
+  const faqArr = (c.faqs || []).map((f: string) => {
+    const match = f.match(/^Q:\s*(.*?)\s*A:\s*(.*)$/)
+    if (match) {
+      return { q: match[1], a: match[2] }
+    }
+    return { q: f, a: '' }
+  })
+
+  const instructorName = 'Ajinkya Amrule'
+
+  return {
+    id: c.id,
+    title: c.title,
+    category: c.instrumentId,
+    level: levelStr,
+    price: c.price,
+    discountPrice: c.discountPrice || 0,
+    instructor: instructorName,
+    instructorId: c.instructorId || 'instructor-1',
+    duration: c.duration,
+    rating: 4.8,
+    students: c.enrolledStudents || 0,
+    image: c.thumbnail || `/courses/${c.id}.jpg`,
+    bannerImage: c.banner || null,
+    description: c.description || '',
+    aboutCourse: c.aboutCourse || '',
+    curriculum: curriculumArr,
+    learningOutcomes: c.learningOutcomes || [],
+    prerequisites: c.learningOutcomes || [],
+    topicsCovered: curriculumArr,
+    highlights: c.learningOutcomes || [],
+    isDisabled: c.isDisabled || false,
+    featured: c.featured || false,
+    upcoming: c.upcoming || false,
+    demoVideo: c.demoVideo || '',
+    galleryImages: c.galleryImages || [],
+    faq: faqArr,
+    lessons: c.lessons || 24,
+    projects: c.projects || 3,
+    assignments: c.assignments || 5,
+    hasCertificate: c.certificateAvailable || false,
+    maxStudents: c.maxStudents || 30,
+    difficulty: diffStr,
+    language: c.language || 'English',
+    status: statusStr,
+    thumbnail: c.thumbnail || null
+  }
+}
+
+export function mapCourseToDb(c: any) {
+  let levelEnum: CourseLevel = CourseLevel.BEGINNER
+  const lvl = String(c.level).toUpperCase()
+  if (lvl === 'BEGINNER' || lvl === 'EASY') levelEnum = CourseLevel.BEGINNER
+  else if (lvl === 'INTERMEDIATE' || lvl === 'MEDIUM') levelEnum = CourseLevel.INTERMEDIATE
+  else if (lvl === 'ADVANCED' || lvl === 'HARD') levelEnum = CourseLevel.ADVANCED
+
+  let diffEnum: CourseDifficulty = CourseDifficulty.MEDIUM
+  const diff = String(c.difficulty).toUpperCase()
+  if (diff === 'EASY' || diff === 'BEGINNER') diffEnum = CourseDifficulty.EASY
+  else if (diff === 'MEDIUM' || diff === 'INTERMEDIATE') diffEnum = CourseDifficulty.MEDIUM
+  else if (diff === 'HARD' || diff === 'ADVANCED') diffEnum = CourseDifficulty.HARD
+
+  let statusEnum: CourseStatus = CourseStatus.DRAFT
+  let isDisabled = c.isDisabled !== undefined ? c.isDisabled : true
+
+  const status = String(c.status || '').toUpperCase()
+  if (status === 'PUBLISHED') {
+    statusEnum = CourseStatus.PUBLISHED
+    isDisabled = false
+  } else if (status === 'ARCHIVED') {
+    statusEnum = CourseStatus.ARCHIVED
+    isDisabled = true
+  } else if (status === 'DRAFT') {
+    statusEnum = CourseStatus.DRAFT
+    isDisabled = true
+  }
+
+  return {
+    title: c.title,
+    slug: c.slug || c.title.toLowerCase().replace(/\s+/g, '-'),
+    level: levelEnum,
+    description: c.description || '',
+    duration: c.duration || '3 Months',
+    price: Number(c.price),
+    discountPrice: c.discountPrice ? Number(c.discountPrice) : null,
+    instructorId: c.instructorId || 'instructor-1',
+    thumbnail: c.thumbnail || c.image || null,
+    banner: c.banner || c.bannerImage || null,
+    maxStudents: c.maxStudents ? Number(c.maxStudents) : 30,
+    language: c.language || 'English',
+    difficulty: diffEnum,
+    certificateAvailable: c.certificateAvailable !== false,
+    status: statusEnum,
+    aboutCourse: c.aboutCourse || c.description || '',
+    curriculum: Array.isArray(c.curriculum) ? JSON.stringify(c.curriculum) : String(c.curriculum),
+    learningOutcomes: c.learningOutcomes || [],
+    faqs: Array.isArray(c.faq) 
+      ? c.faq.map((item: any) => `Q: ${item.q || item.question} A: ${item.a || item.answer}`) 
+      : Array.isArray(c.faqs) ? c.faqs : [],
+    isDisabled,
+    featured: c.featured || false,
+    upcoming: c.upcoming || false,
+    demoVideo: c.demoVideo || null,
+    galleryImages: c.galleryImages || []
+  }
+}
+
+// Database helper functions
+
+export async function getInstruments(): Promise<Instrument[]> {
+  try {
+    const list = await prisma.instrument.findMany({
+      orderBy: { name: 'asc' }
+    })
+    if (list.length === 0) {
+      return DEFAULT_CATEGORIES as any
+    }
+    return list.map(i => ({
+      id: i.id,
+      name: i.name,
+      status: (i.status === 'Active' || i.status === 'ACTIVE') ? 'Active' : (i.status === 'Upcoming' || i.status === 'COMING_SOON' ? 'Upcoming' : 'Inactive'),
+      icon: i.icon || undefined,
+      image: i.image || undefined,
+      description: i.description || undefined,
+      isVisible: i.isVisible,
+      coursesCount: i.coursesCount,
+      startingPrice: i.startingPrice,
+      levels: i.levels,
+      createdAt: i.createdAt,
+      updatedAt: i.updatedAt
+    }))
+  } catch (err) {
+    console.warn('getInstruments failed, returning fallback.', err)
+    return DEFAULT_CATEGORIES as any
+  }
+}
+
+export async function addInstrument(instrument: Instrument): Promise<boolean> {
+  try {
+    await prisma.instrument.create({
+      data: {
+        id: instrument.id,
+        name: instrument.name,
+        slug: instrument.id.toLowerCase().replace(/\s+/g, '-'),
+        icon: instrument.icon || null,
+        description: instrument.description || null,
+        image: instrument.image || null,
+        status: instrument.status === 'Active' ? 'ACTIVE' : (instrument.status === 'Upcoming' ? 'COMING_SOON' : 'INACTIVE'),
+        isFeatured: false,
+        isUpcoming: instrument.status === 'Upcoming',
+        isVisible: instrument.isVisible ?? true,
+        coursesCount: instrument.coursesCount || 0,
+        startingPrice: instrument.startingPrice || 4999,
+        levels: instrument.levels || ["Beginner", "Intermediate", "Advanced"]
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function deleteInstrument(id: string): Promise<boolean> {
+  try {
+    await prisma.instrument.delete({
+      where: { id }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function updateInstrument(instrument: Instrument): Promise<boolean> {
+  try {
+    await prisma.instrument.update({
+      where: { id: instrument.id },
+      data: {
+        name: instrument.name,
+        status: instrument.status === 'Active' ? 'ACTIVE' : (instrument.status === 'Upcoming' ? 'COMING_SOON' : 'INACTIVE'),
+        icon: instrument.icon || null,
+        description: instrument.description || null,
+        image: instrument.image || null,
+        isUpcoming: instrument.status === 'Upcoming',
+        isVisible: instrument.isVisible ?? true,
+        coursesCount: instrument.coursesCount || 0,
+        startingPrice: instrument.startingPrice || 4999,
+        levels: instrument.levels || ["Beginner", "Intermediate", "Advanced"]
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function getCourses(): Promise<Course[]> {
+  try {
+    const list = await prisma.course.findMany()
+    const instructors = await prisma.instructor.findMany()
+    const instructorMap = new Map(instructors.map(i => [i.id, i.name]))
+    if (list.length === 0) {
+      return DEFAULT_COURSES as any
+    }
+    return list.map(c => mapCourseToFrontend(c, instructorMap)) as Course[]
+  } catch (err) {
+    console.warn('getCourses failed, returning fallback.', err)
+    return DEFAULT_COURSES as any
+  }
+}
+
+export async function getCourseByInstrumentAndLevel(instrumentSlug: string, levelStr: string) {
+  const levelUpper = levelStr.toUpperCase() as CourseLevel
+  let instrument: any = null
+  let course: any = null
+  let dbError = false
+
+  try {
+    instrument = await prisma.instrument.findUnique({
+      where: { slug: instrumentSlug }
+    })
+    if (instrument) {
+      course = await prisma.course.findFirst({
+        where: {
+          instrumentId: instrument.id,
+          level: levelUpper
+        },
+        include: {
+          CourseContent: true,
+          Curriculum: {
+            include: {
+              modules: true
+            }
+          },
+          LearningOutcomes: true,
+          Prerequisites: true,
+          TopicsCovered: true
+        }
+      })
+    }
+  } catch (err) {
+    console.warn('getCourseByInstrumentAndLevel DB query failed. Using fallbacks.', err)
+    dbError = true
+  }
+
+  // Fallback if DB error, or not found in DB
+  if (dbError || !instrument || !course) {
+    const fallbackCategory = DEFAULT_CATEGORIES.find(i => i.slug === instrumentSlug)
+    if (!fallbackCategory) return null
+
+    const fallbackCourse = DEFAULT_COURSES.find(c => 
+      c.category.toLowerCase() === fallbackCategory.id.toLowerCase() && 
+      c.level.toLowerCase() === levelStr.toLowerCase()
+    )
+    if (!fallbackCourse) return null
+
+    return {
+      ...fallbackCourse,
+      instrumentName: fallbackCategory.name,
+      instrumentSlug: fallbackCategory.slug,
+      instructorName: 'Ajinkya Amrule',
+      instructorBio: 'Professional music educator dedicated to Trinity, Guildhall and modern performance training.',
+      instructorImage: '/images/instructor_portrait.jpg',
+      about: fallbackCourse.aboutCourse || fallbackCourse.description,
+      prerequisites: fallbackCourse.prerequisites,
+      topicsCovered: fallbackCourse.topicsCovered,
+      learningOutcomesList: fallbackCourse.learningOutcomes,
+      curriculumList: fallbackCourse.curriculum.map((c, index) => ({
+        moduleName: `Module ${index + 1}: ${c}`,
+        topics: [c]
+      }))
+    }
+  }
+
+  const mapped = mapCourseToFrontend(course)
+
+  return {
+    ...mapped,
+    instrumentName: instrument.name,
+    instrumentSlug: instrument.slug,
+    instructorName: 'Ajinkya Amrule',
+    instructorBio: '',
+    instructorImage: '/images/instructor_portrait.jpg',
+    about: course.CourseContent?.about || course.description || '',
+    prerequisites: course.Prerequisites.map(p => p.requirement),
+    topicsCovered: course.TopicsCovered.map(t => t.topic),
+    learningOutcomesList: course.LearningOutcomes.map(l => l.outcome),
+    curriculumList: course.Curriculum?.modules.map(c => ({
+      moduleName: c.moduleName,
+      topics: c.topics
+    })) || []
+  }
+}
+
+export async function updateCoursePrice(id: string, price: number): Promise<boolean> {
+  try {
+    await prisma.course.update({
+      where: { id },
+      data: { price }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function getInstructors(): Promise<Instructor[]> {
+  try {
+    const list = await prisma.instructor.findMany()
+    if (list.length === 0) {
+      return [{
+        id: 'instructor-1',
+        name: 'Ajinkya Amrule',
+        email: 'instructor@2ndinversion.com',
+        expertise: 'Piano, Guitar, Vocals, Music Theory, Bass Guitar',
+        rating: 4.9,
+        students: 500,
+        avatar: 'AA',
+        isActive: true,
+        photo: '/images/instructor_portrait.jpg',
+        certificates: ['Trinity College London Certified', 'Associated Board of the Royal Schools of Music (ABRSM)']
+      }]
+    }
+    return list.map(i => ({
+      id: i.id,
+      name: i.name,
+      email: i.email,
+      expertise: i.expertise || '',
+      rating: i.rating,
+      students: i.students,
+      avatar: i.avatar || 'AA',
+      isActive: i.isActive,
+      photo: i.photo || undefined,
+      resume: i.resume || undefined,
+      certificates: i.certificates
+    }))
+  } catch (err) {
+    console.warn('getInstructors failed, returning fallback.', err)
+    return [{
+      id: 'instructor-1',
+      name: 'Ajinkya Amrule',
+      email: 'instructor@2ndinversion.com',
+      expertise: 'Piano, Guitar, Vocals, Music Theory, Bass Guitar',
+      rating: 4.9,
+      students: 500,
+      avatar: 'AA',
+      isActive: true,
+      photo: '/images/instructor_portrait.jpg',
+      certificates: ['Trinity College London Certified', 'Associated Board of the Royal Schools of Music (ABRSM)']
+    }]
+  }
+}
+
+export async function getSchedules(): Promise<BatchSchedule[]> {
+  try {
+    const list = await prisma.batchSchedule.findMany()
+    return list.map(s => ({
+      id: s.id,
+      name: s.name,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      timeSlots: s.timeSlots
+    }))
+  } catch (err) {
+    console.warn('getSchedules failed, returning empty list.', err)
+    return []
+  }
+}
+
+export async function updateSchedules(schedules: BatchSchedule[]): Promise<boolean> {
+  try {
+    await prisma.$transaction([
+      prisma.batchSchedule.deleteMany(),
+      prisma.batchSchedule.createMany({
+        data: schedules.map(s => ({
+          id: s.id,
+          name: s.name,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          timeSlots: s.timeSlots
+        }))
+      })
+    ])
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function getHolidays(): Promise<Holiday[]> {
+  try {
+    const list = await prisma.holiday.findMany()
+    return list.map(h => ({
+      id: h.id,
+      date: h.date,
+      reason: h.reason,
+      isRecurringWeekly: h.isRecurringWeekly,
+      dayOfWeek: h.dayOfWeek || undefined
+    }))
+  } catch (err) {
+    console.warn('getHolidays failed, returning empty list.', err)
+    return []
+  }
+}
+
+export async function addHoliday(holiday: Holiday): Promise<boolean> {
+  try {
+    await prisma.holiday.create({
+      data: {
+        id: holiday.id,
+        date: holiday.date,
+        reason: holiday.reason,
+        isRecurringWeekly: holiday.isRecurringWeekly,
+        dayOfWeek: holiday.dayOfWeek ?? null
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function deleteHoliday(id: string): Promise<boolean> {
+  try {
+    await prisma.holiday.delete({ where: { id } })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function getBookings(): Promise<Booking[]> {
+  try {
+    const list = await prisma.booking.findMany()
+    return list.map(b => ({
+      id: b.id,
+      courseId: b.courseId,
+      courseName: b.courseName,
+      instructor: b.instructor,
+      date: b.date,
+      timeSlot: b.timeSlot,
+      batchTiming: b.batchTiming,
+      studentName: b.studentName,
+      studentEmail: b.studentEmail,
+      status: b.status as any,
+      createdAt: b.createdAt.toISOString(),
+      paymentMethod: b.paymentMethod || undefined,
+      amount: b.amount || undefined,
+      studentId: b.studentId || undefined,
+      paymentId: b.paymentId || undefined,
+      orderId: b.orderId || undefined,
+      paymentStatus: b.paymentStatus || undefined
+    }))
+  } catch (err) {
+    console.warn('getBookings failed, returning empty list.', err)
+    return []
+  }
+}
+
+export async function addBooking(booking: Booking): Promise<boolean> {
+  try {
+    await prisma.booking.create({
+      data: {
+        id: booking.id,
+        courseId: booking.courseId,
+        courseName: booking.courseName,
+        instructor: booking.instructor,
+        date: booking.date,
+        timeSlot: booking.timeSlot,
+        batchTiming: booking.batchTiming,
+        studentName: booking.studentName,
+        studentEmail: booking.studentEmail,
+        status: booking.status,
+        amount: booking.amount ?? null,
+        paymentMethod: booking.paymentMethod ?? null,
+        studentId: booking.studentId ?? null,
+        paymentId: booking.paymentId ?? null,
+        orderId: booking.orderId ?? null,
+        paymentStatus: booking.paymentStatus ?? null
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function updateBookingStatus(id: string, status: 'Booked' | 'Pending' | 'Cancelled'): Promise<boolean> {
+  try {
+    await prisma.booking.update({
+      where: { id },
+      data: { status }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function deleteBooking(id: string): Promise<boolean> {
+  try {
+    await prisma.booking.delete({ where: { id } })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function getWorkshops(): Promise<Workshop[]> {
+  try {
+    const list = await prisma.workshop.findMany()
+    return list.map(w => ({
+      id: w.id,
+      title: w.title,
+      instructor: w.instructor,
+      date: w.date,
+      time: w.time,
+      price: w.price,
+      description: w.description,
+      capacity: w.capacity,
+      images: w.images
+    }))
+  } catch (err) {
+    console.warn('getWorkshops failed, returning empty list.', err)
+    return []
+  }
+}
+
+export async function addWorkshop(workshop: Workshop): Promise<boolean> {
+  try {
+    await prisma.workshop.create({
+      data: {
+        id: workshop.id,
+        title: workshop.title,
+        instructor: workshop.instructor,
+        date: workshop.date,
+        time: workshop.time,
+        price: workshop.price,
+        description: workshop.description,
+        capacity: workshop.capacity ?? 30,
+        images: workshop.images ?? []
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function getRecordedSessions(): Promise<RecordedSession[]> {
+  try {
+    const list = await prisma.recordedSession.findMany()
+    return list.map(r => ({
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      url: r.url,
+      instrument: r.instrument,
+      courseId: r.courseId || undefined
+    }))
+  } catch (err) {
+    console.warn('getRecordedSessions failed, returning empty list.', err)
+    return []
+  }
+}
+
+export async function addRecordedSession(session: RecordedSession): Promise<boolean> {
+  try {
+    await prisma.recordedSession.create({
+      data: {
+        id: session.id,
+        title: session.title,
+        description: session.description,
+        url: session.url,
+        instrument: session.instrument,
+        courseId: session.courseId ?? null
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function getUserByEmail(email: string): Promise<DbUser | null> {
+  const u = await prisma.user.findUnique({
+    where: { email: email.toLowerCase() }
+  })
+  if (!u) return null
+  return {
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    passwordHash: u.passwordHash || undefined,
+    role: u.role as any,
+    createdAt: u.createdAt.toISOString(),
+    googleId: u.googleId || undefined,
+    isVerified: u.isVerified,
+    status: u.status as any,
+    enrolledCourses: u.enrolledCourses
+  }
+}
+
+export async function createUser(user: DbUser): Promise<boolean> {
+  try {
+    await prisma.user.create({
+      data: {
+        id: user.id,
+        name: user.name,
+        email: user.email.toLowerCase(),
+        passwordHash: user.passwordHash ?? null,
+        role: user.role,
+        googleId: user.googleId ?? null,
+        isVerified: user.isVerified || false,
+        status: user.status || 'Active',
+        enrolledCourses: user.enrolledCourses ?? []
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function updateUserPassword(email: string, passwordHash: string): Promise<boolean> {
+  try {
+    await prisma.user.update({
+      where: { email: email.toLowerCase() },
+      data: { passwordHash }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function verifyUserEmail(email: string): Promise<boolean> {
+  try {
+    await prisma.user.update({
+      where: { email: email.toLowerCase() },
+      data: { isVerified: true }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function getInquiries(): Promise<ContactInquiry[]> {
+  const list = await prisma.contactInquiry.findMany()
+  return list.map(i => ({
+    id: i.id,
+    fullName: i.fullName,
+    email: i.email,
+    phone: i.phone,
+    purpose: i.purpose,
+    message: i.message,
+    createdAt: i.createdAt.toISOString(),
+    ipAddress: i.ipAddress || undefined,
+    status: i.status as any
+  }))
 }
 
 export async function addInquiry(inquiry: ContactInquiry): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const res = await db.collection('inquiries').insertOne(inquiry)
-    return res.acknowledged
+  try {
+    await prisma.contactInquiry.create({
+      data: {
+        id: inquiry.id,
+        fullName: inquiry.fullName,
+        email: inquiry.email,
+        phone: inquiry.phone,
+        purpose: inquiry.purpose,
+        message: inquiry.message,
+        ipAddress: inquiry.ipAddress ?? null,
+        status: inquiry.status
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
   }
-  const data = readFallbackDB()
-  if (!data.inquiries) data.inquiries = []
-  data.inquiries.push(inquiry)
-  writeFallbackDB(data)
-  return true
 }
 
 export async function updateInquiryStatus(id: string, status: 'New' | 'Read'): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const res = await db.collection('inquiries').updateOne({ id }, { $set: { status } })
-    return res.modifiedCount > 0
-  }
-  const data = readFallbackDB()
-  if (!data.inquiries) return false
-  const index = data.inquiries.findIndex((i: ContactInquiry) => i.id === id)
-  if (index !== -1) {
-    data.inquiries[index].status = status
-    writeFallbackDB(data)
+  try {
+    await prisma.contactInquiry.update({
+      where: { id },
+      data: { status }
+    })
     return true
+  } catch (err) {
+    console.error(err)
+    return false
   }
-  return false
 }
 
 export async function deleteInquiry(id: string): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const res = await db.collection('inquiries').deleteOne({ id })
-    return res.deletedCount > 0
-  }
-  const data = readFallbackDB()
-  if (!data.inquiries) return false
-  const filtered = data.inquiries.filter((i: ContactInquiry) => i.id !== id)
-  if (filtered.length !== data.inquiries.length) {
-    data.inquiries = filtered
-    writeFallbackDB(data)
+  try {
+    await prisma.contactInquiry.delete({ where: { id } })
     return true
+  } catch (err) {
+    console.error(err)
+    return false
   }
-  return false
 }
 
 export async function getNotifications(): Promise<AdminNotification[]> {
-  const db = await getMongoClient()
-  if (db) {
-    return db.collection<AdminNotification>('notifications').find({}).toArray()
-  }
-  const data = readFallbackDB()
-  return data.notifications || []
+  const list = await prisma.notification.findMany()
+  return list.map(n => ({
+    id: n.id,
+    title: n.title,
+    message: n.message,
+    createdAt: n.createdAt.toISOString(),
+    isRead: n.isRead
+  }))
 }
 
 export async function addNotification(notification: AdminNotification): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const res = await db.collection('notifications').insertOne(notification)
-    return res.acknowledged
+  try {
+    await prisma.notification.create({
+      data: {
+        id: notification.id,
+        title: notification.title,
+        message: notification.message,
+        isRead: notification.isRead
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
   }
-  const data = readFallbackDB()
-  if (!data.notifications) data.notifications = []
-  data.notifications.push(notification)
-  writeFallbackDB(data)
-  return true
 }
 
 export async function markNotificationsAsRead(ids?: string[]): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const filter = ids ? { id: { $in: ids } } : {}
-    const res = await db.collection('notifications').updateMany(filter, { $set: { isRead: true } })
-    return res.modifiedCount > 0
-  }
-  const data = readFallbackDB()
-  if (!data.notifications) return false
-  data.notifications.forEach((n: AdminNotification) => {
-    if (!ids || ids.includes(n.id)) {
-      n.isRead = true
+  try {
+    if (ids && ids.length > 0) {
+      await prisma.notification.updateMany({
+        where: { id: { in: ids } },
+        data: { isRead: true }
+      })
+    } else {
+      await prisma.notification.updateMany({
+        data: { isRead: true }
+      })
     }
-  })
-  writeFallbackDB(data)
-  return true
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
 }
 
 export async function deleteNotification(id: string): Promise<boolean> {
-  const db = await getMongoClient()
-  if (db) {
-    const res = await db.collection('notifications').deleteOne({ id })
-    return res.deletedCount > 0
-  }
-  const data = readFallbackDB()
-  if (!data.notifications) return false
-  const filtered = data.notifications.filter((n: AdminNotification) => n.id !== id)
-  if (filtered.length !== data.notifications.length) {
-    data.notifications = filtered
-    writeFallbackDB(data)
+  try {
+    await prisma.notification.delete({ where: { id } })
     return true
+  } catch (err) {
+    console.error(err)
+    return false
   }
-  return false
+}
+
+export async function addCourse(course: Course): Promise<boolean> {
+  try {
+    const dbPayload = mapCourseToDb(course)
+    await prisma.course.create({
+      data: {
+        id: course.id,
+        instrumentId: course.category,
+        ...dbPayload
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function updateCourse(course: Course): Promise<boolean> {
+  try {
+    const dbPayload = mapCourseToDb(course)
+    await prisma.course.update({
+      where: { id: course.id },
+      data: {
+        instrumentId: course.category,
+        ...dbPayload
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function deleteCourse(id: string): Promise<boolean> {
+  try {
+    await prisma.course.delete({ where: { id } })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function toggleCourseStatus(id: string, isDisabled: boolean): Promise<boolean> {
+  try {
+    await prisma.course.update({
+      where: { id },
+      data: { isDisabled }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function addInstructor(inst: Instructor): Promise<boolean> {
+  try {
+    await prisma.instructor.create({
+      data: {
+        id: inst.id,
+        name: inst.name,
+        email: inst.email,
+        expertise: inst.expertise,
+        rating: inst.rating,
+        students: inst.students,
+        avatar: inst.avatar,
+        isActive: inst.isActive || true,
+        photo: inst.photo ?? null,
+        resume: inst.resume ?? null,
+        certificates: inst.certificates ?? []
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function updateInstructor(inst: Instructor): Promise<boolean> {
+  try {
+    await prisma.instructor.update({
+      where: { id: inst.id },
+      data: {
+        name: inst.name,
+        email: inst.email,
+        expertise: inst.expertise,
+        avatar: inst.avatar,
+        isActive: inst.isActive !== false,
+        photo: inst.photo ?? null,
+        resume: inst.resume ?? null,
+        certificates: inst.certificates ?? []
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function deleteInstructor(id: string): Promise<boolean> {
+  try {
+    await prisma.instructor.delete({ where: { id } })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function getUsers(): Promise<DbUser[]> {
+  const list = await prisma.user.findMany()
+  return list.map(u => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    passwordHash: u.passwordHash || undefined,
+    role: u.role as any,
+    createdAt: u.createdAt.toISOString(),
+    googleId: u.googleId || undefined,
+    isVerified: u.isVerified,
+    status: u.status as any,
+    enrolledCourses: u.enrolledCourses
+  }))
+}
+
+export async function updateUserStatus(email: string, status: 'Active' | 'Suspended' | 'Pending'): Promise<boolean> {
+  try {
+    await prisma.user.update({
+      where: { email: email.toLowerCase() },
+      data: { status }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function deleteUser(email: string): Promise<boolean> {
+  try {
+    await prisma.user.delete({ where: { email: email.toLowerCase() } })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function addEnrolledCourse(email: string, courseId: string): Promise<boolean> {
+  try {
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } })
+    if (!user) return false
+    const enrolled = [...user.enrolledCourses]
+    if (!enrolled.includes(courseId)) {
+      enrolled.push(courseId)
+      await prisma.user.update({
+        where: { email: email.toLowerCase() },
+        data: { enrolledCourses: enrolled }
+      })
+    }
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function getPayments(): Promise<Payment[]> {
+  const list = await prisma.payment.findMany()
+  return list.map(p => ({
+    id: p.id,
+    studentEmail: p.studentEmail,
+    studentName: p.studentName,
+    courseId: p.courseId,
+    courseName: p.courseName,
+    amount: p.amount,
+    paymentId: p.paymentId,
+    orderId: p.orderId,
+    status: p.status as any,
+    createdAt: p.createdAt.toISOString(),
+    invoiceNumber: p.invoiceNumber || undefined
+  }))
+}
+
+export async function addPayment(payment: Payment): Promise<boolean> {
+  try {
+    await prisma.payment.create({
+      data: {
+        id: payment.id,
+        studentEmail: payment.studentEmail,
+        studentName: payment.studentName,
+        courseId: payment.courseId,
+        courseName: payment.courseName,
+        amount: payment.amount,
+        paymentId: payment.paymentId,
+        orderId: payment.orderId,
+        status: payment.status,
+        invoiceNumber: payment.invoiceNumber ?? null
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function updateWorkshop(workshop: Workshop): Promise<boolean> {
+  try {
+    await prisma.workshop.update({
+      where: { id: workshop.id },
+      data: {
+        title: workshop.title,
+        instructor: workshop.instructor,
+        date: workshop.date,
+        time: workshop.time,
+        price: workshop.price,
+        description: workshop.description,
+        capacity: workshop.capacity ?? 30,
+        images: workshop.images ?? []
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function deleteWorkshop(id: string): Promise<boolean> {
+  try {
+    await prisma.workshop.delete({ where: { id } })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function deleteRecordedSession(id: string): Promise<boolean> {
+  try {
+    await prisma.recordedSession.delete({ where: { id } })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function getAuditLogs(): Promise<AuditLog[]> {
+  const list = await prisma.auditLog.findMany({
+    orderBy: { createdAt: 'desc' }
+  })
+  return list.map(a => ({
+    id: a.id,
+    userEmail: a.userEmail,
+    action: a.action,
+    details: a.details,
+    createdAt: a.createdAt.toISOString()
+  }))
+}
+
+export async function addAuditLog(log: AuditLog): Promise<boolean> {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        id: log.id || undefined,
+        userEmail: log.userEmail,
+        action: log.action,
+        details: log.details
+      }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
+}
+
+export async function rescheduleBooking(id: string, date: string, timeSlot: string): Promise<boolean> {
+  try {
+    await prisma.booking.update({
+      where: { id },
+      data: { date, timeSlot }
+    })
+    return true
+  } catch (err) {
+    console.error(err)
+    return false
+  }
 }

@@ -97,7 +97,7 @@ export default function SignupPage() {
     }
   }
 
-  const handleVerifyCode = (e: React.FormEvent) => {
+  const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!verificationCode || verificationCode.length < 4) {
       setVerificationError('Enter a valid verification code')
@@ -107,24 +107,38 @@ export default function SignupPage() {
     setVerificationError('')
 
     try {
-      // Simulate verification code check
-      setTimeout(() => {
-        setIsVerifying(false)
-        setVerifiedSuccess(true)
-        
-        // Log user in locally
-        const newUser = {
-          email: formData.email,
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           name: formData.name,
-          role: 'STUDENT',
-          isVerified: true
-        }
-        localStorage.setItem('user', JSON.stringify(newUser))
+          email: formData.email,
+          password: formData.password
+        })
+      })
 
-        setTimeout(() => {
-          setShowVerificationModal(false)
-          window.location.replace('/student/dashboard')
-        }, 1500)
+      if (!res.ok) {
+        const data = await res.json()
+        setVerificationError(data.error || 'Registration failed')
+        setIsVerifying(false)
+        return
+      }
+
+      setIsVerifying(false)
+      setVerifiedSuccess(true)
+      
+      // Log user in locally
+      const newUser = {
+        email: formData.email,
+        name: formData.name,
+        role: 'STUDENT',
+        isVerified: true
+      }
+      localStorage.setItem('user', JSON.stringify(newUser))
+
+      setTimeout(() => {
+        setShowVerificationModal(false)
+        window.location.replace('/student/dashboard')
       }, 1500)
     } catch (err) {
       setVerificationError('Verification failed. Invalid code.')

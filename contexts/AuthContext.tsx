@@ -26,10 +26,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
+  const [mounted, setMounted] = useState(false)
   const { data: session, status } = useSession()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Sync NextAuth session with local context state
   useEffect(() => {
+    if (!mounted) return
     if (status === 'authenticated' && session?.user) {
       const dbUser: User = {
         email: session.user.email || '',
@@ -44,10 +50,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null)
       }
     }
-  }, [session, status])
+  }, [session, status, mounted])
 
   // Load user from localStorage on mount
   useEffect(() => {
+    if (!mounted) return
     const savedUser = localStorage.getItem('user')
     if (savedUser) {
       try {
@@ -58,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('user')
       }
     }
-  }, [])
+  }, [mounted])
 
   const login = async (email: string, password: string, rememberMe: boolean = false): Promise<boolean> => {
     try {

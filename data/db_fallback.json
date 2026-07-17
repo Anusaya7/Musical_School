@@ -5,33 +5,126 @@
       "title": "Piano Beginner",
       "category": "piano",
       "level": "Beginner",
-      "price": 4500,
+      "price": 4999,
       "instructor": "Ajinkya Amrule",
       "duration": "3 Months",
       "rating": 4.8,
-      "students": 1240,
+      "students": 30,
       "image": "/courses/piano-beginner.jpg",
-      "description": "Build a strong piano foundation with posture, note reading, scales, and your first performance pieces.",
-      "aboutCourse": "Develop basic piano habits and start reading notes.",
+      "description": "Master the art of Piano with our comprehensive Beginner course.",
+      "aboutCourse": "This course covers all aspects of Piano at the Beginner level.",
       "curriculum": [
-        "Intro to Keys",
-        "Posture",
-        "Reading Sheets"
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
       ],
       "learningOutcomes": [
-        "Play simple tunes",
-        "Correct posture"
+        "Play confidently",
+        "Master fundamentals"
       ],
       "prerequisites": [
         "None"
       ],
       "topicsCovered": [
-        "Scales",
-        "Chords"
+        "Techniques",
+        "Chords",
+        "Repertoire"
       ],
       "highlights": [
-        "Practical exercises"
-      ]
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": true,
+      "upcoming": false,
+      "lessons": 24,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "piano-intermediate",
+      "title": "Piano Intermediate",
+      "category": "piano",
+      "level": "Intermediate",
+      "price": 6999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "4 Months",
+      "rating": 4.8,
+      "students": 25,
+      "image": "/courses/piano-intermediate.jpg",
+      "description": "Master the art of Piano with our comprehensive Intermediate course.",
+      "aboutCourse": "This course covers all aspects of Piano at the Intermediate level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "Completion of Piano Beginner"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": false,
+      "upcoming": false,
+      "lessons": 36,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "piano-advanced",
+      "title": "Piano Advanced",
+      "category": "piano",
+      "level": "Advanced",
+      "price": 9999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "6 Months",
+      "rating": 4.8,
+      "students": 20,
+      "image": "/courses/piano-advanced.jpg",
+      "description": "Master the art of Piano with our comprehensive Advanced course.",
+      "aboutCourse": "This course covers all aspects of Piano at the Advanced level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "Completion of Piano Beginner"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": false,
+      "upcoming": false,
+      "lessons": 48,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
     },
     {
       "id": "guitar-beginner",
@@ -41,30 +134,753 @@
       "price": 4999,
       "instructor": "Ajinkya Amrule",
       "duration": "3 Months",
-      "rating": 4.7,
-      "students": 1100,
+      "rating": 4.8,
+      "students": 30,
       "image": "/courses/guitar-beginner.jpg",
-      "description": "Learn fundamental chords, tuning, basic strumming, and play your first songs.",
-      "aboutCourse": "Develop guitar playing skills from scratch.",
+      "description": "Master the art of Guitar with our comprehensive Beginner course.",
+      "aboutCourse": "This course covers all aspects of Guitar at the Beginner level.",
       "curriculum": [
-        "Tuning and Posture",
-        "Open Chords",
-        "Strumming Patterns"
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
       ],
       "learningOutcomes": [
-        "Play basic chord progressions",
-        "Tune your guitar"
+        "Play confidently",
+        "Master fundamentals"
       ],
       "prerequisites": [
         "None"
       ],
       "topicsCovered": [
-        "Open Chords",
-        "Strumming"
+        "Techniques",
+        "Chords",
+        "Repertoire"
       ],
       "highlights": [
-        "Fun practice tracks"
-      ]
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": true,
+      "upcoming": false,
+      "lessons": 24,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "guitar-intermediate",
+      "title": "Guitar Intermediate",
+      "category": "guitar",
+      "level": "Intermediate",
+      "price": 6999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "4 Months",
+      "rating": 4.8,
+      "students": 25,
+      "image": "/courses/guitar-intermediate.jpg",
+      "description": "Master the art of Guitar with our comprehensive Intermediate course.",
+      "aboutCourse": "This course covers all aspects of Guitar at the Intermediate level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "Completion of Guitar Beginner"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": false,
+      "upcoming": false,
+      "lessons": 36,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "guitar-advanced",
+      "title": "Guitar Advanced",
+      "category": "guitar",
+      "level": "Advanced",
+      "price": 9999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "6 Months",
+      "rating": 4.8,
+      "students": 20,
+      "image": "/courses/guitar-advanced.jpg",
+      "description": "Master the art of Guitar with our comprehensive Advanced course.",
+      "aboutCourse": "This course covers all aspects of Guitar at the Advanced level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "Completion of Guitar Beginner"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": false,
+      "upcoming": false,
+      "lessons": 48,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "drums-beginner",
+      "title": "Drums Beginner",
+      "category": "drums",
+      "level": "Beginner",
+      "price": 4999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "3 Months",
+      "rating": 4.8,
+      "students": 30,
+      "image": "/courses/drums-beginner.jpg",
+      "description": "Master the art of Drums with our comprehensive Beginner course.",
+      "aboutCourse": "This course covers all aspects of Drums at the Beginner level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "None"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": true,
+      "upcoming": false,
+      "lessons": 24,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "drums-intermediate",
+      "title": "Drums Intermediate",
+      "category": "drums",
+      "level": "Intermediate",
+      "price": 6999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "4 Months",
+      "rating": 4.8,
+      "students": 25,
+      "image": "/courses/drums-intermediate.jpg",
+      "description": "Master the art of Drums with our comprehensive Intermediate course.",
+      "aboutCourse": "This course covers all aspects of Drums at the Intermediate level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "Completion of Drums Beginner"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": false,
+      "upcoming": false,
+      "lessons": 36,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "drums-advanced",
+      "title": "Drums Advanced",
+      "category": "drums",
+      "level": "Advanced",
+      "price": 9999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "6 Months",
+      "rating": 4.8,
+      "students": 20,
+      "image": "/courses/drums-advanced.jpg",
+      "description": "Master the art of Drums with our comprehensive Advanced course.",
+      "aboutCourse": "This course covers all aspects of Drums at the Advanced level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "Completion of Drums Beginner"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": false,
+      "upcoming": false,
+      "lessons": 48,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "vocals-beginner",
+      "title": "Vocals Beginner",
+      "category": "vocals",
+      "level": "Beginner",
+      "price": 4999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "3 Months",
+      "rating": 4.8,
+      "students": 30,
+      "image": "/courses/vocals-beginner.jpg",
+      "description": "Master the art of Vocals with our comprehensive Beginner course.",
+      "aboutCourse": "This course covers all aspects of Vocals at the Beginner level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "None"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": true,
+      "upcoming": false,
+      "lessons": 24,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "vocals-intermediate",
+      "title": "Vocals Intermediate",
+      "category": "vocals",
+      "level": "Intermediate",
+      "price": 6999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "4 Months",
+      "rating": 4.8,
+      "students": 25,
+      "image": "/courses/vocals-intermediate.jpg",
+      "description": "Master the art of Vocals with our comprehensive Intermediate course.",
+      "aboutCourse": "This course covers all aspects of Vocals at the Intermediate level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "Completion of Vocals Beginner"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": false,
+      "upcoming": false,
+      "lessons": 36,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "vocals-advanced",
+      "title": "Vocals Advanced",
+      "category": "vocals",
+      "level": "Advanced",
+      "price": 9999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "6 Months",
+      "rating": 4.8,
+      "students": 20,
+      "image": "/courses/vocals-advanced.jpg",
+      "description": "Master the art of Vocals with our comprehensive Advanced course.",
+      "aboutCourse": "This course covers all aspects of Vocals at the Advanced level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "Completion of Vocals Beginner"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": false,
+      "upcoming": false,
+      "lessons": 48,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "violin-beginner",
+      "title": "Violin Beginner",
+      "category": "violin",
+      "level": "Beginner",
+      "price": 4999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "3 Months",
+      "rating": 4.8,
+      "students": 30,
+      "image": "/courses/violin-beginner.jpg",
+      "description": "Master the art of Violin with our comprehensive Beginner course.",
+      "aboutCourse": "This course covers all aspects of Violin at the Beginner level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "None"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": true,
+      "upcoming": false,
+      "lessons": 24,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "violin-intermediate",
+      "title": "Violin Intermediate",
+      "category": "violin",
+      "level": "Intermediate",
+      "price": 6999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "4 Months",
+      "rating": 4.8,
+      "students": 25,
+      "image": "/courses/violin-intermediate.jpg",
+      "description": "Master the art of Violin with our comprehensive Intermediate course.",
+      "aboutCourse": "This course covers all aspects of Violin at the Intermediate level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "Completion of Violin Beginner"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": false,
+      "upcoming": false,
+      "lessons": 36,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "violin-advanced",
+      "title": "Violin Advanced",
+      "category": "violin",
+      "level": "Advanced",
+      "price": 9999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "6 Months",
+      "rating": 4.8,
+      "students": 20,
+      "image": "/courses/violin-advanced.jpg",
+      "description": "Master the art of Violin with our comprehensive Advanced course.",
+      "aboutCourse": "This course covers all aspects of Violin at the Advanced level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "Completion of Violin Beginner"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": false,
+      "upcoming": false,
+      "lessons": 48,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "music-theory-beginner",
+      "title": "Music Theory Beginner",
+      "category": "music-theory",
+      "level": "Beginner",
+      "price": 4999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "3 Months",
+      "rating": 4.8,
+      "students": 30,
+      "image": "/courses/music-theory-beginner.jpg",
+      "description": "Master the art of Music Theory with our comprehensive Beginner course.",
+      "aboutCourse": "This course covers all aspects of Music Theory at the Beginner level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "None"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": true,
+      "upcoming": false,
+      "lessons": 24,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "music-theory-intermediate",
+      "title": "Music Theory Intermediate",
+      "category": "music-theory",
+      "level": "Intermediate",
+      "price": 6999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "4 Months",
+      "rating": 4.8,
+      "students": 25,
+      "image": "/courses/music-theory-intermediate.jpg",
+      "description": "Master the art of Music Theory with our comprehensive Intermediate course.",
+      "aboutCourse": "This course covers all aspects of Music Theory at the Intermediate level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "Completion of Music Theory Beginner"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": false,
+      "upcoming": false,
+      "lessons": 36,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "music-theory-advanced",
+      "title": "Music Theory Advanced",
+      "category": "music-theory",
+      "level": "Advanced",
+      "price": 9999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "6 Months",
+      "rating": 4.8,
+      "students": 20,
+      "image": "/courses/music-theory-advanced.jpg",
+      "description": "Master the art of Music Theory with our comprehensive Advanced course.",
+      "aboutCourse": "This course covers all aspects of Music Theory at the Advanced level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "Completion of Music Theory Beginner"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": false,
+      "upcoming": false,
+      "lessons": 48,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "bass-guitar-beginner",
+      "title": "Bass Guitar Beginner",
+      "category": "bass-guitar",
+      "level": "Beginner",
+      "price": 4999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "3 Months",
+      "rating": 4.8,
+      "students": 30,
+      "image": "/courses/bass-guitar-beginner.jpg",
+      "description": "Master the art of Bass Guitar with our comprehensive Beginner course.",
+      "aboutCourse": "This course covers all aspects of Bass Guitar at the Beginner level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "None"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": true,
+      "upcoming": false,
+      "lessons": 24,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "bass-guitar-intermediate",
+      "title": "Bass Guitar Intermediate",
+      "category": "bass-guitar",
+      "level": "Intermediate",
+      "price": 6999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "4 Months",
+      "rating": 4.8,
+      "students": 25,
+      "image": "/courses/bass-guitar-intermediate.jpg",
+      "description": "Master the art of Bass Guitar with our comprehensive Intermediate course.",
+      "aboutCourse": "This course covers all aspects of Bass Guitar at the Intermediate level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "Completion of Bass Guitar Beginner"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": false,
+      "upcoming": false,
+      "lessons": 36,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
+    },
+    {
+      "id": "bass-guitar-advanced",
+      "title": "Bass Guitar Advanced",
+      "category": "bass-guitar",
+      "level": "Advanced",
+      "price": 9999,
+      "instructor": "Ajinkya Amrule",
+      "duration": "6 Months",
+      "rating": 4.8,
+      "students": 20,
+      "image": "/courses/bass-guitar-advanced.jpg",
+      "description": "Master the art of Bass Guitar with our comprehensive Advanced course.",
+      "aboutCourse": "This course covers all aspects of Bass Guitar at the Advanced level.",
+      "curriculum": [
+        "Core Techniques",
+        "Practice Exercises",
+        "Final Project"
+      ],
+      "learningOutcomes": [
+        "Play confidently",
+        "Master fundamentals"
+      ],
+      "prerequisites": [
+        "Completion of Bass Guitar Beginner"
+      ],
+      "topicsCovered": [
+        "Techniques",
+        "Chords",
+        "Repertoire"
+      ],
+      "highlights": [
+        "Individualized feedback",
+        "Certification"
+      ],
+      "isDisabled": false,
+      "featured": false,
+      "upcoming": false,
+      "lessons": 48,
+      "projects": 3,
+      "assignments": 5,
+      "hasCertificate": true
     }
   ],
   "instructors": [
@@ -139,7 +955,22 @@
       "dayOfWeek": 1
     }
   ],
-  "bookings": [],
+  "bookings": [
+    {
+      "id": "BK-1783531409874",
+      "courseId": "piano-advanced",
+      "courseName": "Piano Advanced",
+      "instructor": "Ajinkya Amrule",
+      "date": "2026-07-08",
+      "timeSlot": "06:00 AM",
+      "batchTiming": "morning",
+      "studentName": "kritika patil",
+      "studentEmail": "kritika123@gmail.com",
+      "status": "Pending",
+      "createdAt": "2026-07-08T17:23:29.874Z",
+      "amount": 9999
+    }
+  ],
   "workshops": [
     {
       "id": "w1",
@@ -187,6 +1018,74 @@
       "role": "STUDENT",
       "createdAt": "2026-06-19T06:31:02.076Z",
       "isVerified": true
+    }
+  ],
+  "instruments": [
+    {
+      "id": "piano",
+      "name": "Piano",
+      "status": "Active",
+      "icon": "M9 19V6l12-3v13"
+    },
+    {
+      "id": "guitar",
+      "name": "Guitar",
+      "status": "Active",
+      "icon": "M9 19V6l12-3v13"
+    },
+    {
+      "id": "drums",
+      "name": "Drums",
+      "status": "Active",
+      "icon": "M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+    },
+    {
+      "id": "vocals",
+      "name": "Vocals",
+      "status": "Active",
+      "icon": "M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7"
+    },
+    {
+      "id": "violin",
+      "name": "Violin",
+      "status": "Active",
+      "icon": "M9 19V6l12-3v13"
+    },
+    {
+      "id": "music-theory",
+      "name": "Music Theory",
+      "status": "Active",
+      "icon": "M12 6.253v13"
+    },
+    {
+      "id": "bass-guitar",
+      "name": "Bass Guitar",
+      "status": "Active",
+      "icon": "M9 19V6l12-3v13"
+    },
+    {
+      "id": "saxophone",
+      "name": "Saxophone",
+      "status": "Upcoming",
+      "icon": "M9 19V6l12-3v13"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif-1783531409904",
+      "title": "New Booking Request",
+      "message": "kritika patil requested a demo slot for Piano Advanced on 2026-07-08 at 06:00 AM",
+      "createdAt": "2026-07-08T17:23:29.904Z",
+      "isRead": false
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "log-1783531409925",
+      "userEmail": "kritika123@gmail.com",
+      "action": "Booking Request",
+      "details": "Requested class booking: Piano Advanced on 2026-07-08 (06:00 AM)",
+      "createdAt": "2026-07-08T17:23:29.925Z"
     }
   ]
 }

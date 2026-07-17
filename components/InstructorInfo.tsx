@@ -1,18 +1,62 @@
-import React from 'react'
-import Image from 'next/image'
+'use client'
+
+import React, { useState, useEffect } from 'react'
 
 export default function InstructorInfo() {
-  const expertise = [
-    { name: 'Piano', icon: '🎹' },
-    { name: 'Guitar', icon: '🎸' },
-    { name: 'Vocal Training', icon: '🎤' },
-    { name: 'Music Theory', icon: '🎼' }
-  ]
+  const [instructor, setInstructor] = useState<any>(null)
+  const [courseCount, setCourseCount] = useState(0)
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/instructors').then(r => r.json()).catch(() => []),
+      fetch('/api/courses').then(r => r.json()).catch(() => [])
+    ]).then(([instructors, courses]) => {
+      // Find the first active instructor (e.g. Ajinkya Amrule) or default to the first one
+      const activeInst = instructors.find((i: any) => i.name === 'Ajinkya Amrule' || i.isActive !== false) || instructors[0]
+      if (activeInst) {
+        setInstructor(activeInst)
+        
+        // Count active courses assigned to this instructor
+        const assignedCourses = courses.filter((c: any) => c.instructorId === activeInst.id || c.instructor === activeInst.name)
+        setCourseCount(assignedCourses.length)
+      }
+    }).catch(err => console.error('Failed to load instructor info:', err))
+  }, [])
+
+  const name = instructor?.name || 'Ajinkya Amrule'
+  const role = instructor?.role || 'Senior Music Instructor'
+  const bio = instructor?.bio || 'Professional music educator with over 10 years of experience teaching piano, guitar, vocals, and music theory.\nPassionate about helping beginners and advanced learners build confidence, technique, and creativity through structured learning.'
+  const experience = instructor?.experience || '10+ Years'
+  const studentsCount = instructor?.students || 500
+  const avatarPhoto = instructor?.photo || '/images/instructor_portrait.jpg'
+  
+  // Parse expertise tags
+  const expertiseList = instructor?.expertise 
+    ? instructor.expertise.split(',').map((e: string) => e.trim()) 
+    : ['Piano', 'Guitar', 'Vocals', 'Music Theory']
+
+  const getEmojiForExpertise = (name: string) => {
+    const lowercase = name.toLowerCase()
+    if (lowercase.includes('piano')) return '🎹'
+    if (lowercase.includes('guitar')) return '🎸'
+    if (lowercase.includes('vocal') || lowercase.includes('singing')) return '🎤'
+    if (lowercase.includes('theory')) return '🎼'
+    if (lowercase.includes('drum')) return '🥁'
+    if (lowercase.includes('violin')) return '🎻'
+    if (lowercase.includes('bass')) return '🎸'
+    if (lowercase.includes('saxophone')) return '🎷'
+    return '🎵'
+  }
+
+  const expertise = expertiseList.map((name: string) => ({
+    name,
+    icon: getEmojiForExpertise(name)
+  }))
 
   const stats = [
-    { title: '10+ Years Experience', icon: '⭐' },
-    { title: '500+ Students Trained', icon: '🎓' },
-    { title: 'Professional Certification', icon: '🏆' }
+    { title: `${experience} Experience`, icon: '⭐' },
+    { title: `${studentsCount}+ Students Trained`, icon: '🎓' },
+    { title: `${courseCount} Dynamic Courses`, icon: '📚' }
   ]
 
   return (
@@ -41,16 +85,14 @@ export default function InstructorInfo() {
             {/* Left: Instructor Photo */}
             <div className="relative flex-shrink-0 w-[320px] h-[380px] group/photo">
               {/* Floating accent circles */}
-              <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-[#DCEEFF] opacity-70 blur-sm animate-pulse pointer-events-none" />
-              <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-[#FFD6E8] opacity-70 blur-sm animate-pulse pointer-events-none" />
+              <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-[#DCEEFF] opacity-70 blur-sm pointer-events-none" />
+              <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-[#FFD6E8] opacity-70 blur-sm pointer-events-none" />
               
-              <Image
-                src="/images/instructor_ajinkya.jpg"
-                alt="Ajinkya Amrule"
-                fill
-                sizes="(max-width: 768px) 100vw, 320px"
-                priority
-                className="rounded-[24px] object-cover object-center shadow-md transition-transform duration-300 group-hover/photo:scale-[1.015] ease-out"
+              <img
+                src={avatarPhoto}
+                alt={`${name} - ${role}`}
+                loading="lazy"
+                className="w-full h-full rounded-[24px] object-cover shadow-md transition-transform duration-300 group-hover/photo:scale-[1.015] ease-out"
               />
             </div>
 
@@ -59,21 +101,18 @@ export default function InstructorInfo() {
               {/* Header Info */}
               <div className="mb-4 flex flex-col items-center lg:items-start gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EFF6FF] px-3 py-1 text-xs font-bold text-[#2563EB]">
-                  Senior Music Instructor
+                  {role}
                 </span>
                 <h3 className="text-3xl md:text-[34px] font-extrabold text-[#0F1E4A] leading-tight">
-                  Ajinkya Amrule
+                  {name}
                 </h3>
               </div>
 
               {/* Description */}
               <div className="text-slate-500 font-medium text-sm md:text-base leading-relaxed mb-8 flex flex-col gap-4">
-                <p>
-                  Professional music educator with over 10 years of experience teaching piano, guitar, vocals, and music theory.
-                </p>
-                <p>
-                  Passionate about helping beginners and advanced learners build confidence, technique, and creativity through structured learning.
-                </p>
+                {bio.split('\n').map((para: string, idx: number) => (
+                  <p key={idx}>{para}</p>
+                ))}
               </div>
 
               {/* Expertise Tags */}

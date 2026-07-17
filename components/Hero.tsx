@@ -1,9 +1,61 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+
+interface MusicalNote {
+  id: number
+  left: number
+  top: number
+  animationDuration: number
+  animationDelay: number
+  fontSize: number
+  symbol: string
+}
+
+interface FloatingElement {
+  id: number
+  left: number
+  top: number
+  animationDuration: number
+  animationDelay: number
+  fontSize: number
+  symbol: string
+}
 
 export default function Hero() {
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+  const [musicalNotes, setMusicalNotes] = useState<MusicalNote[]>([])
+  const [floatingElements, setFloatingElements] = useState<FloatingElement[]>([])
+
+  useEffect(() => {
+    setMounted(true)
+    
+    // Generate musical notes with deterministic values
+    const newMusicalNotes: MusicalNote[] = Array.from({ length: 7 }, (_, i) => ({
+      id: i,
+      left: 10 + i * 13,
+      top: 15 + (Math.sin(i) * 25),
+      animationDuration: 3 + i * 0.3,
+      animationDelay: i * 0.2,
+      fontSize: 24 + (i % 16),
+      symbol: ['\u266a', '\u266b', '\u266c', '\u2669', '\u266d', '\u266e', '\u266f'][i]
+    }))
+    setMusicalNotes(newMusicalNotes)
+    
+    // Generate floating elements with deterministic values
+    const newFloatingElements: FloatingElement[] = Array.from({ length: 12 }, (_, i) => ({
+      id: i,
+      left: 5 + i * 8,
+      top: 10 + (Math.cos(i) * 30),
+      animationDuration: 4 + i * 0.4,
+      animationDelay: i * 0.3,
+      fontSize: 16 + (i % 12),
+      symbol: ['♪', '♫', '♬', '♭', '♮', '♯'][i % 6]
+    }))
+    setFloatingElements(newFloatingElements)
+  }, [])
 
   const handleExploreCourses = () => {
     router.push('/courses')
@@ -38,34 +90,34 @@ export default function Hero() {
 
         {/* Musical Notes Animation */}
         <div className="absolute inset-0 pointer-events-none">
-          {['\u266a', '\u266b', '\u266c', '\u2669', '\u266d', '\u266e', '\u266f'].map((note, i) => (
+          {mounted && musicalNotes.map((note) => (
             <div
-              key={i}
+              key={note.id}
               className="absolute text-white opacity-30 animate-bounce"
               style={{
-                left: `${10 + i * 13}%`,
-                top: `${15 + Math.sin(i) * 25}%`,
-                animation: `float ${3 + i * 0.3}s ease-in-out ${i * 0.2}s infinite`,
-                fontSize: `${24 + Math.random() * 16}px`,
+                left: `${note.left}%`,
+                top: `${note.top}%`,
+                animation: `float ${note.animationDuration}s ease-in-out ${note.animationDelay}s infinite`,
+                fontSize: `${note.fontSize}px`,
               }}
             >
-              {note}
+              {note.symbol}
             </div>
           ))}
           
           {/* Additional Floating Music Elements */}
-          {[...Array(12)].map((_, i) => (
+          {mounted && floatingElements.map((element) => (
             <div
-              key={`float-${i}`}
+              key={`float-${element.id}`}
               className="absolute text-yellow-200 opacity-40 animate-pulse"
               style={{
-                left: `${5 + i * 8}%`,
-                top: `${10 + Math.cos(i) * 30}%`,
-                animation: `float ${4 + i * 0.4}s ease-in-out ${i * 0.3}s infinite`,
-                fontSize: `${16 + Math.random() * 12}px`,
+                left: `${element.left}%`,
+                top: `${element.top}%`,
+                animation: `float ${element.animationDuration}s ease-in-out ${element.animationDelay}s infinite`,
+                fontSize: `${element.fontSize}px`,
               }}
             >
-              {['♪', '♫', '♬', '♭', '♮', '♯'][i % 6]}
+              {element.symbol}
             </div>
           ))}
         </div>

@@ -1,5 +1,4 @@
 import React from 'react'
-import Image from 'next/image'
 
 export default function InstructorInfo() {
   const expertise = [
@@ -44,13 +43,10 @@ export default function InstructorInfo() {
               <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-[#DCEEFF] opacity-70 blur-sm animate-pulse pointer-events-none" />
               <div className="absolute -bottom-4 -right-4 w-16 h-16 rounded-full bg-[#FFD6E8] opacity-70 blur-sm animate-pulse pointer-events-none" />
               
-              <Image
-                src="/images/instructor_ajinkya.jpg"
+              <img
+                src="/images/instructor_portrait.png"
                 alt="Ajinkya Amrule"
-                fill
-                sizes="(max-width: 768px) 100vw, 320px"
-                priority
-                className="rounded-[24px] object-cover object-center shadow-md transition-transform duration-300 group-hover/photo:scale-[1.015] ease-out"
+                className="w-full h-full rounded-[24px] object-cover shadow-md transition-transform duration-300 group-hover/photo:scale-[1.015] ease-out"
               />
             </div>
 

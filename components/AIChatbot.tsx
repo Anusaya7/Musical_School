@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface Message {
   id: number
@@ -11,16 +11,23 @@ interface Message {
 
 export default function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      text: "Hello! I'm your AI Music Assistant. How can I help you with your musical journey today?",
-      sender: 'bot',
-      timestamp: new Date()
-    }
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const messageIdCounterRef = useRef(1)
+
+  useEffect(() => {
+    setMounted(true)
+    setMessages([
+      {
+        id: 1,
+        text: "Hello! I'm your AI Music Assistant. How can I help you with your musical journey today?",
+        sender: 'bot',
+        timestamp: new Date()
+      }
+    ])
+  }, [])
 
   const botResponses = {
     greeting: "Welcome to 2nd Inversion Musical School! I'm here to help you with information about our courses, schedules, and enrollment.",
@@ -61,8 +68,9 @@ export default function AIChatbot() {
   const handleSendMessage = () => {
     if (inputMessage.trim() === '') return
 
+    messageIdCounterRef.current += 1
     const userMessage: Message = {
-      id: Date.now(),
+      id: messageIdCounterRef.current,
       text: inputMessage,
       sender: 'user',
       timestamp: new Date()
@@ -74,8 +82,9 @@ export default function AIChatbot() {
 
     // Simulate bot typing delay
     setTimeout(() => {
+      messageIdCounterRef.current += 1
       const botResponse: Message = {
-        id: Date.now() + 1,
+        id: messageIdCounterRef.current,
         text: getBotResponse(inputMessage),
         sender: 'bot',
         timestamp: new Date()
@@ -99,6 +108,8 @@ export default function AIChatbot() {
     "How do I enroll?",
     "Where are you located?"
   ]
+
+  if (!mounted) return null
 
   return (
     <>

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <!-- Soft Blue background gradient -->
+    <linearGradient id="sax-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0F7FF" />
+      <stop offset="100%" stop-color="#DCEEFF" />
+    </linearGradient>
+    
+    <!-- Golden gradient for body -->
+    <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE082" />
+      <stop offset="35%" stop-color="#FFD54F" />
+      <stop offset="70%" stop-color="#FFB300" />
+      <stop offset="100%" stop-color="#FF8F00" />
+    </linearGradient>
+    
+    <!-- Soft shadow -->
+    <filter id="soft-shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#485E90" flood-opacity="0.12" />
+    </filter>
+  </defs>
+
+  <!-- Soft Blue circular background -->
+  <circle cx="50" cy="50" r="42" fill="url(#sax-bg)" />
+
+  <!-- Saxophone Group with Soft Shadow -->
+  <g filter="url(#soft-shadow)">
+    <!-- Neck piece -->
+    <path d="M 38 20 C 38 20, 36 28, 44 26 L 44 32" stroke="url(#gold-grad)" stroke-width="4" stroke-linecap="round" fill="none" />
+    <!-- Mouthpiece (Black/Cork) -->
+    <path d="M 38 20 L 35 18 L 37 16 L 40 18 Z" fill="#1E293B" />
+
+    <!-- Saxophone Tube/Body (Curving downwards and back up) -->
+    <path d="M 44 28 
+             L 45 60 
+             C 45 74, 66 74, 68 62 
+             C 69 56, 75 48, 77 44" 
+          stroke="url(#gold-grad)" 
+          stroke-width="7.5" 
+          stroke-linecap="round" 
+          fill="none" />
+
+    <!-- Inner tube line for 3D look -->
+    <path d="M 44 28 
+             L 45 60 
+             C 45 74, 66 74, 68 62 
+             C 69 56, 75 48, 77 44" 
+          stroke="#FFF9C4" 
+          stroke-width="1.5" 
+          stroke-linecap="round" 
+          fill="none" 
+          opacity="0.5" />
+
+    <!-- Saxophone Bell (Angled ellipse) -->
+    <ellipse cx="77" cy="44" rx="9" ry="4.5" fill="url(#gold-grad)" stroke="#FF8F00" stroke-width="1.2" transform="rotate(-15 77 44)" />
+    <!-- Inside of Bell (Dark Gold) -->
+    <ellipse cx="77" cy="44" rx="7" ry="3" fill="#B36B00" transform="rotate(-15 77 44)" />
+
+    <!-- Keys and details along the tube -->
+    <circle cx="45" cy="36" r="2.2" fill="#FFFFFF" stroke="#FF8F00" stroke-width="0.8" />
+    <circle cx="45" cy="44" r="2.2" fill="#FFFFFF" stroke="#FF8F00" stroke-width="0.8" />
+    <circle cx="45" cy="52" r="2.2" fill="#FFFFFF" stroke="#FF8F00" stroke-width="0.8" />
+    
+    <!-- Rod (Long vertical line representing action rods) -->
+    <line x1="48" y1="32" x2="48" y2="56" stroke="#FF8F00" stroke-width="1.2" />
+
+    <!-- Low key guards -->
+    <path d="M 50 64 C 52 66, 56 66, 58 64" stroke="#FF8F00" stroke-width="1.2" fill="none" />
+    <path d="M 54 68 C 56 70, 60 70, 62 68" stroke="#FF8F00" stroke-width="1.2" fill="none" />
+  </g>
+
+  <!-- Small music notes -->
+  <path d="M 22 28 C 22 29, 21.5 29.5, 21 29.5 C 20.5 29.5, 20 29, 20 28 L 20 24 L 24 23 L 24 27 Z" fill="#5EA8FF" opacity="0.8" />
+  <path d="M 76 22 C 76 23.5, 74.8 24, 74 24 C 72.8 24, 72 23.5, 72 22 L 72 16 L 78 14 L 78 20 Z" fill="#FFD54F" opacity="0.8" />
+</svg>

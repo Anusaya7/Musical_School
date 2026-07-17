@@ -20,6 +20,24 @@ export async function POST(request: Request) {
 
     const success = await updateSchedules(body)
     if (success) {
+      const { addAuditLog, addNotification } = await import('@/lib/db')
+      // Log audit
+      await addAuditLog({
+        id: `log-${Date.now()}`,
+        userEmail: 'admin@2ndinversion.com',
+        action: 'Schedule Changed',
+        details: `Updated batch schedules: ${body.map(s => `${s.name} (${s.startTime}-${s.endTime})`).join(', ')}`,
+        createdAt: new Date().toISOString()
+      })
+      // Create notification
+      await addNotification({
+        id: `notif-${Date.now()}`,
+        title: '📅 Schedule Updated',
+        message: `Admin updated batch schedules.`,
+        createdAt: new Date().toISOString(),
+        isRead: false
+      })
+
       return NextResponse.json({ success: true, schedules: body })
     } else {
       return NextResponse.json({ error: 'Failed to update schedules' }, { status: 500 })

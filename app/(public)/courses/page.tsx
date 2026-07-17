@@ -24,12 +24,24 @@ function CoursesPageContent() {
   const router = useRouter()
   const category = searchParams.get('category')
   const [levelFilter, setLevelFilter] = useState<CourseLevel | 'All'>('All')
+  const [allDbCourses, setAllDbCourses] = useState<Course[]>([])
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([])
 
+  useEffect(() => {
+    fetch('/api/courses')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setAllDbCourses(data.filter((c: any) => !c.isDisabled))
+        }
+      })
+      .catch(err => console.error('Failed to load courses:', err))
+  }, [])
+
   const baseCourses = useMemo(() => {
-    if (category) return getCoursesByCategory(category)
-    return getAllCourses()
-  }, [category])
+    if (category) return allDbCourses.filter(c => c.category === category)
+    return allDbCourses
+  }, [allDbCourses, category])
 
   useEffect(() => {
     const result =

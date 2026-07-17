@@ -5,148 +5,63 @@ import Link from 'next/link'
 import { Star, Clock, User, ShoppingCart } from 'lucide-react'
 import { Course } from '@/data/coursesData'
 
-// Custom SVG Note Components
-const SingleNote = memo(({ className, color }: { className?: string; color: string }) => (
-  <svg className={`${className} w-3 h-4`} viewBox="0 0 12 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M8 12.5c0 1.38-1.12 2.5-2.5 2.5S3 13.88 3 12.5s1.12-2.5 2.5-2.5c.34 0 .66.07.96.19V2h5v3H8v7.5z"
-      fill={color}
-    />
-  </svg>
-))
-SingleNote.displayName = 'SingleNote'
-
-const DoubleNote = memo(({ className, color }: { className?: string; color: string }) => (
-  <svg className={`${className} w-4 h-4`} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M3 11.5c0 1.1.9 2 2 2s2-.9 2-2v-8l7-1.75V9.5c0 1.1.9 2 2 2s2-.9 2-2v-9L5 2.5v9z"
-      fill={color}
-    />
-  </svg>
-))
-DoubleNote.displayName = 'DoubleNote'
-
-// Custom 3D Glossy Grand Piano Vector SVG
-const PianoSVG = memo(({ color }: { color: 'pink' | 'blue' | 'purple' }) => {
-  const themes = {
-    pink: {
-      baseGrad: ['#FFD6E8', '#FF6FAF'],
-      highlight: '#FFF0F6',
-      shadow: '#FF3B8E',
-      noteColor: '#FF6FAF'
-    },
-    blue: {
-      baseGrad: ['#DCEEFF', '#5EA8FF'],
-      highlight: '#F0F7FF',
-      shadow: '#2B8CFF',
-      noteColor: '#5EA8FF'
-    },
-    purple: {
-      baseGrad: ['#F4D9FF', '#DFA7FF'],
-      highlight: '#FAF0FF',
-      shadow: '#C37DFF',
-      noteColor: '#DFA7FF'
-    }
-  }
-
-  const active = themes[color]
-  const gradId = `piano-card-grad-${color}`
-  const glossyId = `glossy-card-grad-${color}`
-
-  return (
-    <div className="relative w-32 h-24 flex-shrink-0 select-none">
-      <svg width="100%" height="100%" viewBox="0 0 120 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          {/* Main 3D Gradient */}
-          <linearGradient id={gradId} x1="20" y1="15" x2="100" y2="75" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor={active.baseGrad[0]} />
-            <stop offset="50%" stopColor={active.baseGrad[1]} />
-            <stop offset="100%" stopColor={active.shadow} />
-          </linearGradient>
-          {/* Glossy Overlay Gradient */}
-          <linearGradient id={glossyId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.6" />
-            <stop offset="40%" stopColor="#FFFFFF" stopOpacity="0.1" />
-            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-
-        {/* 3D Drop Shadow under the Piano */}
-        <ellipse cx="60" cy="72" rx="42" ry="7" fill="black" fillOpacity="0.08" />
-
-        {/* Piano Back/Main Body */}
-        <path
-          d="M15 48 C15 28, 40 28, 55 18 C68 8, 100 8, 108 18 C115 26, 115 56, 108 60 C98 65, 35 65, 15 58 Z"
-          fill={`url(#${gradId})`}
-          stroke={active.baseGrad[1]}
-          strokeWidth="0.5"
-        />
-
-        {/* Glossy Specular Reflection Layer */}
-        <path
-          d="M16 45 C20 28, 42 28, 55 19 C66 10, 98 10, 106 19 C111 25, 111 50, 106 54 Z"
-          fill={`url(#${glossyId})`}
-        />
-
-        {/* Piano Open Lid */}
-        <path d="M48 15 L92 5 L102 18 L58 22 Z" fill={active.highlight} opacity="0.95" stroke={active.baseGrad[1]} strokeWidth="0.5" />
-        {/* Support Stick */}
-        <line x1="88" y1="5" x2="88" y2="20" stroke="#555" strokeWidth="2" />
-
-        {/* Keyboard Bed */}
-        <rect x="20" y="48" width="70" height="12" rx="2" fill="white" stroke={active.baseGrad[1]} strokeWidth="1.2" />
-        {/* Key Dividers */}
-        <line x1="26" y1="48" x2="26" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
-        <line x1="32" y1="48" x2="32" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
-        <line x1="38" y1="48" x2="38" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
-        <line x1="44" y1="48" x2="44" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
-        <line x1="50" y1="48" x2="50" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
-        <line x1="56" y1="48" x2="56" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
-        <line x1="62" y1="48" x2="62" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
-        <line x1="68" y1="48" x2="68" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
-        <line x1="74" y1="48" x2="74" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
-        <line x1="80" y1="48" x2="80" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
-        <line x1="86" y1="48" x2="86" y2="60" stroke="#E2E8F0" strokeWidth="0.7" />
-
-        {/* Black keys */}
-        <rect x="24" y="48" width="2" height="7" fill="#0F172A" />
-        <rect x="30" y="48" width="2" height="7" fill="#0F172A" />
-        <rect x="42" y="48" width="2" height="7" fill="#0F172A" />
-        <rect x="48" y="48" width="2" height="7" fill="#0F172A" />
-        <rect x="54" y="48" width="2" height="7" fill="#0F172A" />
-        <rect x="66" y="48" width="2" height="7" fill="#0F172A" />
-        <rect x="72" y="48" width="2" height="7" fill="#0F172A" />
-        <rect x="78" y="48" width="2" height="7" fill="#0F172A" />
-
-        {/* Legs */}
-        <rect x="22" y="60" width="3.5" height="13" fill={active.baseGrad[1]} />
-        <rect x="84.5" y="60" width="3.5" height="13" fill={active.baseGrad[1]} />
-        <rect x="53" y="61" width="3.5" height="11" fill={active.shadow} />
-      </svg>
-      
-      {/* Floating vector music notes */}
-      <DoubleNote className="absolute -top-1 -right-3 opacity-60 animate-bounce" color={active.noteColor} />
-      <SingleNote className="absolute top-8 -left-4 opacity-50 animate-pulse" color={active.noteColor} />
-      <SingleNote className="absolute -top-4 left-12 opacity-40 animate-bounce" color={active.noteColor} />
-    </div>
-  )
-})
-PianoSVG.displayName = 'PianoSVG'
-
+import InstrumentIllustration from '@/components/InstrumentIllustration'
 interface CourseCardProps {
   course: Course
-  isInCart: boolean
-  onAddToCart: (course: Course) => void
+  isInCart?: boolean
+  onAddToCart?: (course: Course) => void
   showBooking?: boolean
   bookingSlot?: React.ReactNode
+  
+  // Dashboard modes
+  mode?: 'public' | 'admin' | 'instructor' | 'student'
+  
+  // Admin triggers
+  onEdit?: (course: Course) => void
+  onDelete?: (course: Course) => void
+  onToggleStatus?: (course: Course) => void
+  onDuplicate?: (course: Course) => void
+  
+  // Instructor triggers
+  onManageAssignments?: (course: Course) => void
+  onUploadVideos?: (course: Course) => void
+  onQuizzes?: (course: Course) => void
+  onAttendance?: (course: Course) => void
+  onPerformance?: (course: Course) => void
+  
+  // Student parameters
+  progress?: number
+  completedLessons?: number
+  totalLessons?: number
+  certificateStatus?: string
+  isFavorite?: boolean
+  onToggleFavorite?: (course: Course) => void
+  onContinueLearning?: (course: Course) => void
 }
 
 const CourseCard = memo(({
   course,
-  isInCart,
+  isInCart = false,
   onAddToCart,
   showBooking = false,
   bookingSlot,
+  mode = 'public',
+  onEdit,
+  onDelete,
+  onToggleStatus,
+  onDuplicate,
+  onManageAssignments,
+  onUploadVideos,
+  onQuizzes,
+  onAttendance,
+  onPerformance,
+  progress = 60,
+  completedLessons = 14,
+  totalLessons = 24,
+  certificateStatus,
+  isFavorite = false,
+  onToggleFavorite,
+  onContinueLearning,
 }: CourseCardProps) => {
   // Determine card accent styling based on course level/title
   const getThemeConfig = (title: string, levelStr: string) => {
@@ -155,48 +70,48 @@ const CourseCard = memo(({
       return {
         themeColor: 'blue',
         badgeText: 'INTERMEDIATE',
-        border: 'border-[#DCEEFF] hover:border-[#5EA8FF]/50',
-        shadow: 'shadow-sm hover:shadow-xl hover:shadow-[#DCEEFF]/30',
-        badge: 'bg-[#DCEEFF]/30 text-[#5EA8FF] border-[#DCEEFF]/60',
-        label: 'text-[#5EA8FF]',
-        instructorIcon: 'text-[#5EA8FF]',
-        pillBg: 'bg-[#DCEEFF]/20',
+        border: 'border-[#DCEEFF] hover:border-[#5EA8FF]/50 dark:border-slate-800 dark:hover:border-blue-500/50',
+        shadow: 'shadow-sm hover:shadow-xl hover:shadow-[#DCEEFF]/30 dark:hover:shadow-blue-900/10',
+        badge: 'bg-[#DCEEFF]/30 text-[#5EA8FF] border-[#DCEEFF]/60 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800/40',
+        label: 'text-[#5EA8FF] dark:text-blue-400',
+        instructorIcon: 'text-[#5EA8FF] dark:text-blue-450',
+        pillBg: 'bg-[#DCEEFF]/20 dark:bg-blue-950/15',
         iconColor: '#5EA8FF',
-        price: 'text-[#5EA8FF]',
-        secondaryBtn: 'border-[#5EA8FF]/40 text-[#5EA8FF] hover:bg-[#DCEEFF]/20',
-        cartBtn: 'border-gray-200 text-gray-400 hover:border-[#5EA8FF] hover:text-[#5EA8FF] hover:bg-[#DCEEFF]/10'
+        price: 'text-[#5EA8FF] dark:text-blue-400',
+        secondaryBtn: 'border-[#5EA8FF]/40 text-[#5EA8FF] hover:bg-[#DCEEFF]/20 dark:border-blue-800/40 dark:text-blue-400 dark:hover:bg-blue-950/30',
+        cartBtn: 'border-gray-200 text-gray-400 hover:border-[#5EA8FF] hover:text-[#5EA8FF] hover:bg-[#DCEEFF]/10 dark:border-slate-800 dark:hover:border-blue-500'
       }
     }
     if (t.includes('advanced')) {
       return {
         themeColor: 'purple',
         badgeText: 'ADVANCED',
-        border: 'border-[#F4D9FF] hover:border-[#DFA7FF]/50',
-        shadow: 'shadow-sm hover:shadow-xl hover:shadow-[#F4D9FF]/30',
-        badge: 'bg-[#F4D9FF]/30 text-[#DFA7FF] border-[#F4D9FF]/60',
-        label: 'text-[#DFA7FF]',
-        instructorIcon: 'text-[#DFA7FF]',
-        pillBg: 'bg-[#F4D9FF]/20',
+        border: 'border-[#F4D9FF] hover:border-[#DFA7FF]/50 dark:border-slate-800 dark:hover:border-purple-500/50',
+        shadow: 'shadow-sm hover:shadow-xl hover:shadow-[#F4D9FF]/30 dark:hover:shadow-purple-900/10',
+        badge: 'bg-[#F4D9FF]/30 text-[#DFA7FF] border-[#F4D9FF]/60 dark:bg-purple-950/20 dark:text-purple-400 dark:border-purple-800/40',
+        label: 'text-[#DFA7FF] dark:text-purple-400',
+        instructorIcon: 'text-[#DFA7FF] dark:text-purple-450',
+        pillBg: 'bg-[#F4D9FF]/20 dark:bg-purple-950/15',
         iconColor: '#DFA7FF',
-        price: 'text-[#DFA7FF]',
-        secondaryBtn: 'border-[#DFA7FF]/40 text-[#DFA7FF] hover:bg-[#F4D9FF]/20',
-        cartBtn: 'border-gray-200 text-gray-400 hover:border-[#DFA7FF] hover:text-[#DFA7FF] hover:bg-[#F4D9FF]/10'
+        price: 'text-[#DFA7FF] dark:text-purple-400',
+        secondaryBtn: 'border-[#DFA7FF]/40 text-[#DFA7FF] hover:bg-[#F4D9FF]/20 dark:border-purple-800/40 dark:text-purple-400 dark:hover:bg-purple-950/30',
+        cartBtn: 'border-gray-200 text-gray-400 hover:border-[#DFA7FF] hover:text-[#DFA7FF] hover:bg-[#F4D9FF]/10 dark:border-slate-800 dark:hover:border-purple-500'
       }
     }
     // Beginner/Default
     return {
       themeColor: 'pink',
       badgeText: 'BEGINNER',
-      border: 'border-[#FFD6E8] hover:border-[#FF6FAF]/50',
-      shadow: 'shadow-sm hover:shadow-xl hover:shadow-[#FFD6E8]/30',
-      badge: 'bg-[#FFD6E8]/30 text-[#FF6FAF] border-[#FFD6E8]/60',
-      label: 'text-[#FF6FAF]',
-      instructorIcon: 'text-[#FF6FAF]',
-      pillBg: 'bg-[#FFD6E8]/20',
+      border: 'border-[#FFD6E8] hover:border-[#FF6FAF]/50 dark:border-slate-800 dark:hover:border-pink-500/50',
+      shadow: 'shadow-sm hover:shadow-xl hover:shadow-[#FFD6E8]/30 dark:hover:shadow-pink-900/10',
+      badge: 'bg-[#FFD6E8]/30 text-[#FF6FAF] border-[#FFD6E8]/60 dark:bg-pink-950/20 dark:text-pink-400 dark:border-pink-800/40',
+      label: 'text-[#FF6FAF] dark:text-pink-400',
+      instructorIcon: 'text-[#FF6FAF] dark:text-pink-450',
+      pillBg: 'bg-[#FFD6E8]/20 dark:bg-pink-950/15',
       iconColor: '#FF6FAF',
-      price: 'text-[#FF6FAF]',
-      secondaryBtn: 'border-[#FF6FAF]/40 text-[#FF6FAF] hover:bg-[#FFD6E8]/20',
-      cartBtn: 'border-gray-200 text-gray-400 hover:border-[#FF6FAF] hover:text-[#FF6FAF] hover:bg-[#FFD6E8]/10'
+      price: 'text-[#FF6FAF] dark:text-pink-400',
+      secondaryBtn: 'border-[#FF6FAF]/40 text-[#FF6FAF] hover:bg-[#FFD6E8]/20 dark:border-pink-800/40 dark:text-pink-400 dark:hover:bg-pink-950/30',
+      cartBtn: 'border-gray-200 text-gray-400 hover:border-[#FF6FAF] hover:text-[#FF6FAF] hover:bg-[#FFD6E8]/10 dark:border-slate-800 dark:hover:border-pink-500'
     }
   }
 
@@ -204,16 +119,37 @@ const CourseCard = memo(({
 
   return (
     <article
-      className={`group rounded-[24px] border-[1.5px] p-7 flex flex-col justify-between transition-transform transition-shadow duration-300 transform translate-z-0 will-change-transform hover:-translate-y-1.5 bg-white ${style.border} ${style.shadow} hover:shadow-2xl`}
+      className={`group rounded-[24px] border-[1.5px] p-7 flex flex-col justify-between transition-all duration-300 transform translate-z-0 will-change-transform hover:-translate-y-1.5 bg-white dark:bg-slate-900 ${style.border} ${style.shadow} hover:shadow-2xl`}
       style={{ transform: 'translateZ(0)' }}
     >
       <div>
         {/* Card Header: Badge & Glossy Piano Illustration */}
-        <div className="flex justify-between items-start mb-6">
+        <div className="flex justify-between items-start mb-6 relative">
           <span className={`px-4 py-1.5 rounded-full border text-[11px] font-bold tracking-wider uppercase ${style.badge}`}>
             {style.badgeText}
           </span>
-          <PianoSVG color={style.themeColor as any} />
+          <div className="flex items-center gap-3">
+            <InstrumentIllustration category={course.category} size={64} className="w-16 h-16" />
+            {mode === 'student' && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onToggleFavorite?.(course)
+                }}
+                className={`absolute top-0 right-0 p-2 rounded-full border transition-all ${
+                  isFavorite 
+                    ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800/50 text-red-500 shadow-sm'
+                    : 'bg-white dark:bg-slate-850 border-slate-100 dark:border-slate-800 text-slate-400 hover:text-red-400'
+                }`}
+                title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              >
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Course Info */}
@@ -221,17 +157,17 @@ const CourseCard = memo(({
           <p className={`text-[11px] font-extrabold tracking-widest uppercase ${style.label}`}>
             {course.category.replace('-', ' ').toUpperCase()}
           </p>
-          <h3 className="text-[22px] font-bold text-[#0F1E4A] leading-tight">
+          <h3 className="text-[22px] font-bold text-[#0F1E4A] dark:text-slate-100 leading-tight">
             {course.title}
           </h3>
           
           {/* Instructor Info */}
           <div className="flex items-center gap-2 text-sm pt-1">
             <User className={`w-4 h-4 ${style.instructorIcon}`} />
-            <span className="text-[#0F1E4A] font-semibold opacity-90">{course.instructor}</span>
+            <span className="text-[#0F1E4A] dark:text-slate-350 font-semibold opacity-90">{course.instructor}</span>
           </div>
 
-          <p className="text-sm text-slate-500 leading-relaxed font-normal line-clamp-2">
+          <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-normal line-clamp-2">
             {course.description}
           </p>
         </div>
@@ -241,21 +177,21 @@ const CourseCard = memo(({
           {/* Duration Box */}
           <div className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-semibold text-xs ${style.pillBg}`}>
             <Clock className="w-3.5 h-3.5" style={{ color: style.iconColor }} />
-            <span className="text-[#0F1E4A]">{course.duration}</span>
+            <span className="text-[#0F1E4A] dark:text-slate-300">{course.duration}</span>
           </div>
           {/* Rating Box */}
           <div className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-semibold text-xs ${style.pillBg}`}>
             <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-            <span className="text-[#0F1E4A]">{course.rating}</span>
+            <span className="text-[#0F1E4A] dark:text-slate-300">{course.rating}</span>
           </div>
         </div>
       </div>
 
       <div>
         {/* Course Fee Section */}
-        <div className="border-t border-gray-100 pt-5 mb-6 flex justify-between items-center">
+        <div className="border-t border-gray-100 dark:border-slate-800 pt-5 mb-6 flex justify-between items-center">
           <div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">
               Course Fee
             </p>
             <p className={`text-2xl font-black ${style.price}`}>
@@ -269,38 +205,182 @@ const CourseCard = memo(({
           </span>
         </div>
 
-        {/* Action Buttons */}
-        <div className="space-y-3">
-          {/* Primary button: Book Time Slot */}
-          {showBooking && bookingSlot && (
-            <div className="w-full">
-              {bookingSlot}
-            </div>
-          )}
+        {/* Action Buttons depending on Mode */}
+        {mode === 'public' && (
+          <div className="space-y-3">
+            {showBooking && bookingSlot && (
+              <div className="w-full">
+                {bookingSlot}
+              </div>
+            )}
 
-          {/* Secondary & Cart buttons row */}
-          <div className="flex gap-3">
-            <Link
-              href={`/courses/${course.id}`}
-              className="btn-premium-base btn-premium-secondary flex-1 h-12 text-xs gap-1.5"
-            >
-              <span>View Details</span>
-              <span className="text-sm">→</span>
-            </Link>
+            <div className="flex gap-3">
+              {(() => {
+                const parts = course.id.toLowerCase().split('-')
+                const level = parts[parts.length - 1]
+                const instrument = parts.slice(0, -1).join('-')
+                return (
+                  <Link
+                    href={`/courses/${instrument}/${level}`}
+                    className="btn-premium-base btn-premium-secondary flex-1 h-12 text-xs gap-1.5"
+                  >
+                    <span>View Details</span>
+                    <span className="text-sm">→</span>
+                  </Link>
+                )
+              })()}
+
+              {onAddToCart && (
+                <button
+                  onClick={() => onAddToCart(course)}
+                  className={`btn-premium-base w-12 h-12 ${
+                    isInCart 
+                      ? 'bg-green-500 border-green-500 text-white shadow-sm shadow-green-200' 
+                      : 'btn-premium-secondary'
+                  }`}
+                  title={isInCart ? 'Added to Cart' : 'Add to Cart'}
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {mode === 'admin' && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2 text-[10px] font-bold">
+              <button
+                onClick={() => onEdit?.(course)}
+                className="btn-premium-base btn-premium-secondary h-10 border-[#5EA8FF]/20 text-[#5EA8FF] hover:bg-[#DCEEFF]/10"
+              >
+                Edit Course
+              </button>
+              <button
+                onClick={() => onDuplicate?.(course)}
+                className="btn-premium-base btn-premium-secondary h-10"
+              >
+                Duplicate
+              </button>
+              <button
+                onClick={() => onToggleStatus?.(course)}
+                className={`btn-premium-base h-10 border ${
+                  course.isDisabled 
+                    ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/30 text-green-700 dark:text-green-400 hover:bg-green-100'
+                    : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100'
+                }`}
+              >
+                {course.isDisabled ? 'Enable' : 'Disable'}
+              </button>
+              <button
+                onClick={() => onDelete?.(course)}
+                className="btn-premium-base h-10 border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-950/20 text-red-650 dark:text-red-400 hover:bg-red-100"
+              >
+                Delete
+              </button>
+            </div>
+            
+            {/* Admin specific stats block */}
+            <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 px-3 py-2 rounded-xl text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-2">
+              <span>👨‍🎓 {course.students || 0} Enrolled</span>
+              <span>💰 ₹{((course.students || 0) * course.price).toLocaleString('en-IN')} Rev</span>
+            </div>
+          </div>
+        )}
+
+        {mode === 'instructor' && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-1.5 text-[9px] font-bold">
+              <button
+                onClick={() => onEdit?.(course)}
+                className="btn-premium-base btn-premium-secondary h-8 py-0"
+                title="Edit Course Specs"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => onManageAssignments?.(course)}
+                className="btn-premium-base btn-premium-secondary h-8 py-0"
+                title="Manage Assignments"
+              >
+                Assign
+              </button>
+              <button
+                onClick={() => onUploadVideos?.(course)}
+                className="btn-premium-base btn-premium-secondary h-8 py-0"
+                title="Upload Lessons"
+              >
+                Videos
+              </button>
+              <button
+                onClick={() => onQuizzes?.(course)}
+                className="btn-premium-base btn-premium-secondary h-8 py-0"
+                title="Manage Quizzes"
+              >
+                Quizzes
+              </button>
+              <button
+                onClick={() => onAttendance?.(course)}
+                className="btn-premium-base btn-premium-secondary h-8 py-0"
+                title="Attendance Logs"
+              >
+                Attend
+              </button>
+              <button
+                onClick={() => onPerformance?.(course)}
+                className="btn-premium-base btn-premium-secondary h-8 py-0"
+                title="Performance Analytics"
+              >
+                Analytics
+              </button>
+            </div>
+            
+            <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 px-3 py-2 rounded-xl text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-2">
+              <span>👨‍🎓 {course.students || 0} Students</span>
+              <span>{course.isDisabled ? '🚫 Draft' : '✅ Published'}</span>
+            </div>
+          </div>
+        )}
+
+        {mode === 'student' && (
+          <div className="space-y-4 mt-2">
+            {/* Progress Bar */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                <span>Learning Progress</span>
+                <span>{progress}%</span>
+              </div>
+              <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] transition-all duration-500"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <div className="flex justify-between items-center text-[9px] font-semibold text-slate-400 dark:text-slate-500">
+                <span>{completedLessons} Completed</span>
+                <span>{Math.max(0, totalLessons - completedLessons)} Remaining</span>
+              </div>
+            </div>
+
+            {/* Student metadata specs */}
+            <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 border-t border-slate-50 dark:border-slate-800 pt-3">
+              <div>👨‍🏫 {course.instructor}</div>
+              <div>⏳ {course.duration}</div>
+              <div className="col-span-2 flex items-center gap-1.5 mt-1">
+                🎓 Certificate: <span className="text-green-600 dark:text-green-400">
+                  {certificateStatus || (course.hasCertificate ? 'Available' : 'None')}
+                </span>
+              </div>
+            </div>
 
             <button
-              onClick={() => onAddToCart(course)}
-              className={`btn-premium-base w-12 h-12 ${
-                isInCart 
-                  ? 'bg-green-500 border-green-500 text-white shadow-sm shadow-green-200' 
-                  : 'btn-premium-secondary'
-              }`}
-              title={isInCart ? 'Added to Cart' : 'Add to Cart'}
+              onClick={() => onContinueLearning?.(course)}
+              className="w-full h-12 flex items-center justify-center font-bold text-xs bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white rounded-xl shadow-md hover:shadow-lg transition-all"
             >
-              <ShoppingCart className="w-5 h-5" />
+              Continue Learning →
             </button>
           </div>
-        </div>
+        )}
       </div>
     </article>
   )

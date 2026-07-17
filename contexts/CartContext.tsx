@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useReducer, useEffect } from 'react'
+import React, { createContext, useContext, useReducer, useEffect, useState } from 'react'
 
 export interface Course {
   id: string
@@ -122,9 +122,15 @@ const initialState: CartState = {
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Load cart from localStorage on mount
   useEffect(() => {
+    if (!mounted) return
     const savedCart = localStorage.getItem('cart')
     if (savedCart) {
       try {
@@ -134,12 +140,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Failed to load cart from localStorage:', error)
       }
     }
-  }, [])
+  }, [mounted])
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
+    if (!mounted) return
     localStorage.setItem('cart', JSON.stringify(state.items))
-  }, [state.items])
+  }, [state.items, mounted])
 
   const addItem = (course: Course) => {
     dispatch({ type: 'ADD_ITEM', payload: course })

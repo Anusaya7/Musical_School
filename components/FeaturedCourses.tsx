@@ -135,91 +135,6 @@ const PianoSVG = memo(({ color }: { color: 'pink' | 'blue' | 'purple' }) => {
 })
 PianoSVG.displayName = 'PianoSVG'
 
-// Static piano courses array placed outside component to guarantee stable references
-const pianoCourses = [
-  {
-    id: 'piano-beginner',
-    title: 'Piano Beginner',
-    category: 'PIANO',
-    level: 'Beginner',
-    price: 4999,
-    instructor: 'Ajinkya Amrule',
-    duration: '3 Months',
-    rating: 4.8,
-    description: 'Build a strong piano foundation with posture, note reading, scales, and your first performance pieces.',
-    themeColor: 'pink',
-    badgeText: 'BEGINNER',
-    cardStyle: {
-      bg: 'bg-white',
-      border: 'border-[#FFD6E8] hover:border-[#FF6FAF]/50',
-      shadow: 'shadow-sm hover:shadow-xl hover:shadow-[#FFD6E8]/30',
-      badge: 'bg-[#FFD6E8]/30 text-[#FF6FAF] border-[#FFD6E8]/60',
-      label: 'text-[#FF6FAF]',
-      instructorIcon: 'text-[#FF6FAF]',
-      pillBg: 'bg-[#FFD6E8]/20',
-      iconColor: '#FF6FAF',
-      price: 'text-[#FF6FAF]',
-      primaryBtn: 'bg-gradient-to-r from-[#FF6FAF] to-[#FF8EBF] hover:from-[#FF8EBF] hover:to-[#FF6FAF] shadow-[#FFD6E8]/60',
-      secondaryBtn: 'border-[#FF6FAF]/40 text-[#FF6FAF] hover:bg-[#FFD6E8]/20',
-      cartBtn: 'border-gray-200 text-gray-400 hover:border-[#FF6FAF] hover:text-[#FF6FAF] hover:bg-[#FFD6E8]/10'
-    }
-  },
-  {
-    id: 'piano-intermediate',
-    title: 'Piano Intermediate',
-    category: 'PIANO',
-    level: 'Intermediate',
-    price: 6999,
-    instructor: 'Ajinkya Amrule',
-    duration: '4 Months',
-    rating: 4.85,
-    description: 'Develop expressive playing, chord voicings, sight-reading fluency, and stylistic versatility.',
-    themeColor: 'blue',
-    badgeText: 'INTERMEDIATE',
-    cardStyle: {
-      bg: 'bg-white',
-      border: 'border-[#DCEEFF] hover:border-[#5EA8FF]/50',
-      shadow: 'shadow-sm hover:shadow-xl hover:shadow-[#DCEEFF]/30',
-      badge: 'bg-[#DCEEFF]/30 text-[#5EA8FF] border-[#DCEEFF]/60',
-      label: 'text-[#5EA8FF]',
-      instructorIcon: 'text-[#5EA8FF]',
-      pillBg: 'bg-[#DCEEFF]/20',
-      iconColor: '#5EA8FF',
-      price: 'text-[#5EA8FF]',
-      primaryBtn: 'bg-gradient-to-r from-[#5EA8FF] to-[#7EB8FF] hover:from-[#7EB8FF] hover:to-[#5EA8FF] shadow-[#DCEEFF]/60',
-      secondaryBtn: 'border-[#5EA8FF]/40 text-[#5EA8FF] hover:bg-[#DCEEFF]/20',
-      cartBtn: 'border-gray-200 text-gray-400 hover:border-[#5EA8FF] hover:text-[#5EA8FF] hover:bg-[#DCEEFF]/10'
-    }
-  },
-  {
-    id: 'piano-advanced',
-    title: 'Piano Advanced',
-    category: 'PIANO',
-    level: 'Advanced',
-    price: 9999,
-    instructor: 'Ajinkya Amrule',
-    duration: '6 Months',
-    rating: 4.9,
-    description: 'Master advanced repertoire, improvisation, performance technique, and professional-level...',
-    themeColor: 'purple',
-    badgeText: 'ADVANCED',
-    cardStyle: {
-      bg: 'bg-white',
-      border: 'border-[#F4D9FF] hover:border-[#DFA7FF]/50',
-      shadow: 'shadow-sm hover:shadow-xl hover:shadow-[#F4D9FF]/30',
-      badge: 'bg-[#F4D9FF]/30 text-[#DFA7FF] border-[#F4D9FF]/60',
-      label: 'text-[#DFA7FF]',
-      instructorIcon: 'text-[#DFA7FF]',
-      pillBg: 'bg-[#F4D9FF]/20',
-      iconColor: '#DFA7FF',
-      price: 'text-[#DFA7FF]',
-      primaryBtn: 'bg-gradient-to-r from-[#FF6FAF] to-[#DFA7FF] hover:from-[#DFA7FF] hover:to-[#FF6FAF] shadow-[#F4D9FF]/60',
-      secondaryBtn: 'border-[#DFA7FF]/40 text-[#DFA7FF] hover:bg-[#F4D9FF]/20',
-      cartBtn: 'border-gray-200 text-gray-400 hover:border-[#DFA7FF] hover:text-[#DFA7FF] hover:bg-[#F4D9FF]/10'
-    }
-  }
-]
-
 interface CourseCardProps {
   course: any
   isInCartAlready: boolean
@@ -309,13 +224,20 @@ const CourseCard = memo(({ course, isInCartAlready, onBookClick, onAddToCart }: 
 
           {/* Secondary & Cart buttons row */}
           <div className="flex gap-3">
-            <Link
-              href={`/courses/${course.id}`}
-              className="btn-premium-base btn-premium-secondary flex-1 h-12 text-xs gap-1.5"
-            >
-              <span>View Details</span>
-              <span className="text-sm">→</span>
-            </Link>
+            {(() => {
+              const parts = course.id.toLowerCase().split('-')
+              const level = parts[parts.length - 1]
+              const instrument = parts.slice(0, -1).join('-')
+              return (
+                <Link
+                  href={`/courses/${instrument}/${level}`}
+                  className="btn-premium-base btn-premium-secondary flex-1 h-12 text-xs gap-1.5"
+                >
+                  <span>View Details</span>
+                  <span className="text-sm">→</span>
+                </Link>
+              )
+            })()}
 
             <button
               onClick={() => onAddToCart(course)}
@@ -336,13 +258,87 @@ const CourseCard = memo(({ course, isInCartAlready, onBookClick, onAddToCart }: 
 })
 CourseCard.displayName = 'CourseCard'
 
+const getCardStyle = (themeColor: 'pink' | 'blue' | 'purple') => {
+  if (themeColor === 'pink') {
+    return {
+      bg: 'bg-white',
+      border: 'border-[#FFD6E8] hover:border-[#FF6FAF]/50',
+      shadow: 'shadow-sm hover:shadow-xl hover:shadow-[#FFD6E8]/30',
+      badge: 'bg-[#FFD6E8]/30 text-[#FF6FAF] border-[#FFD6E8]/60',
+      label: 'text-[#FF6FAF]',
+      instructorIcon: 'text-[#FF6FAF]',
+      pillBg: 'bg-[#FFD6E8]/20',
+      iconColor: '#FF6FAF',
+      price: 'text-[#FF6FAF]',
+      primaryBtn: 'bg-gradient-to-r from-[#FF6FAF] to-[#FF8EBF] hover:from-[#FF8EBF] hover:to-[#FF6FAF] shadow-[#FFD6E8]/60',
+      secondaryBtn: 'border-[#FF6FAF]/40 text-[#FF6FAF] hover:bg-[#FFD6E8]/20',
+      cartBtn: 'border-gray-200 text-gray-400 hover:border-[#FF6FAF] hover:text-[#FF6FAF] hover:bg-[#FFD6E8]/10'
+    }
+  }
+  if (themeColor === 'purple') {
+    return {
+      bg: 'bg-white',
+      border: 'border-[#F4D9FF] hover:border-[#DFA7FF]/50',
+      shadow: 'shadow-sm hover:shadow-xl hover:shadow-[#F4D9FF]/30',
+      badge: 'bg-[#F4D9FF]/30 text-[#DFA7FF] border-[#F4D9FF]/60',
+      label: 'text-[#DFA7FF]',
+      instructorIcon: 'text-[#DFA7FF]',
+      pillBg: 'bg-[#F4D9FF]/20',
+      iconColor: '#DFA7FF',
+      price: 'text-[#DFA7FF]',
+      primaryBtn: 'bg-gradient-to-r from-[#FF6FAF] to-[#DFA7FF] hover:from-[#DFA7FF] hover:to-[#FF6FAF] shadow-[#F4D9FF]/60',
+      secondaryBtn: 'border-[#DFA7FF]/40 text-[#DFA7FF] hover:bg-[#F4D9FF]/20',
+      cartBtn: 'border-gray-200 text-gray-400 hover:border-[#DFA7FF] hover:text-[#DFA7FF] hover:bg-[#F4D9FF]/10'
+    }
+  }
+  return {
+    bg: 'bg-white',
+    border: 'border-[#DCEEFF] hover:border-[#5EA8FF]/50',
+    shadow: 'shadow-sm hover:shadow-xl hover:shadow-[#DCEEFF]/30',
+    badge: 'bg-[#DCEEFF]/30 text-[#5EA8FF] border-[#DCEEFF]/60',
+    label: 'text-[#5EA8FF]',
+    instructorIcon: 'text-[#5EA8FF]',
+    pillBg: 'bg-[#DCEEFF]/20',
+    iconColor: '#5EA8FF',
+    price: 'text-[#5EA8FF]',
+    primaryBtn: 'bg-gradient-to-r from-[#5EA8FF] to-[#7EB8FF] hover:from-[#7EB8FF] hover:to-[#5EA8FF] shadow-[#DCEEFF]/60',
+    secondaryBtn: 'border-[#5EA8FF]/40 text-[#5EA8FF] hover:bg-[#DCEEFF]/20',
+    cartBtn: 'border-gray-200 text-gray-400 hover:border-[#5EA8FF] hover:text-[#5EA8FF] hover:bg-[#DCEEFF]/10'
+  }
+}
+
 export default function FeaturedCourses() {
   const { addItem, isInCart } = useCart()
   const [selectedClass, setSelectedClass] = useState<any>(null)
   const [showBookingModal, setShowBookingModal] = useState(false)
+  const [courses, setCourses] = useState<any[]>([])
   
   const [showSuccess, setShowSuccess] = useState(false)
   const [booking, setBooking] = useState<any>(null)
+
+  useEffect(() => {
+    fetch('/api/courses')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const pianoList = data
+            .filter((c: any) => c.category?.toLowerCase() === 'piano' && !c.isDisabled)
+            .map((c: any) => {
+              const lowerLevel = c.level.toLowerCase()
+              const themeColor = lowerLevel.includes('beginner') ? 'pink' : lowerLevel.includes('intermediate') ? 'blue' : 'purple'
+              const badgeText = c.level.toUpperCase()
+              return {
+                ...c,
+                themeColor,
+                badgeText,
+                cardStyle: getCardStyle(themeColor)
+              }
+            })
+          setCourses(pianoList)
+        }
+      })
+      .catch(err => console.error('Error fetching courses:', err))
+  }, [])
 
   const handleBookClick = useCallback((course: any) => {
     setSelectedClass({
@@ -384,13 +380,13 @@ export default function FeaturedCourses() {
         {/* Section Header */}
         <div className="text-center mb-16">
           <h2 className="text-[28px] md:text-3xl font-bold text-[#0F1E4A]">
-            Showing 3 Piano courses
+            Showing {courses.length} Piano courses
           </h2>
         </div>
 
         {/* Course Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {pianoCourses.map((course) => {
+          {courses.map((course) => {
             const isInCartAlready = isInCart(course.id)
 
             return (

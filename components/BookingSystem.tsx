@@ -14,6 +14,18 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
     classId: selectedClass || '',
     message: ''
   })
+  const [coursesList, setCoursesList] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch('/api/courses')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setCoursesList(data.filter((c: any) => !c.isDisabled))
+        }
+      })
+      .catch(err => console.error('Failed to fetch courses for booking:', err))
+  }, [])
 
   useEffect(() => {
     if (selectedClass) {
@@ -153,9 +165,11 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
                     className="h-[56px] w-full px-4 pr-10 border-2 border-[#B8D4FF] hover:border-[#5EA8FF] rounded-[14px] bg-white text-[#0F1E4A] font-medium text-sm transition-all duration-300 focus:outline-none focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/12 appearance-none cursor-pointer"
                   >
                     <option value="">Choose a class...</option>
-                    <option value="morning-piano">Morning Piano Class (4:00 AM - 12:00 PM)</option>
-                    <option value="evening-guitar">Evening Guitar Class (3:00 PM - 9:00 PM)</option>
-                    <option value="vocal-training">Vocal Training (3:00 PM - 9:00 PM)</option>
+                    {coursesList.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.title} ({c.level}) - ₹{c.price.toLocaleString('en-IN')}
+                      </option>
+                    ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-[#94A3B8]">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

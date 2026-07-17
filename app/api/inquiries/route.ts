@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getInquiries, addInquiry, updateInquiryStatus, deleteInquiry, addNotification } from '@/lib/db'
 import nodemailer from 'nodemailer'
+import { sendSystemEmail } from '@/lib/email'
 
 // Basic input sanitization to prevent XSS
 function sanitize(input: string): string {
@@ -175,37 +176,14 @@ export async function POST(request: Request) {
     await addNotification(newNotification)
 
     // 5. Send Emails via Nodemailer
-    const transporter = getTransporter()
-    let emailSent = false
-    let smtpMissing = false
+    const adminText = `New Inquiry Received:\n\nFull Name: ${sFullName}\nEmail: ${sEmail}\nPhone: ${sPhone}\nPurpose: ${sPurpose}\nMessage:\n${sMessage}\n\nSubmitted On: ${dateStr} ${timeStr}\nIP Address: ${ip}`
+    const userText = `Hello ${sFullName},\n\nThank you for contacting 2ND INVERSION Music School.\nWe have successfully received your inquiry.\nOur team will contact you within 24 hours.\n\nIf your inquiry is urgent, please contact us directly.\n\nPhone:\n+91 77688 38832\n\nEmail:\naamrule90@gmail.com\n\nRegards,\n2ND INVERSION Music School`
 
-    if (transporter) {
-      try {
-        const fromEmail = process.env.SMTP_FROM || '"2ND INVERSION" <noreply@2ndinversion.com>'
-        
-        // A. Email to Admin (aamrule90@gmail.com)
-        await transporter.sendMail({
-          from: fromEmail,
-          to: 'aamrule90@gmail.com',
-          subject: 'New Inquiry - 2ND INVERSION Music School',
-          text: `New Inquiry Received:\n\nFull Name: ${sFullName}\nEmail: ${sEmail}\nPhone: ${sPhone}\nPurpose: ${sPurpose}\nMessage:\n${sMessage}\n\nSubmitted On: ${dateStr} ${timeStr}\nIP Address: ${ip}`
-        })
-
-        // B. Auto Reply to Student
-        await transporter.sendMail({
-          from: fromEmail,
-          to: sEmail,
-          subject: 'Thank you for contacting 2ND INVERSION Music School',
-          text: `Hello ${sFullName},\n\nThank you for contacting 2ND INVERSION Music School.\nWe have successfully received your inquiry.\nOur team will contact you within 24 hours.\n\nIf your inquiry is urgent, please contact us directly.\n\nPhone:\n+91 77688 38832\n\nEmail:\naamrule90@gmail.com\n\nRegards,\n2ND INVERSION Music School`
-        })
-
-        emailSent = true
-      } catch (err) {
-        console.error('SMTP email transmission error:', err)
-      }
-    } else {
-      smtpMissing = true
-    }
+    const sentAdmin = await sendSystemEmail('aamrule90@gmail.com', 'New Inquiry - 2ND INVERSION Music School', adminText.replace(/\n/g, '<br/>'))
+    const sentUser = await sendSystemEmail(sEmail, 'Thank you for contacting 2ND INVERSION Music School', userText.replace(/\n/g, '<br/>'))
+    
+    const emailSent = sentAdmin && sentUser
+    const smtpMissing = !process.env.SMTP_HOST
 
     return NextResponse.json({
       success: true,

@@ -1,67 +1,54 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { COURSE_COUNTS } from '@/data/coursesData'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 
 export default function ExploreInstruments() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const searchTerm = searchParams.get('search')?.toLowerCase().trim() || ''
   const [shakingCard, setShakingCard] = useState<number | null>(null)
+  const [instrumentsList, setInstrumentsList] = useState<any[]>([])
+  const [coursesList, setCoursesList] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const instruments = [
-    { name: 'Piano', courses: COURSE_COUNTS.piano, icon: 'M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3', theme: 'pink' },
-    { name: 'Guitar', courses: COURSE_COUNTS.guitar, icon: 'M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3', theme: 'blue' },
-    { name: 'Drums', courses: COURSE_COUNTS.drums, icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z', theme: 'cyan' },
-    { name: 'Vocals', courses: COURSE_COUNTS.vocals, icon: 'M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z', theme: 'pink' },
-    { name: 'Violin', courses: COURSE_COUNTS.violin, icon: 'M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3', theme: 'blue' },
-    { name: 'Music Theory', courses: COURSE_COUNTS['music-theory'], icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253', theme: 'pink' },
-    { name: 'Bass Guitar', courses: COURSE_COUNTS['bass-guitar'], icon: 'M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3', theme: 'blue' },
-    { name: 'Saxophone', courses: COURSE_COUNTS.saxophone, icon: 'M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3', theme: 'pink' }
-  ]
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/categories?paginated=false').then(res => res.json()).catch(() => []),
+      fetch('/api/courses').then(res => res.json()).catch(() => [])
+    ]).then(([insts, crss]) => {
+      if (Array.isArray(insts)) setInstrumentsList(insts)
+      if (Array.isArray(crss)) setCoursesList(crss)
+      setLoading(false)
+    }).catch(err => {
+      console.error('Failed to load instruments or courses:', err)
+      setLoading(false)
+    })
+  }, [])
 
-  const filteredInstruments =
-    searchTerm === ''
-      ? instruments
-      : instruments.filter(
-          (instrument) =>
-            instrument.name.toLowerCase() === searchTerm
-        )
-
-  const handleExploreCourses = (instrumentName: string) => {
-    console.log(`Exploring ${instrumentName} courses...`)
-    
-    const categoryMap: { [key: string]: string } = {
-      'Piano': 'piano',
-      'Guitar': 'guitar',
-      'Drums': 'drums',
-      'Vocals': 'vocals',
-      'Violin': 'violin',
-      'Music Theory': 'music-theory',
-      'Bass Guitar': 'bass-guitar',
-      'Saxophone': 'saxophone'
+  const handleExploreCourses = (instrumentId: string, status: string) => {
+    if (status === 'Upcoming') {
+      alert("Thanks for your interest! We'll notify you as soon as our Saxophone classes launch.")
+      return
     }
-    
-    const category = categoryMap[instrumentName] || instrumentName.toLowerCase().replace(' ', '-')
-    router.push(`/courses?category=${category}`)
+    router.push(`/courses/${instrumentId}`)
   }
 
-  const handleCardClick = (instrumentName: string, index: number) => {
+  const handleCardClick = (instrumentId: string, status: string, index: number) => {
+    if (status === 'Upcoming') {
+      handleExploreCourses(instrumentId, status)
+      return
+    }
     setShakingCard(index)
     setTimeout(() => {
       setShakingCard(null)
-      handleExploreCourses(instrumentName)
+      handleExploreCourses(instrumentId, status)
     }, 250)
   }
 
   const handleViewAllInstruments = () => {
-    console.log('Viewing all instruments...')
     router.push('/courses')
   }
 
-  // Define icon gradient themes
   const getIconStyles = (theme: string) => {
     switch (theme) {
       case 'pink':
@@ -75,7 +62,6 @@ export default function ExploreInstruments() {
     }
   }
 
-  // Framer Motion staggered animations
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -99,6 +85,58 @@ export default function ExploreInstruments() {
     }
   }
 
+  // Pre-process instruments and associate with courses list
+  const visibleInstruments = instrumentsList.filter(inst => inst.isVisible !== false && inst.status !== 'Inactive')
+  const mappedInstruments = visibleInstruments.map((inst, index) => {
+    const matchingCourses = coursesList.filter(
+      c => c.category?.toLowerCase() === inst.id?.toLowerCase() && !c.isDisabled
+    )
+    const startingPrice = inst.startingPrice || (matchingCourses.length > 0 ? Math.min(...matchingCourses.map(c => c.price)) : 4999)
+    
+    const themes = ['pink', 'blue', 'cyan']
+    const theme = themes[index % themes.length]
+
+    const iconMap: { [key: string]: string } = {
+      piano: '/icons/piano.svg',
+      guitar: '/icons/guitar.svg',
+      drums: '/icons/drums.svg',
+      vocals: '/icons/microphone.svg',
+      violin: '/icons/violin.svg',
+      'music-theory': '/icons/music-theory.svg',
+      'bass-guitar': '/icons/bass-guitar.svg',
+      saxophone: '/icons/saxophone.svg'
+    }
+
+    const lookupId = inst.id?.toLowerCase() || ''
+    const normalizedId = lookupId === 'vocals' ? 'vocals'
+      : lookupId === 'theory' || lookupId === 'music-theory' || lookupId === 'music theory' ? 'music-theory'
+      : lookupId === 'bass' || lookupId === 'bass-guitar' || lookupId === 'bass guitar' ? 'bass-guitar'
+      : lookupId;
+
+    const uniqueLevels = inst.levels || matchingCourses
+      .map(c => c.level)
+      .filter((value, idx, self) => self.indexOf(value) === idx)
+
+    return {
+      id: inst.id,
+      name: inst.name,
+      status: inst.status === 'ACTIVE' ? 'Active' : (inst.status === 'COMING_SOON' ? 'Upcoming' : 'Inactive'),
+      courses: 3,
+      levels: uniqueLevels.length > 0 ? uniqueLevels.join(', ') : 'Beginner, Intermediate, Advanced',
+      startingPrice,
+      icon: iconMap[normalizedId] || inst.icon || '/icons/piano.svg',
+      theme
+    }
+  })
+
+  if (loading) {
+    return (
+      <div className="py-24 text-center text-slate-500 font-bold text-sm">
+        Loading instruments registry...
+      </div>
+    )
+  }
+
   return (
     <section className="py-24 bg-[#FAFBFF] relative overflow-hidden font-sans">
       {/* Decorative top soft accents */}
@@ -120,52 +158,84 @@ export default function ExploreInstruments() {
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: "-60px" }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12 animate-in fade-in duration-700"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12"
         >
-          {filteredInstruments.length > 0 ? (
-            filteredInstruments.map((instrument, index) => (
-              <motion.div
-                key={index}
-                variants={cardVariants}
-                className="group relative cursor-pointer rounded-[24px] border-[1.5px] border-[#5EA8FF]/15 p-[1px] flex flex-col justify-between transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] shadow-[0_8px_30px_rgb(0,0,0,0.01)] hover:shadow-[0_20px_50px_rgba(94,168,255,0.14)] will-change-transform transform-gpu"
-                style={{
-                  background: 'linear-gradient(135deg, #EAF5FF 0%, #F8FBFF 50%, #FFEAF4 100%)',
-                  backfaceVisibility: 'hidden'
-                }}
-                onClick={() => handleCardClick(instrument.name, index)}
-              >
-                {/* White glassmorphism card effect */}
-                <div className="bg-white/45 backdrop-blur-[16px] rounded-[23px] py-10 px-6 text-center w-full h-full flex flex-col justify-between items-center transition-all duration-300 border border-white/30 overflow-hidden relative">
-                  
-                  <div className="mb-8 flex flex-col items-center w-full">
-                    {/* Icon with Circular pastel background and inner glow */}
-                    <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 group-hover:scale-105 group-hover:rotate-[6deg] transition-all duration-300 ease-out backdrop-blur-[8px] ${getIconStyles(instrument.theme)}`}>
+          {mappedInstruments.map((instrument, index) => (
+            <motion.div
+              key={index}
+              variants={cardVariants}
+              className="group relative cursor-pointer rounded-[24px] border-[1.5px] border-[#5EA8FF]/15 p-[1px] flex flex-col justify-between transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] shadow-[0_8px_30px_rgb(0,0,0,0.01)] hover:shadow-[0_20px_50px_rgba(94,168,255,0.14)] will-change-transform transform-gpu"
+              style={{
+                background: 'linear-gradient(135deg, #EAF5FF 0%, #F8FBFF 50%, #FFEAF4 100%)',
+                backfaceVisibility: 'hidden'
+              }}
+              onClick={() => handleCardClick(instrument.id, instrument.status, index)}
+            >
+              {/* White glassmorphism card effect */}
+              <div className="bg-white/45 backdrop-blur-[16px] rounded-[23px] py-10 px-6 text-center w-full h-full flex flex-col justify-between items-center transition-all duration-300 border border-white/30 overflow-hidden relative">
+                
+                {/* Upcoming Badge */}
+                {instrument.status === 'Upcoming' && (
+                  <div className="absolute top-4 right-4 bg-[#FFF7E6] text-[#D97706] border border-[#FACC15] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+                    🚀 Coming Soon
+                  </div>
+                )}
+
+                <div className="mb-8 flex flex-col items-center w-full">
+                  {/* Icon with Circular pastel background and inner glow */}
+                  <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 group-hover:scale-105 group-hover:rotate-[6deg] transition-all duration-300 ease-out backdrop-blur-[8px] ${getIconStyles(instrument.theme)}`}>
+                    {instrument.icon?.startsWith('/') ? (
+                      <img 
+                        src={instrument.icon} 
+                        alt={instrument.name} 
+                        className="w-10 h-10 object-contain" 
+                      />
+                    ) : (
                       <svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={instrument.icon} />
                       </svg>
-                    </div>
-                    
-                    {/* Heading Text */}
-                    <h3 className="text-xl font-bold text-[#0F1E4A] mb-2 transition-colors duration-300 group-hover:text-[#5EA8FF]">
-                      {instrument.name}
-                    </h3>
-                    <p className="text-slate-400 font-bold text-xs">
-                      {instrument.courses} courses
-                    </p>
+                    )}
                   </div>
                   
-                  {/* Explore Courses Button Redesign */}
-                  <div className="flex justify-center w-full">
-                    <div
-                      className={`btn-premium-base btn-premium-explore h-[48px] w-fit px-[28px] ${
-                        shakingCard === index ? 'animate-button-shake' : ''
-                      }`}
-                    >
-                      <span className="relative z-10 select-none">
-                        Explore Courses
-                      </span>
+                  {/* Heading Text */}
+                  <h3 className="text-xl font-bold text-[#0F1E4A] mb-2 transition-colors duration-300 group-hover:text-[#5EA8FF]">
+                    {instrument.name}
+                  </h3>
+                  
+                  {instrument.status === 'Upcoming' ? (
+                    <p className="text-[#D97706] font-extrabold text-xs uppercase tracking-wider">
+                      Launching Soon
+                    </p>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-slate-400 font-bold text-xs">
+                        {instrument.courses} courses
+                      </p>
+                      <p className="text-[10px] text-slate-450 font-medium">
+                        Levels: {instrument.levels}
+                      </p>
+                      {instrument.startingPrice && (
+                        <p className="text-xs font-black text-[#5EA8FF] mt-1">
+                          Starts from ₹{instrument.startingPrice.toLocaleString('en-IN')}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Explore Courses Button */}
+                <div className="flex justify-center w-full">
+                  <div
+                    className={`btn-premium-base btn-premium-explore h-[48px] w-fit px-[28px] ${
+                      shakingCard === index ? 'animate-button-shake' : ''
+                    } ${instrument.status === 'Upcoming' ? 'opacity-75 cursor-not-allowed border-amber-300' : ''}`}
+                  >
+                    <span className="relative z-10 select-none">
+                      {instrument.status === 'Upcoming' ? 'Notify Me' : 'Explore Courses'}
+                    </span>
+                    {instrument.status !== 'Upcoming' && (
                       <svg 
-                        className="w-4 h-4 ml-2 relative z-10 transition-transform duration-300 ease-out group-hover:translate-x-2 text-current" 
+                        className="w-4 h-4 ml-2 relative z-10 text-current" 
                         fill="none" 
                         stroke="currentColor" 
                         strokeWidth={2.5} 
@@ -173,19 +243,13 @@ export default function ExploreInstruments() {
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                       </svg>
-                    </div>
+                    )}
                   </div>
-
                 </div>
-              </motion.div>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-10">
-              <h3 className="text-2xl font-semibold text-slate-400">
-                No instruments found
-              </h3>
-            </div>
-          )}
+
+              </div>
+            </motion.div>
+          ))}
         </motion.div>
 
         <div className="text-center mt-20">
@@ -200,4 +264,3 @@ export default function ExploreInstruments() {
     </section>
   )
 }
-

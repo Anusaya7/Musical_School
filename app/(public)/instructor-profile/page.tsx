@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Header from '@/components/Header'
 import Image from 'next/image'
+import Header from '@/components/Header'
 import { 
   Award, 
   BookOpen, 
@@ -51,6 +51,168 @@ function useCountUp(end: number, duration: number = 2000, trigger: boolean = fal
   return count
 }
 
+const InstructorCertificateCard = ({ cert, onView, onDownload }: { cert: any; onView: () => void; onDownload: () => void }) => {
+  return (
+    <div className="bg-white/80 backdrop-blur-md border border-slate-200/80 rounded-[24px] p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col justify-between group h-full">
+      <div className="space-y-4">
+        {/* Trinity Crest Brand Representation */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xs font-black shadow-sm">
+              T
+            </div>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+              Trinity College
+            </span>
+          </div>
+          <span className="px-2 py-0.5 bg-green-50 text-green-600 text-[9px] font-black uppercase rounded-md border border-green-150 shadow-sm shrink-0">
+            {cert.result}
+          </span>
+        </div>
+
+        {/* Certificate Title */}
+        <div>
+          <h3 className="text-base font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+            🎓 {cert.grade}
+          </h3>
+          <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">
+            {cert.issuer}
+          </p>
+        </div>
+
+        {/* Award Detail */}
+        <p className="text-[11px] text-slate-500 leading-normal line-clamp-2">
+          {cert.award}
+        </p>
+
+        {/* Date and Location info */}
+        <div className="text-[10px] text-slate-400 font-semibold space-y-0.5 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+          <p><span className="text-slate-400">Date:</span> {cert.date}</p>
+          <p><span className="text-slate-400">Center:</span> Pune (303)</p>
+        </div>
+      </div>
+
+      {/* Button Controls */}
+      <div className="flex gap-2.5 mt-5">
+        <button
+          onClick={onView}
+          className="flex-1 py-2.5 bg-slate-900 text-white font-bold rounded-xl text-[11px] hover:bg-blue-600 transition active:scale-[0.98] flex items-center justify-center gap-1 shadow-sm"
+        >
+          <ExternalLink className="w-3 h-3" /> View
+        </button>
+        <button
+          onClick={onDownload}
+          className="px-3.5 py-2.5 bg-white border border-[#E5E7EB] text-slate-700 font-bold rounded-xl text-[11px] hover:bg-slate-50 transition active:scale-[0.98] flex items-center justify-center shadow-sm"
+          title="Download Certificate File"
+        >
+          <Download className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+const CertificateGallery = ({ 
+  certifications, 
+  onView, 
+  onDownload 
+}: { 
+  certifications: any[]; 
+  onView: (index: number) => void; 
+  onDownload: (index: number) => void 
+}) => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+      {certifications.map((cert, index) => (
+        <InstructorCertificateCard
+          key={cert.id}
+          cert={cert}
+          onView={() => onView(index)}
+          onDownload={() => onDownload(index)}
+        />
+      ))}
+    </div>
+  )
+}
+
+const CertificatePreview = ({ imageSrc, alt }: { imageSrc: string; alt: string }) => {
+  return (
+    <div className="relative w-full aspect-[3/4] max-h-[70vh] flex items-center justify-center bg-[#FCFBF7] border-[12px] border-double border-[#C5A880] shadow-inner rounded-lg overflow-hidden group/zoom">
+      <Image
+        src={imageSrc}
+        alt={alt}
+        fill
+        sizes="(max-width: 768px) 100vw, 640px"
+        className="object-contain p-2 transition-transform duration-300 ease-out hover:scale-110"
+        priority
+      />
+    </div>
+  )
+}
+
+const CertificateModal = ({ 
+  isOpen, 
+  onClose, 
+  cert, 
+  onDownload 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  cert: any; 
+  onDownload: () => void 
+}) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-[24px] border border-slate-200 max-w-2xl w-full p-6 md:p-8 space-y-6 shadow-2xl relative animate-scaleUp"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition z-10"
+          title="Close Modal"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <CertificatePreview imageSrc={cert.image} alt={`${cert.grade} - ${cert.issuer}`} />
+
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-2 border-t border-slate-100">
+          <div className="text-left w-full sm:w-auto">
+            <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+              {cert.grade}
+            </h4>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+              Official Credential Verification
+            </p>
+          </div>
+          <button 
+            onClick={onDownload}
+            className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold transition flex items-center gap-1.5 w-full sm:w-auto justify-center shadow-md active:scale-[0.98]"
+          >
+            <Download className="w-4 h-4" /> Download Certificate
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function InstructorProfile() {
   const [statsTrigger, setStatsTrigger] = useState(false)
   const [activeGalleryTab, setActiveGalleryTab] = useState<'all' | 'performances' | 'workshops' | 'recitals' | 'classroom'>('all')
@@ -75,7 +237,8 @@ export default function InstructorProfile() {
       issueNum: '1',
       trinityId: '1-9391143941:1-9719324067',
       candidateNum: '1-9719324067',
-      id: 'grade8'
+      id: 'grade8',
+      image: '/images/Ajinkya_Amrule_Grade_8_Certificate.png'
     },
     {
       grade: 'Grade 7 Piano',
@@ -90,7 +253,8 @@ export default function InstructorProfile() {
       issueNum: '1',
       trinityId: '1-9391143941:1-9719324067',
       candidateNum: '1-9719324067',
-      id: 'grade7'
+      id: 'grade7',
+      image: '/images/Ajinkya_Amrule_Grade_7_Certificate.png'
     },
     {
       grade: 'Grade 6 Piano',
@@ -105,7 +269,8 @@ export default function InstructorProfile() {
       issueNum: '1',
       trinityId: '1-9391143941:1-9719324067',
       candidateNum: '1-9719324067',
-      id: 'grade6'
+      id: 'grade6',
+      image: '/images/Ajinkya_Amrule_Grade_6_Certificate.png'
     },
     {
       grade: 'Grade 5 Piano',
@@ -120,7 +285,8 @@ export default function InstructorProfile() {
       issueNum: '1',
       trinityId: '1-9391143941:1-9719324067',
       candidateNum: '1-9719324067',
-      id: 'grade5'
+      id: 'grade5',
+      image: '/images/Ajinkya_Amrule_Grade_5_Certificate.png'
     }
   ]
 
@@ -160,9 +326,24 @@ export default function InstructorProfile() {
       desc: 'Scaled to 300+ active students, launching our advanced online portals and virtual learning models.'
     },
     {
+      year: '2022',
+      title: 'Trinity Grade 5 Distinction',
+      desc: 'Awarded Grade 5 Piano with Distinction from Trinity College London.'
+    },
+    {
       year: '2023',
       title: 'Trinity Grade 6 Distinction',
-      desc: 'Awarded Grade 6 Piano with Distinction, expanding certification courses and classical recitals.'
+      desc: 'Awarded Grade 6 Piano with Distinction from Trinity College London.'
+    },
+    {
+      year: '2024',
+      title: 'Trinity Grade 7 Distinction',
+      desc: 'Awarded Grade 7 Piano with Distinction from Trinity College London.'
+    },
+    {
+      year: '2025',
+      title: 'Trinity Grade 8 Distinction',
+      desc: 'Awarded Grade 8 Piano with Distinction from Trinity College London.'
     },
     {
       year: '2026',
@@ -226,7 +407,7 @@ export default function InstructorProfile() {
   }
 
   const triggerResumeDownload = () => {
-    const resumeText = `AJINKYA UDDHAV AMRULE - RESUME\n\nRole: Senior Music Instructor & Piano Specialist\nAddress: Sr. No. 56/2/30, Pimple Gurav, Pune\nEmail: aamrule90@gmail.com\nPhone: +91 77688 38832\n\nEXPERIENCE:\n- Founder & Lead Instructor at 2nd Inversion Music School (2018 - Present)\n- Professional Music Educator & Tutor (2014 - Present)\n\nEDUCATION & CERTIFICATIONS:\n- Trinity College London Grade 6 Piano - Distinction (2023)\n- Graduate Degree in Sound & Audio Engineering`;
+    const resumeText = `AJINKYA UDDHAV AMRULE - RESUME\n\nRole: Senior Music Instructor & Piano Specialist\nAddress: Sr. No. 56/2/30, Pimple Gurav, Pune\nEmail: aamrule90@gmail.com\nPhone: +91 77688 38832\n\nEXPERIENCE:\n- Founder & Lead Instructor at 2nd Inversion Music School (2018 - Present)\n- Professional Music Educator & Tutor (2014 - Present)\n\nEDUCATION & CERTIFICATIONS:\n- Trinity College London Grade 8 Piano - Distinction (2025)\n- Trinity College London Grade 7 Piano - Distinction (2024)\n- Trinity College London Grade 6 Piano - Distinction (2023)\n- Trinity College London Grade 5 Piano - Distinction (2022)\n- Graduate Degree in Sound & Audio Engineering`;
     handleDownloadFile("Ajinkya_Amrule_Resume.txt", resumeText);
   }
 
@@ -234,6 +415,28 @@ export default function InstructorProfile() {
     const cert = certifications[selectedCertIndex]
     const certText = `TRINITY COLLEGE LONDON\n${cert.grade} - ${cert.result}\n${cert.award}\nCandidate: Ajinkya Amrule\nDate: ${cert.date}\nPlace of entry: ${cert.place}\nCertificate issued: ${cert.issued}\nResult: ${cert.result}\nQualification number: ${cert.qualification}\nUnit number: ${cert.unit}\nCertificate issue number: ${cert.issueNum}\nTrinity ID: ${cert.trinityId}\nCandidate number: ${cert.candidateNum}`;
     handleDownloadFile(`Trinity_${cert.grade.replace(/\s+/g, '_')}_Certificate_Details.txt`, certText);
+  }
+
+  const downloadCertificateImage = (gradeName: string, imageSrc: string) => {
+    fetch(imageSrc)
+      .then(response => response.blob())
+      .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Trinity_${gradeName.replace(/\s+/g, '_')}_Certificate.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(err => {
+        console.error('Failed to download image', err);
+        // Fallback to details download
+        const cert = certifications.find(c => c.grade === gradeName) || certifications[0];
+        const certText = `TRINITY COLLEGE LONDON\n${cert.grade} - ${cert.result}\n${cert.award}\nCandidate: Ajinkya Amrule\nDate: ${cert.date}\nPlace of entry: ${cert.place}\nCertificate issued: ${cert.issued}\nResult: ${cert.result}\nQualification number: ${cert.qualification}\nUnit number: ${cert.unit}\nCertificate issue number: ${cert.issueNum}\nTrinity ID: ${cert.trinityId}\nCandidate number: ${cert.candidateNum}`;
+        handleDownloadFile(`Trinity_${cert.grade.replace(/\s+/g, '_')}_Certificate_Details.txt`, certText);
+      });
   }
 
   return (
@@ -256,13 +459,11 @@ export default function InstructorProfile() {
             <div className="w-full lg:w-5/12 flex flex-col items-center">
               <div className="relative w-[280px] sm:w-[360px] h-[330px] sm:h-[420px] rounded-[32px] overflow-hidden group shadow-[0_20px_50px_rgba(37,99,235,0.08)] bg-slate-50 border-4 border-white/60">
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/20 via-transparent to-transparent z-10 opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
-                <Image 
-                  src="/images/instructor_ajinkya.jpg" 
-                  alt="Ajinkya Uddhav Amrule" 
-                  fill
-                  sizes="(max-width: 640px) 280px, 360px"
-                  priority
-                  className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                <img 
+                  src="/images/instructor_portrait.jpg" 
+                  alt="Ajinkya Amrule - Senior Music Instructor" 
+                  loading="lazy"
+                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
                 />
                 
                 {/* Floating Glassmorphic Badges */}
@@ -481,91 +682,17 @@ export default function InstructorProfile() {
             <div className="w-16 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full" />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start max-w-5xl mx-auto">
-            {/* Left Column: Selector list */}
-            <div className="lg:col-span-5 space-y-3">
-              {certifications.map((cert, index) => (
-                <button
-                  key={cert.id}
-                  onClick={() => setSelectedCertIndex(index)}
-                  className={`w-full text-left p-4 rounded-2xl border transition-all duration-200 flex items-center gap-3.5 ${
-                    selectedCertIndex === index
-                      ? 'bg-blue-50/50 border-blue-500 shadow-sm'
-                      : 'bg-white border-[#E5E7EB] hover:bg-slate-50'
-                  }`}
-                >
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    selectedCertIndex === index
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-500'
-                  }`}>
-                    <Award className="w-4.5 h-4.5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-black text-slate-900 leading-snug">
-                      {cert.grade}
-                    </h4>
-                    <p className="text-[10px] text-slate-400 font-extrabold mt-0.5 uppercase tracking-wider">
-                      {cert.issuer} • {cert.date.split(' ').slice(1).join(' ')}
-                    </p>
-                  </div>
-                  <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-transform ${
-                    selectedCertIndex === index ? 'text-blue-600 translate-x-0.5' : 'text-slate-400'
-                  }`} />
-                </button>
-              ))}
-            </div>
-
-            {/* Right Column: Featured Details Card */}
-            <div className="lg:col-span-7 bg-white border-2 border-[#E5E7EB] rounded-3xl p-6 sm:p-8 shadow-md relative overflow-hidden flex flex-col sm:flex-row gap-6 items-center">
-              <div className="absolute top-0 left-0 bottom-0 w-2 bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500 hidden sm:block" />
-              
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center text-white shadow-md shrink-0">
-                <Award className="w-10 h-10" />
-              </div>
-
-              <div className="flex-1 space-y-4 text-center sm:text-left w-full">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-wider block">
-                    {certifications[selectedCertIndex].issuer}
-                  </span>
-                  <h3 className="text-xl font-black text-slate-900">
-                    {certifications[selectedCertIndex].grade}
-                  </h3>
-                  <p className="text-[11px] font-extrabold text-slate-400 leading-relaxed">
-                    {certifications[selectedCertIndex].award}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 select-none">
-                  <span className="px-2 py-0.5 bg-green-50 text-green-600 text-[10px] font-black uppercase rounded-md border border-green-100 shadow-sm">
-                    {certifications[selectedCertIndex].result}
-                  </span>
-                  <span className="px-2 py-0.5 bg-slate-50 text-slate-500 text-[10px] font-black uppercase rounded-md border border-[#E5E7EB]">
-                    Date: {certifications[selectedCertIndex].date}
-                  </span>
-                  <span className="px-2 py-0.5 bg-slate-50 text-slate-500 text-[10px] font-black uppercase rounded-md border border-[#E5E7EB]">
-                    Issued: {certifications[selectedCertIndex].issued}
-                  </span>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3 pt-2 justify-center sm:justify-start">
-                  <button 
-                    onClick={() => setIsCertificateOpen(true)}
-                    className="px-5 py-2.5 bg-slate-900 text-white font-bold rounded-xl text-xs hover:bg-slate-800 transition active:scale-[0.98] flex items-center justify-center gap-1.5"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" /> View Certificate
-                  </button>
-                  <button 
-                    onClick={triggerCertificateDownload}
-                    className="px-5 py-2.5 bg-white border border-[#E5E7EB] text-slate-700 font-bold rounded-xl text-xs hover:bg-slate-50 transition active:scale-[0.98] flex items-center justify-center gap-1.5"
-                  >
-                    <Download className="w-3.5 h-3.5" /> Download Details
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <CertificateGallery 
+            certifications={certifications} 
+            onView={(index) => {
+              setSelectedCertIndex(index);
+              setIsCertificateOpen(true);
+            }} 
+            onDownload={(index) => {
+              const cert = certifications[index];
+              downloadCertificateImage(cert.grade, cert.image);
+            }} 
+          />
         </div>
       </section>
 
@@ -911,8 +1038,20 @@ export default function InstructorProfile() {
                 <h4 className="text-xs font-black text-slate-900 border-l-4 border-pink-500 pl-2">Education & Certifications</h4>
                 <ul className="space-y-2 text-slate-650">
                   <li className="flex justify-between">
+                    <span>Grade 8 Piano Certificate with Distinction — Trinity College London</span>
+                    <span>2025</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span>Grade 7 Piano Certificate with Distinction — Trinity College London</span>
+                    <span>2024</span>
+                  </li>
+                  <li className="flex justify-between">
                     <span>Grade 6 Piano Certificate with Distinction — Trinity College London</span>
                     <span>2023</span>
+                  </li>
+                  <li className="flex justify-between">
+                    <span>Grade 5 Piano Certificate with Distinction — Trinity College London</span>
+                    <span>2022</span>
                   </li>
                   <li className="flex justify-between">
                     <span>Graduate Degree in Sound & Audio Engineering</span>
@@ -925,102 +1064,15 @@ export default function InstructorProfile() {
         </div>
       )}
 
-      {/* 2. Certificate Mockup Modal */}
-      {isCertificateOpen && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[24px] border border-slate-200 max-w-2xl w-full p-6 md:p-8 space-y-6 shadow-2xl relative animate-scaleUp">
-            <button 
-              onClick={() => setIsCertificateOpen(false)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition z-10"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* The Certificate Canvas */}
-            <div className="relative bg-[#FCFBF7] border-[12px] border-double border-[#C5A880] p-6 sm:p-10 shadow-inner rounded-lg text-center font-serif text-slate-800 overflow-hidden">
-              {/* Subtle watermark background */}
-              <div className="absolute inset-0 opacity-[0.02] flex items-center justify-center pointer-events-none select-none">
-                <span className="text-[120px] font-black tracking-widest text-[#C5A880]">TRINITY</span>
-              </div>
-
-              {/* Trinity Crest SVG */}
-              <div className="flex justify-center mb-4">
-                <svg className="w-16 h-16" viewBox="0 0 100 100" fill="none">
-                  {/* Pegasus/Crest representation */}
-                  <path d="M50 5 L60 25 L85 25 L65 40 L75 65 L50 50 L25 65 L35 40 L15 25 L40 25 Z" fill="#C5A880" />
-                  <circle cx="50" cy="45" r="10" stroke="#1E3A8A" strokeWidth="2" fill="#EF4444" />
-                  <path d="M47 41 L47 49 M53 41 L53 49 M50 43 L50 47" stroke="#F59E0B" strokeWidth="1.5" />
-                </svg>
-              </div>
-
-              <h2 className="text-2xl sm:text-3xl font-bold text-[#4C1D95] tracking-wide mb-1 uppercase font-serif">
-                Trinity College London
-              </h2>
-              <p className="text-[10px] sm:text-xs font-semibold text-slate-400 tracking-widest uppercase mb-6 font-sans">
-                Patron: HRH The Duke of Kent KG
-              </p>
-
-              <p className="text-xs sm:text-sm text-slate-500 italic mb-4">This is to certify that</p>
-              
-              <h3 className="text-2xl sm:text-3xl font-black text-slate-900 border-b-2 border-slate-100 pb-2 max-w-md mx-auto mb-4 font-serif">
-                Ajinkya Amrule
-              </h3>
-
-              <p className="text-xs sm:text-sm text-slate-500 italic mb-1">is awarded</p>
-              
-              <h4 className="text-xl sm:text-2xl font-extrabold text-slate-800 mb-2 font-serif">
-                {certifications[selectedCertIndex].grade}
-              </h4>
-
-              <p className="text-[10px] sm:text-xs text-slate-400 max-w-md mx-auto mb-4 font-sans font-medium uppercase tracking-wider">
-                {certifications[selectedCertIndex].award}
-              </p>
-
-              <div className="inline-block px-4 py-1.5 bg-[#ECFDF5] border border-[#A7F3D0] rounded-lg text-[#047857] text-xs font-black uppercase tracking-widest mb-6 font-sans">
-                {certifications[selectedCertIndex].result}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[10px] sm:text-xs text-slate-450 border-t border-slate-100 pt-4 text-left font-sans font-semibold">
-                <div className="space-y-1.5">
-                  <p><span className="text-slate-400">Date of Exam:</span> <span className="text-slate-700">{certifications[selectedCertIndex].date}</span></p>
-                  <p><span className="text-slate-400">Place of Entry:</span> <span className="text-slate-700">Pune (Centre no. 303)</span></p>
-                  <p><span className="text-slate-400">Date Issued:</span> <span className="text-slate-700">{certifications[selectedCertIndex].issued}</span></p>
-                </div>
-                <div className="space-y-1.5 sm:text-right">
-                  <p><span className="text-slate-400">Qualification No:</span> <span className="text-slate-700">{certifications[selectedCertIndex].qualification}</span></p>
-                  <p><span className="text-slate-400">Trinity ID:</span> <span className="text-slate-700">{certifications[selectedCertIndex].trinityId}</span></p>
-                  <p><span className="text-slate-400">Candidate No:</span> <span className="text-slate-700">{certifications[selectedCertIndex].candidateNum}</span></p>
-                </div>
-              </div>
-
-              {/* Signature Block */}
-              <div className="mt-6 flex flex-col items-center sm:items-end justify-between border-t border-slate-100 pt-4 gap-4">
-                <div className="text-center sm:text-right">
-                  <div className="font-serif italic text-slate-700 text-sm mb-1 select-none font-bold">
-                    Erez Tocker
-                  </div>
-                  <div className="text-[9px] text-slate-400 uppercase tracking-widest font-sans font-bold">
-                    Chief Executive, Trinity College London
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Controls */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Official Credential Verification
-              </span>
-              <button 
-                onClick={triggerCertificateDownload}
-                className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold transition flex items-center gap-1.5 w-full sm:w-auto justify-center shadow-md active:scale-[0.98]"
-              >
-                <Download className="w-4 h-4" /> Download Certificate Details
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CertificateModal
+        isOpen={isCertificateOpen}
+        onClose={() => setIsCertificateOpen(false)}
+        cert={certifications[selectedCertIndex]}
+        onDownload={() => {
+          const cert = certifications[selectedCertIndex];
+          downloadCertificateImage(cert.grade, cert.image);
+        }}
+      />
 
       {/* 3. YouTube Video Modal */}
       {isVideoOpen && (
