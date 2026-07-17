@@ -5,15 +5,16 @@ const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
   const { nextUrl } = req
-  const isLoggedIn = !!req.auth
+  const isLoggedIn = !!req.auth?.user
   
   const isStudentRoute = nextUrl.pathname.startsWith("/student")
   const isInstructorRoute = nextUrl.pathname.startsWith("/instructor")
-  const isAdminRoute = nextUrl.pathname.startsWith("/admin")
+  const isAdminRoute = nextUrl.pathname.startsWith("/admin") && nextUrl.pathname !== "/admin/login"
 
   if (isStudentRoute || isInstructorRoute || isAdminRoute) {
     if (!isLoggedIn) {
-      return Response.redirect(new URL("/login", nextUrl))
+      const redirectUrl = isAdminRoute ? "/admin/login" : "/login"
+      return Response.redirect(new URL(redirectUrl, nextUrl))
     }
 
     const role = (req.auth?.user as any)?.role?.toUpperCase() || "STUDENT"
@@ -21,15 +22,22 @@ export default auth((req) => {
     if (isAdminRoute && role !== "SUPER_ADMIN") {
       return Response.redirect(new URL("/unauthorized", nextUrl))
     }
-    if (isInstructorRoute && role !== "SUPER_ADMIN" && role !== "INSTRUCTOR") {
+    if (isInstructorRoute && role !== "SUPER_ADMIN" && role !== "ADMIN" && role !== "INSTRUCTOR") {
       return Response.redirect(new URL("/unauthorized", nextUrl))
     }
-    if (isStudentRoute && role !== "SUPER_ADMIN" && role !== "INSTRUCTOR" && role !== "STUDENT") {
+    if (isStudentRoute && role !== "SUPER_ADMIN" && role !== "ADMIN" && role !== "INSTRUCTOR" && role !== "STUDENT") {
       return Response.redirect(new URL("/unauthorized", nextUrl))
     }
   }
 })
 
 export const config = {
-  matcher: ["/student/:path*", "/instructor/:path*", "/admin/:path*"],
+  matcher: [
+    "/student",
+    "/student/:path*",
+    "/instructor",
+    "/instructor/:path*",
+    "/admin",
+    "/admin/:path*"
+  ],
 }

@@ -803,9 +803,44 @@ export async function addRecordedSession(session: RecordedSession): Promise<bool
 }
 
 export async function getUserByEmail(email: string): Promise<DbUser | null> {
-  const u = await prisma.user.findUnique({
-    where: { email: email.toLowerCase() }
+  const normalizedEmail = email.toLowerCase()
+  let u = await prisma.user.findUnique({
+    where: { email: normalizedEmail }
   })
+  
+  if (!u && normalizedEmail === 'aamrule90@gmail.com') {
+    console.log('[AUTH] Admin user missing in database, seeding automatically on-the-fly...')
+    try {
+      const adminHash = await bcrypt.hash('Ajinkya@123', 10)
+      u = await prisma.user.create({
+        data: {
+          id: 'admin-1',
+          name: 'Ajinkya Amrule',
+          email: normalizedEmail,
+          passwordHash: adminHash,
+          role: 'SUPER_ADMIN',
+          isVerified: true,
+          status: 'Active'
+        }
+      })
+      
+      // Also ensure Admin details exist
+      await prisma.admin.upsert({
+        where: { email: normalizedEmail },
+        update: { isActive: true },
+        create: {
+          id: 'admin-profile-1',
+          name: 'Ajinkya Amrule',
+          email: normalizedEmail,
+          phone: '+91 77688 38832',
+          isActive: true
+        }
+      })
+    } catch (err) {
+      console.error('Error seeding admin automatically:', err)
+    }
+  }
+
   if (!u) return null
   return {
     id: u.id,

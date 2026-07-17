@@ -122,7 +122,7 @@ model User {
   name            String
   email           String   @unique
   passwordHash    String?
-  role            String   @default("STUDENT")
+  role            Role     @default(STUDENT)
   googleId        String?
   isVerified      Boolean  @default(false)
   status          String   @default("Active")
@@ -132,24 +132,27 @@ model User {
 }
 
 model Booking {
-  id            String   @id @default(uuid())
-  courseId      String
-  courseName    String
-  instructor    String
-  date          String
-  timeSlot      String
-  batchTiming   String
-  studentName   String
-  studentEmail  String
-  status        String   @default("Pending")
-  amount        Float?
-  paymentMethod String?
-  studentId     String?
-  paymentId     String?
-  orderId       String?
-  paymentStatus String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  courseId           String
+  courseName         String
+  instructor         String
+  date               String
+  timeSlot           String
+  batchTiming        String
+  studentName        String
+  studentEmail       String
+  status             String   @default("Pending")
+  amount             Float?
+  paymentMethod      String?
+  studentId          String?
+  paymentId          String?
+  orderId            String?
+  paymentStatus      String?
+  receiptNumber      String?
+  emailStatus        String?
+  notificationStatus String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 model BatchSchedule {
@@ -316,4 +319,21 @@ model Review {
   comment   String
   createdAt DateTime @default(now())
   Course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

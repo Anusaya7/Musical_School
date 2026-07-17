@@ -1,10 +1,14 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Home, LayoutDashboard } from 'lucide-react'
+import { Suspense } from 'react'
 
-export default function UnauthorizedPage() {
+function UnauthorizedContent() {
+  const searchParams = useSearchParams()
   const router = useRouter()
+  
+  const errorMessage = searchParams.get('error') || 'You do not have permission to access this page.'
 
   const handleGoToDashboard = () => {
     const savedUserStr = localStorage.getItem('user')
@@ -45,7 +49,7 @@ export default function UnauthorizedPage() {
 
         {/* Subtitle */}
         <p className="text-[#0F1E4A]/60 text-base mb-8 leading-relaxed">
-          You do not have permission to access this page.
+          {errorMessage}
         </p>
 
         {/* Button container */}
@@ -68,5 +72,17 @@ export default function UnauthorizedPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function UnauthorizedPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#FAFBFF] flex items-center justify-center font-bold text-sm text-slate-400">
+        Loading restriction details...
+      </div>
+    }>
+      <UnauthorizedContent />
+    </Suspense>
   )
 }

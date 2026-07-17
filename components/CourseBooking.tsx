@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
-import { Calendar, Clock, User, Mail, X, CreditCard, Smartphone, Building, Star } from 'lucide-react'
+import { Calendar, Clock, User, Mail, X, CreditCard, Smartphone, Building, Star, CheckCircle2, Loader2 } from 'lucide-react'
 import CalendarDatePicker from '@/components/CalendarDatePicker'
 
 interface CourseBookingProps {
@@ -149,6 +149,10 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
   const [studentEmail, setStudentEmail] = useState('')
   const [studentPhone, setStudentPhone] = useState('')
   const [isBooking, setIsBooking] = useState(false)
+  const [showMockPaymentModal, setShowMockPaymentModal] = useState(false)
+  const [mockOrderId, setMockOrderId] = useState('')
+  const [showProcessingOverlay, setShowProcessingOverlay] = useState(false)
+  const [currentProgressStep, setCurrentProgressStep] = useState(0)
 
   // API State
   const [holidays, setHolidays] = useState<Holiday[]>([])
@@ -258,6 +262,138 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
     setShowPayment(true)
   }
 
+  const startProcessingAndVerify = async (verifyParams: {
+    razorpay_order_id: string
+    razorpay_payment_id: string
+    razorpay_signature: string
+  }) => {
+    setShowProcessingOverlay(true)
+    setCurrentProgressStep(0)
+
+    let apiDone = false
+    let apiSuccess = false
+    let verifyResult: any = null
+    let apiError: string | null = null
+
+    // 1. Trigger backend verification API
+    const apiPromise = fetch('/api/payment/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        razorpay_order_id: verifyParams.razorpay_order_id,
+        razorpay_payment_id: verifyParams.razorpay_payment_id,
+        razorpay_signature: verifyParams.razorpay_signature,
+        orderData: {
+          amount: course.price,
+          notes: {
+            purchaseType: 'booking',
+            courseId: course.id,
+            courseName: course.title,
+            instructor: course.instructor,
+            date: selectedDate,
+            timeSlot: selectedTimeSlot,
+            batchTiming: selectedBatch,
+            studentName,
+            studentEmail,
+            studentPhone,
+            amount: course.price
+          }
+        }
+      })
+    })
+    .then(async (res) => {
+      const data = await res.json()
+      apiDone = true
+      if (res.ok && data.success) {
+        apiSuccess = true
+        verifyResult = data
+      } else {
+        apiError = data.error || 'Payment verification failed'
+      }
+    })
+    .catch((err) => {
+      apiDone = true
+      apiError = err.message || 'Payment verification failed'
+    })
+
+    // 2. Animate the progress steps sequentially (500ms per step)
+    for (let step = 0; step < 5; step++) {
+      setCurrentProgressStep(step)
+      // If the API call finished with an error, abort early
+      if (apiDone && !apiSuccess) {
+        break
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500))
+    }
+
+    // 3. Pause if animation completed but API is still running
+    if (!apiDone) {
+      setCurrentProgressStep(5)
+      await apiPromise
+    }
+
+    // 4. Redirect on failure
+    if (!apiSuccess || apiError) {
+      setShowProcessingOverlay(false)
+      window.location.href = `/payment/failed?error=${encodeURIComponent(apiError || 'Verification failed')}&courseUrl=${encodeURIComponent(window.location.pathname)}`
+      return
+    }
+
+    // 5. Complete all progress steps (sets progress bar to 100%)
+    setCurrentProgressStep(6)
+    await new Promise((resolve) => setTimeout(resolve, 800)) // visual pause on full check state
+
+    // Clear local inputs
+    setSelectedDate('')
+    setSelectedBatch('')
+    setSelectedTimeSlot('')
+    setStudentName('')
+    setStudentEmail('')
+    setStudentPhone('')
+    setShowPayment(false)
+    setShowBookingModal(false)
+    setShowMockPaymentModal(false)
+    setShowProcessingOverlay(false)
+
+    // Redirect to Success Page with full parameters
+    const queryParams = new URLSearchParams({
+      bookingId: verifyResult.bookingId,
+      courseName: verifyResult.courseName,
+      paymentId: verifyResult.paymentId,
+      amount: String(verifyResult.amount),
+      paymentDate: verifyResult.paymentDate,
+      studentEmail: verifyResult.studentEmail,
+      instructorName: verifyResult.instructorName,
+      courseDuration: verifyResult.courseDuration,
+      bookedSlot: verifyResult.bookedSlot,
+      expectedStartDate: verifyResult.expectedStartDate
+    })
+
+    window.location.href = `/payment/success?${queryParams.toString()}`
+  }
+
+  const handleVerifyMockPayment = async (status: 'Success' | 'Failed') => {
+    setIsBooking(true)
+    try {
+      if (status === 'Failed') {
+        window.location.href = `/payment/failed?error=Simulated+payment+failure`
+        return
+      }
+
+      const paymentId = `pay_mock_${Date.now()}`
+      await startProcessingAndVerify({
+        razorpay_order_id: mockOrderId,
+        razorpay_payment_id: paymentId,
+        razorpay_signature: 'mock_signature'
+      })
+    } catch (err: any) {
+      console.error('Mock verification error:', err)
+      alert(err.message || 'Mock payment verification failed.')
+    } finally {
+      setIsBooking(false)
+    }
+  }
+
   const handlePayment = async () => {
     if (!studentName || !studentEmail || !studentPhone) {
       alert('Please fill in all your details including your phone number')
@@ -296,6 +432,14 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
         throw new Error(resData.error || 'Failed to initialize payment order')
       }
 
+      // Intercept mock mode
+      if (resData.isMock) {
+        setMockOrderId(resData.id)
+        setShowMockPaymentModal(true)
+        setIsBooking(false)
+        return
+      }
+
       // 2. Open Razorpay Checkout Dialog
       const Razorpay = (window as any).Razorpay
       if (!Razorpay) {
@@ -312,50 +456,11 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
         order_id: resData.id,
         handler: async function (response: any) {
           try {
-            // Verify payment signature
-            const verifyRes = await fetch('/api/payment/verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                orderData: {
-                  amount: course.price,
-                  notes: {
-                    purchaseType: 'booking',
-                    courseId: course.id,
-                    courseName: course.title,
-                    instructor: course.instructor,
-                    date: selectedDate,
-                    timeSlot: selectedTimeSlot,
-                    batchTiming: selectedBatch,
-                    studentName,
-                    studentEmail,
-                    studentPhone,
-                    amount: course.price
-                  }
-                }
-              })
+            await startProcessingAndVerify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
             })
-
-            const verifyData = await verifyRes.json()
-            if (!verifyData.success) {
-              throw new Error(verifyData.error || 'Signature verification failed')
-            }
-
-            // Reset local inputs
-            setSelectedDate('')
-            setSelectedBatch('')
-            setSelectedTimeSlot('')
-            setStudentName('')
-            setStudentEmail('')
-            setStudentPhone('')
-            setShowPayment(false)
-            setShowBookingModal(false)
-
-            // Redirect to success page
-            window.location.href = `/payment/success?bookingId=${verifyData.bookingId}&courseName=${encodeURIComponent(course.title)}&paymentId=${response.razorpay_payment_id}&amount=${course.price}`
           } catch (verifyErr: any) {
             console.error('Signature verification failed:', verifyErr)
             window.location.href = `/payment/failed?error=${encodeURIComponent(verifyErr.message || 'Signature verification failed')}`
@@ -607,7 +712,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                             : 'btn-premium-base btn-premium-submit w-full h-12 text-xs font-bold text-white'
                         }
                       >
-                        Continue to Payment
+                        Book Time Slot
                       </button>
                       <button
                         type="button"
@@ -673,7 +778,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                   }
                 >
                   {isBooking && <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />}
-                  {isBooking ? 'Processing...' : 'Pay Now'}
+                  {isBooking ? 'Processing...' : 'Proceed to Payment'}
                 </button>
                 <button
                   type="button"
@@ -683,6 +788,121 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                   Back to Details
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mock Razorpay Checkout Modal for sandbox testing */}
+      {showMockPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="relative w-full max-w-md rounded-[24px] bg-[#0F1E4A] text-white shadow-2xl p-8 border border-blue-500/20">
+            <div className="text-center space-y-6">
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 rounded-full bg-blue-600/20 border border-blue-500 flex items-center justify-center mb-4">
+                  <CreditCard className="w-8 h-8 text-blue-400 animate-pulse" />
+                </div>
+                <h3 className="text-xl font-bold">Razorpay Sandbox</h3>
+                <p className="text-xs text-blue-200 mt-1">Simulated Offline Payment System</p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-left text-xs space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Order ID:</span>
+                  <span className="font-mono text-slate-200">{mockOrderId}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Student:</span>
+                  <span className="font-semibold text-slate-200">{studentName} ({studentEmail})</span>
+                </div>
+                <div className="flex justify-between border-t border-white/10 pt-3 text-sm">
+                  <span className="text-slate-400">Amount:</span>
+                  <span className="font-black text-blue-400">₹{course.price.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  onClick={() => handleVerifyMockPayment('Success')}
+                  disabled={isBooking}
+                  className="w-full py-3.5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                >
+                  {isBooking ? 'Processing...' : 'Simulate Payment Success'}
+                </button>
+                <button
+                  onClick={() => handleVerifyMockPayment('Failed')}
+                  disabled={isBooking}
+                  className="w-full py-3 bg-red-600/10 border border-red-500/30 text-red-400 font-bold rounded-2xl hover:bg-red-600/20 active:scale-[0.98] transition-all"
+                >
+                  Simulate Payment Failure
+                </button>
+                <button
+                  onClick={() => {
+                    setShowMockPaymentModal(false)
+                    setIsBooking(false)
+                  }}
+                  disabled={isBooking}
+                  className="w-full py-2.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+                >
+                  Cancel Payment
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Premium Full-Screen Processing Overlay */}
+      {showProcessingOverlay && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md text-white animate-fadeIn">
+          <div className="max-w-md w-full text-center space-y-8 animate-scaleUp">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="relative flex items-center justify-center w-24 h-24">
+                {/* Spinning premium outer ring */}
+                <div className="absolute inset-0 rounded-full border-4 border-t-blue-500 border-r-pink-500 border-b-purple-500 border-l-transparent animate-spin" />
+                <Loader2 className="w-10 h-10 text-blue-400 animate-pulse" />
+              </div>
+              <h2 className="text-2xl font-black tracking-tight text-white">Finalizing Your Booking...</h2>
+              <p className="text-sm text-slate-400 font-medium">Please wait while we verify your payment and confirm your booking.</p>
+            </div>
+
+            {/* Premium progress bar */}
+            <div className="relative w-full h-2.5 bg-slate-800 rounded-full overflow-hidden border border-white/5">
+              <div 
+                className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-500 ease-out" 
+                style={{ width: `${Math.min(100, Math.round((currentProgressStep / 6) * 100))}%` }}
+              />
+            </div>
+
+            {/* Checklist items */}
+            <div className="bg-[#0F1E4A] border border-blue-500/20 rounded-3xl p-6 text-left space-y-4 shadow-xl">
+              {[
+                'Verifying Payment',
+                'Confirming Booking',
+                'Generating Receipt',
+                'Sending Confirmation Email',
+                'Updating Student Dashboard',
+                'Notifying Admin'
+              ].map((step, idx) => {
+                const isCompleted = currentProgressStep > idx
+                const isActive = currentProgressStep === idx
+
+                return (
+                  <div key={idx} className="flex items-center justify-between text-sm transition-all duration-300">
+                    <span className={`font-semibold transition-colors duration-300 ${isCompleted ? 'text-blue-400 line-through decoration-blue-500/30' : isActive ? 'text-white font-bold' : 'text-slate-400'}`}>
+                      {step}
+                    </span>
+                    <div className="flex items-center justify-center w-5 h-5">
+                      {isCompleted ? (
+                        <CheckCircle2 className="w-5 h-5 text-blue-400 animate-scaleUp" />
+                      ) : isActive ? (
+                        <Loader2 className="w-4 h-4 text-pink-500 animate-spin" />
+                      ) : (
+                        <div className="w-4 h-4 rounded-full border border-slate-700" />
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>

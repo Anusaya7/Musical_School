@@ -10,9 +10,13 @@ export default function AdminLayout({
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (window.location.pathname === '/admin/login') {
+      setLoading(false)
+      return
+    }
     const savedUserStr = localStorage.getItem('user')
     if (!savedUserStr) {
-      window.location.replace('/login')
+      window.location.replace('/admin/login')
       return
     }
     try {
@@ -24,7 +28,7 @@ export default function AdminLayout({
       }
       setLoading(false)
     } catch (e) {
-      window.location.replace('/login')
+      window.location.replace('/admin/login')
     }
   }, [])
 

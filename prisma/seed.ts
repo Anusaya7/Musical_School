@@ -299,25 +299,27 @@ async function main() {
   }
 
   // 2. Seed Users
-  const adminEmail = 'admin@2ndinversion.com'
+  const adminEmail = 'aamrule90@gmail.com'
   const studentEmail = 'student@2ndinversion.com'
 
-  const adminUser = await prisma.user.findUnique({ where: { email: adminEmail } })
-  if (!adminUser) {
-    console.log('Seeding admin user...')
-    const adminHash = await bcrypt.hash('Admin@123', 10)
-    await prisma.user.create({
-      data: {
-        id: 'admin-1',
-        name: 'Ajinkya Amrule',
-        email: adminEmail,
-        passwordHash: adminHash,
-        role: 'SUPER_ADMIN',
-        isVerified: true,
-        status: 'Active'
-      }
-    })
-  }
+  const adminHash = await bcrypt.hash('Ajinkya@123', 10)
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {
+      passwordHash: adminHash,
+      role: 'SUPER_ADMIN',
+      status: 'Active'
+    },
+    create: {
+      id: 'admin-1',
+      name: 'Ajinkya Amrule',
+      email: adminEmail,
+      passwordHash: adminHash,
+      role: 'SUPER_ADMIN',
+      isVerified: true,
+      status: 'Active'
+    }
+  })
 
   const instructorUser = await prisma.user.findUnique({ where: { email: instructorEmail } })
   if (!instructorUser) {

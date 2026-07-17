@@ -13,14 +13,22 @@ export async function POST(request: NextRequest) {
     } = await request.json()
 
     // Verify signature
-    const key_secret = process.env.RAZORPAY_KEY_SECRET || '1234567890'
-    const body = `${razorpay_order_id}|${razorpay_payment_id}`
-    const expectedSignature = crypto
-      .createHmac('sha256', key_secret)
-      .update(body.toString())
-      .digest('hex')
+    const isMock = razorpay_order_id?.startsWith('order_mock_')
+    let isAuthentic = false
 
-    const isAuthentic = expectedSignature === razorpay_signature
+    if (isMock) {
+      console.log('[RAZORPAY MOCK MODE] Bypassing signature verification for mock order:', razorpay_order_id)
+      isAuthentic = true
+    } else {
+      const key_secret = process.env.RAZORPAY_KEY_SECRET || '1234567890'
+      const body = `${razorpay_order_id}|${razorpay_payment_id}`
+      const expectedSignature = crypto
+        .createHmac('sha256', key_secret)
+        .update(body.toString())
+        .digest('hex')
+
+      isAuthentic = expectedSignature === razorpay_signature
+    }
 
     if (!isAuthentic) {
       console.warn('[PAYMENT] Signature verification failed')

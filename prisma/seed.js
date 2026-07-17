@@ -247,7 +247,12 @@ async function main() {
     console.log('prisma keys at runtime:', Object.keys(prisma));
     console.log('prisma.instructor value:', prisma.instructor);
     // 1. Seed Instructor
-    const instructorEmail = 'instructor@2ndinversion.com';
+    const instructorEmail = 'aamrule90@gmail.com';
+    
+    // Clear duplicates before seeding to prevent PK/Unique constraints failures
+    await prisma.instructor.deleteMany({ where: { id: 'instructor-1' } });
+    await prisma.instructor.deleteMany({ where: { email: instructorEmail } });
+
     let instructor = await prisma.instructor.findUnique({
         where: { email: instructorEmail }
     });
@@ -288,40 +293,39 @@ async function main() {
         });
     }
     // 2. Seed Users
-    const adminEmail = 'admin@2ndinversion.com';
+    const adminEmail = 'aamrule90@gmail.com';
     const studentEmail = 'student@2ndinversion.com';
-    const adminUser = await prisma.user.findUnique({ where: { email: adminEmail } });
-    if (!adminUser) {
-        console.log('Seeding admin user...');
-        const adminHash = await bcryptjs_1.default.hash('Admin@123', 10);
-        await prisma.user.create({
-            data: {
-                id: 'admin-1',
-                name: 'Ajinkya Amrule',
-                email: adminEmail,
-                passwordHash: adminHash,
-                role: 'SUPER_ADMIN',
-                isVerified: true,
-                status: 'Active'
-            }
-        });
-    }
-    const instructorUser = await prisma.user.findUnique({ where: { email: instructorEmail } });
-    if (!instructorUser) {
-        console.log('Seeding instructor user...');
-        const instHash = await bcryptjs_1.default.hash('Instructor@123', 10);
-        await prisma.user.create({
-            data: {
-                id: 'inst-user-1',
-                name: 'Ajinkya Amrule',
-                email: instructorEmail,
-                passwordHash: instHash,
-                role: 'INSTRUCTOR',
-                isVerified: true,
-                status: 'Active'
-            }
-        });
-    }
+    
+    // Clear user IDs & emails first to prevent conflicts during seed runs
+    await prisma.user.deleteMany({ where: { id: { in: ['admin-1', 'student-1', 'inst-user-1'] } } });
+    await prisma.user.deleteMany({ where: { email: { in: [adminEmail, studentEmail] } } });
+    
+    console.log('Seeding default Admin/Instructor user...');
+    const adminHash = await bcryptjs_1.default.hash('Ajinkya@123', 10);
+    await prisma.user.create({
+        data: {
+            id: 'admin-1',
+            name: 'Ajinkya Amrule',
+            email: adminEmail,
+            passwordHash: adminHash,
+            role: 'SUPER_ADMIN',
+            isVerified: true,
+            status: 'Active'
+        }
+    });
+
+    // Seed Admin details table
+    await prisma.admin.deleteMany({ where: { email: adminEmail } });
+    await prisma.admin.create({
+        data: {
+            id: 'admin-profile-1',
+            name: 'Ajinkya Amrule',
+            email: adminEmail,
+            phone: '+91 77688 38832',
+            isActive: true
+        }
+    });
+
     const studentUser = await prisma.user.findUnique({ where: { email: studentEmail } });
     if (!studentUser) {
         console.log('Seeding student user...');

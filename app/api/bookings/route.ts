@@ -1,9 +1,21 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getBookings, addBooking, updateBookingStatus, addNotification, addAuditLog } from '@/lib/db'
 import { sendSystemEmail } from '@/lib/email'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (id) {
+      const bookings = await getBookings()
+      const booking = bookings.find(b => b.id === id)
+      if (!booking) {
+        return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
+      }
+      return NextResponse.json(booking)
+    }
+
     const bookings = await getBookings()
     return NextResponse.json(bookings)
   } catch (error) {

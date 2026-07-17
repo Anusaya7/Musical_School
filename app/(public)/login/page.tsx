@@ -71,16 +71,8 @@ export default function LoginPage() {
       const checkData = await checkRes.json()
 
       if (!checkRes.ok || !checkData.success) {
-        if (checkData.error === 'Account not found') {
-          console.log(`[AUTH] Login failed: Account not found for ${formData.email}`)
-          setErrors({ email: 'Account not found' })
-        } else if (checkData.error === 'Incorrect password') {
-          console.log(`[AUTH] Login failed: Incorrect password for ${formData.email}`)
-          setErrors({ password: 'Incorrect password' })
-        } else {
-          console.log(`[AUTH] Login failed: ${checkData.error}`)
-          setErrors({ email: checkData.error || 'Login failed. Please try again.' })
-        }
+        console.log(`[AUTH] Login failed: ${checkData.error || 'Invalid credentials'}. Redirecting to unauthorized page...`)
+        window.location.replace(`/unauthorized?error=${encodeURIComponent('Invalid admin email or password.')}`)
         setIsLoading(false)
         return
       }
@@ -97,7 +89,7 @@ export default function LoginPage() {
 
       if (res?.error) {
         console.error(`[AUTH] NextAuth credentials session creation failed: ${res.error}`)
-        setErrors({ email: 'Authentication failed. Please try again.' })
+        window.location.replace(`/unauthorized?error=${encodeURIComponent('Invalid admin email or password.')}`)
       } else {
         setLoginSuccess(true)
         const name = role === 'SUPER_ADMIN' ? 'Ajinkya Amrule' : role === 'INSTRUCTOR' ? 'Ajinkya Amrule' : 'John Doe'
@@ -109,7 +101,7 @@ export default function LoginPage() {
           rememberMe: formData.rememberMe
         }))
 
-        const targetRoute = role === 'SUPER_ADMIN' ? '/admin' : role === 'INSTRUCTOR' ? '/instructor' : '/student'
+        const targetRoute = (role === 'SUPER_ADMIN' || role === 'ADMIN') ? '/admin' : role === 'INSTRUCTOR' ? '/instructor' : '/student'
         console.log(`[AUTH] Redirecting to route: ${targetRoute}`)
 
         setTimeout(() => {
