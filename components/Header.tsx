@@ -136,7 +136,7 @@ export default function Header() {
             <div className={`flex items-center space-x-4 border-l pl-6 ${
               theme === 'dark' ? 'border-gray-600' : 'border-gray-300'
             }`}>
-              <Link href={role === 'SUPER_ADMIN' ? "/admin" : "/admin/login"} className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+              <Link href="/admin/login" className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
                 theme === 'dark' 
                   ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
                   : 'text-gray-600 hover:bg-purple-50 hover:text-purple-600'
@@ -270,7 +270,7 @@ export default function Header() {
               </Link>
               
               <div className={`border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} my-2 pt-2`}>
-                <Link href={role === 'SUPER_ADMIN' ? "/admin" : "/admin/login"} className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+                <Link href="/admin/login" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
                   theme === 'dark' 
                     ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300' 
                     : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'

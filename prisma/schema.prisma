@@ -337,3 +337,93 @@ model Admin {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Certificate {
+  id           String   @id @default(uuid())
+  certNumber   String   @unique
+  studentEmail String
+  studentName  String
+  courseId     String
+  courseName   String
+  issueDate    DateTime @default(now())
+  qrCodeUrl    String?
+  pdfUrl       String?
+}
+
+model Attendance {
+  id           String   @id @default(uuid())
+  studentEmail String
+  courseId     String
+  date         String
+  status       String   @default("PRESENT")
+  createdAt    DateTime @default(now())
+}
+
+model LiveClass {
+  id           String   @id @default(uuid())
+  title        String
+  courseId     String
+  instructorId String
+  platform     String   @default("Zoom")
+  joinUrl      String
+  startTime    DateTime
+  durationMins Int      @default(60)
+  createdAt    DateTime @default(now())
+}
+
+model Assignment {
+  id          String       @id @default(uuid())
+  title       String
+  courseId    String
+  dueDate     DateTime
+  maxScore    Int          @default(100)
+  description String
+  submissions Submission[]
+  createdAt   DateTime     @default(now())
+}
+
+model Submission {
+  id           String     @id @default(uuid())
+  assignmentId String
+  studentEmail String
+  fileUrl      String
+  score        Int?
+  feedback     String?
+  status       String     @default("Submitted")
+  submittedAt  DateTime   @default(now())
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+}
+
+model Coupon {
+  id             String   @id @default(uuid())
+  code           String   @unique
+  discountType   String   @default("PERCENTAGE") // PERCENTAGE or FIXED
+  discountValue  Float
+  minOrderAmount Float    @default(0)
+  isActive       Boolean  @default(true)
+  expiresAt      DateTime?
+  createdAt      DateTime @default(now())
+}
+
+model Referral {
+  id            String   @id @default(uuid())
+  referrerEmail String
+  referredEmail String
+  code          String
+  status        String   @default("PENDING")
+  rewardAmount  Float    @default(500)
+  createdAt     DateTime @default(now())
+}
+
+model CourseProgress {
+  id               String   @id @default(uuid())
+  studentEmail     String
+  courseId         String
+  completedLessons Int      @default(0)
+  totalLessons     Int      @default(10)
+  progressPercent  Float    @default(0)
+  updatedAt        DateTime @updatedAt
+
+  @@unique([studentEmail, courseId])
+}
+
