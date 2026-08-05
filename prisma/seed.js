@@ -9,7 +9,7 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const adapter_pg_1 = require("@prisma/adapter-pg");
 const pg_1 = require("pg");
 const connectionString = process.env.DATABASE_URL;
-const pool = new pg_1.Pool({ connectionString });
+const pool = new pg_1.Pool({ connectionString, connectionTimeoutMillis: 5000 });
 const adapter = new adapter_pg_1.PrismaPg(pool);
 const prisma = new prisma_1.PrismaClient({ adapter });
 // Level templates from coursesData.ts

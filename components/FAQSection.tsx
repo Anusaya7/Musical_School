@@ -2,37 +2,16 @@
 
 import { useState } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useSiteSettings } from '@/contexts/SiteSettingsContext'
+import { DEFAULT_SITE_SETTINGS } from '@/lib/settings-defaults'
 
 export default function FAQSection() {
   const { theme } = useTheme()
+  const { settings } = useSiteSettings()
   const [openIndex, setOpenIndex] = useState<number | null>(null)
 
-  const faqs = [
-    {
-      question: 'Can I upgrade from yearly to lifetime plan?',
-      answer: 'Yes! You can upgrade anytime from your dashboard. We\'ll credit the amount you\'ve already paid towards the lifetime plan.'
-    },
-    {
-      question: 'Are AI practice tools included in all plans?',
-      answer: 'Absolutely! Both lifetime and yearly plans include full access to our AI-powered practice tools for piano, vocals, and music theory.'
-    },
-    {
-      question: 'Do I get a certificate after completion?',
-      answer: 'Yes! You\'ll receive an industry-recognized certificate for each course you complete. These can be added to your resume and LinkedIn profile.'
-    },
-    {
-      question: 'Is this platform beginner-friendly?',
-      answer: 'Definitely! Our courses are designed for all skill levels. We have dedicated beginner tracks with step-by-step guidance and AI assistance.'
-    },
-    {
-      question: 'What if I\'m not satisfied with the course?',
-      answer: 'We offer a 30-day money-back guarantee. If you\'re not completely satisfied, we\'ll refund your payment - no questions asked.'
-    },
-    {
-      question: 'Can I access courses on mobile devices?',
-      answer: 'Yes! Our platform is fully responsive. You can learn on your phone, tablet, or computer with seamless progress sync.'
-    }
-  ]
+  const faqs = settings.faqs || DEFAULT_SITE_SETTINGS.faqs
+
 
   const toggleFAQ = (index: number) => {
     setOpenIndex(openIndex === index ? null : index)

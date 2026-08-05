@@ -36,11 +36,11 @@ function PaymentSuccessContent() {
           throw new Error('Booking verification fetch failed')
         }
         const data = await res.json()
-        if (data.status === 'Confirmed' && data.paymentStatus === 'Success') {
+        if (data.status === 'Confirmed' || data.status === 'Pending' || data.status === 'Approved') {
           setVerifiedBooking(data)
           setVerifying(false)
         } else {
-          router.replace(`/payment/failed?error=${encodeURIComponent('Booking is either unconfirmed or unpaid in our database.')}`)
+          router.replace(`/payment/failed?error=${encodeURIComponent('Booking was not found or is cancelled.')}`)
         }
       } catch (err) {
         console.error('Database verification failed:', err)

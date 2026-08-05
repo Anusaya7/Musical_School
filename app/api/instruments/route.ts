@@ -45,7 +45,7 @@ export async function GET() {
     return NextResponse.json(formatted)
   } catch (error) {
     console.error('Error fetching instruments:', error)
-    return NextResponse.json({ error: 'Failed to fetch instruments' }, { status: 550 })
+    return NextResponse.json({ error: 'Failed to fetch instruments' }, { status: 500 })
   }
 }
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Header from '@/components/Header'
 import MusicBackground from '@/components/MusicBackground'
 import MusicSparkle from '@/components/MusicSparkle'
+import { useSiteSettings } from '@/contexts/SiteSettingsContext'
 import { 
   Music, 
   Award, 
@@ -21,6 +22,8 @@ import {
 export default function About() {
   const [email, setEmail] = useState('')
   const [mounted, setMounted] = useState(false)
+  const { settings } = useSiteSettings()
+  const aboutSettings = settings.homepage_about || {}
 
   useEffect(() => {
     setMounted(true)
@@ -29,6 +32,7 @@ export default function About() {
   const handleEnroll = () => {
     console.log('Enrollment clicked')
   }
+
 
   return (
     <div className="min-h-screen bg-gray-50 relative">
@@ -80,25 +84,31 @@ export default function About() {
             {/* Left: Text */}
             <div className="space-y-6">
               <h2 className="text-4xl font-bold text-gray-900 mb-6">
-                About 2nd Inversion Music School
+                {aboutSettings.title || "About 2nd Inversion Music School"}
               </h2>
               <p className="text-lg leading-relaxed text-gray-700">
-                Founded in 2018, 2nd Inversion Music School is a distinguished centre for performing arts education in Pune. We are committed to delivering exceptional, internationally aligned artistic training to gifted and dedicated musicians from across Maharashtra, empowering them to realise their fullest potential as artists, leaders, and confident global citizens.
+                {aboutSettings.description || "Founded in 2018, 2nd Inversion Music School is a distinguished centre for performing arts education in Pune. We are committed to delivering exceptional, internationally aligned artistic training to gifted and dedicated musicians from across Maharashtra, empowering them to realise their fullest potential as artists, leaders, and confident global citizens."}
               </p>
               
               {/* Key Stats */}
               <div className="grid grid-cols-3 gap-4 pt-6">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-purple-600 mb-2">2018</div>
-                  <p className="text-gray-600">Founded</p>
+                  <div className="text-3xl font-bold text-purple-600 mb-2">
+                    {aboutSettings.statYearVal || "2018"}
+                  </div>
+                  <p className="text-gray-600">{aboutSettings.statYearLbl || "Founded"}</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-purple-600 mb-2">500+</div>
-                  <p className="text-gray-600">Students</p>
+                  <div className="text-3xl font-bold text-purple-600 mb-2">
+                    {aboutSettings.statStudentVal || "500+"}
+                  </div>
+                  <p className="text-gray-600">{aboutSettings.statStudentLbl || "Students"}</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-purple-600 mb-2">6+</div>
-                  <p className="text-gray-600">Years Excellence</p>
+                  <div className="text-3xl font-bold text-purple-600 mb-2">
+                    {aboutSettings.statExcellenceVal || "6+"}
+                  </div>
+                  <p className="text-gray-600">{aboutSettings.statExcellenceLbl || "Years Excellence"}</p>
                 </div>
               </div>
             </div>
@@ -125,7 +135,7 @@ export default function About() {
       <section className="py-20 bg-gradient-to-br from-purple-50 to-pink-50">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">
-            About Ajinkya Amrule
+            About {aboutSettings.founderName || "Ajinkya Amrule"}
           </h2>
           
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -139,9 +149,9 @@ export default function About() {
                     </div>
                     <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full mb-4">
                       <Star className="w-4 h-4 text-yellow-300 fill-yellow-300 mr-2" />
-                      <span className="font-semibold">Founder & Director</span>
+                      <span className="font-semibold">{aboutSettings.founderRole || "Founder & Director"}</span>
                     </div>
-                    <p className="text-lg">Ajinkya Amrule</p>
+                    <p className="text-lg">{aboutSettings.founderName || "Ajinkya Amrule"}</p>
                   </div>
                 </div>
               </div>
@@ -149,20 +159,8 @@ export default function About() {
             
             {/* Right: Text */}
             <div className="space-y-6 order-1 md:order-2">
-              <p className="text-lg leading-relaxed text-gray-700">
-                Ajinkya Amrule is a distinguished pianist, music educator, and sound engineer based in Pune, Maharashtra. Known for his musical sensitivity and disciplined approach, he has built a strong reputation for nurturing both technical excellence and artistic depth in his students.
-              </p>
-              
-              <p className="text-lg leading-relaxed text-gray-700">
-                He holds a graduate degree in Sound Engineering, bringing a rare blend of performance insight and production expertise to his teaching. This interdisciplinary background allows him to guide students not only in piano performance, but also in tone production, listening skills, and musical clarity skills essential for the modern musician.
-              </p>
-              
-              <p className="text-lg leading-relaxed text-gray-700">
-                As the founder and mentor at 2nd Inversion Music School, Ajinkya is deeply committed to structured, internationally aligned music education. His teaching philosophy emphasizes strong fundamentals, musical understanding, and expressive playing, helping students grow into confident performers and thoughtful artists.
-              </p>
-              
-              <p className="text-lg leading-relaxed text-gray-700">
-                Through performance, pedagogy, and mentorship, Ajinkya continues to contribute meaningfully to Pune's growing classical and contemporary music landscape.
+              <p className="text-lg leading-relaxed text-gray-700 whitespace-pre-line">
+                {aboutSettings.founderBio || "Ajinkya Amrule is a distinguished pianist, music educator, and sound engineer based in Pune, Maharashtra. Known for his musical sensitivity and disciplined approach, he has built a strong reputation for nurturing both technical excellence and artistic depth in his students. Through performance, pedagogy, and mentorship, Ajinkya continues to contribute meaningfully to Pune's growing classical and contemporary music landscape."}
               </p>
               
               {/* Qualifications */}

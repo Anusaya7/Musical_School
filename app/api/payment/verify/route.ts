@@ -16,14 +16,21 @@ export async function POST(request: NextRequest) {
     } = await request.json()
 
     // 1. Verify signature
-    const isMock = razorpay_order_id?.startsWith('order_mock_')
+    const isMock = process.env.NODE_ENV !== 'production' && razorpay_order_id?.startsWith('order_mock_')
     let isAuthentic = false
 
     if (isMock) {
       console.log('[RAZORPAY MOCK MODE] Bypassing signature verification for mock order:', razorpay_order_id)
       isAuthentic = true
     } else {
-      const key_secret = process.env.RAZORPAY_KEY_SECRET || '1234567890'
+      const key_secret = process.env.RAZORPAY_KEY_SECRET
+      if (!key_secret) {
+        console.error('[PAYMENT] RAZORPAY_KEY_SECRET is not configured in production environment variables!')
+        return NextResponse.json(
+          { success: false, error: 'Payment gateway configuration missing' },
+          { status: 500 }
+        )
+      }
       const body = `${razorpay_order_id}|${razorpay_payment_id}`
       const expectedSignature = crypto
         .createHmac('sha256', key_secret)
@@ -51,6 +58,61 @@ export async function POST(request: NextRequest) {
     const paymentId = razorpay_payment_id
     const orderId = razorpay_order_id
     const invoiceNumber = `INV-${Date.now().toString().substring(3, 11)}`
+
+    // Check if payment with this paymentId already exists
+    if (paymentId) {
+      const existingPayment = await prisma.payment.findFirst({
+        where: {
+          paymentId
+        }
+      })
+      if (existingPayment) {
+        console.log('[PAYMENT] Duplicate payment verification request received for paymentId:', paymentId)
+        
+        let bookingId = `BK-${existingPayment.id.split('-')[1] || Date.now()}`
+        let bookedSlot = '—'
+        let expectedStartDate = '—'
+        let instructorName = 'Ajinkya Amrule'
+        let courseDuration = '3 Months'
+
+        if (purchaseType === 'booking') {
+          const existingBooking = await prisma.booking.findFirst({
+            where: {
+              paymentId
+            }
+          })
+          if (existingBooking) {
+            bookingId = existingBooking.id
+            bookedSlot = `${existingBooking.date} at ${existingBooking.timeSlot} (${existingBooking.batchTiming} Batch)`
+            expectedStartDate = existingBooking.date
+            instructorName = existingBooking.instructor
+          }
+        }
+
+        try {
+          const courseDetails = await prisma.course.findUnique({ where: { id: courseId } })
+          if (courseDetails?.duration) {
+            courseDuration = courseDetails.duration
+          }
+        } catch (err) {}
+
+        return NextResponse.json({
+          success: true,
+          message: 'Payment already processed and verified successfully (duplicate request)',
+          bookingId,
+          paymentId,
+          orderId,
+          courseName,
+          amount,
+          paymentDate: existingPayment.createdAt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+          studentEmail,
+          instructorName,
+          courseDuration,
+          bookedSlot,
+          expectedStartDate
+        })
+      }
+    }
 
     // 2. Handle trial/class booking payment flow
     if (purchaseType === 'booking') {
@@ -164,6 +226,9 @@ export async function POST(request: NextRequest) {
         }
 
         return bk
+      }, {
+        maxWait: 8000,
+        timeout: 15000
       })
 
       // Send Email to student and admin
@@ -190,32 +255,11 @@ export async function POST(request: NextRequest) {
       `
       
       try {
-        const studentEmailSent = await sendSystemEmail(studentEmail, `Booking Confirmed - ${courseName}`, emailHtml)
-        const adminEmailSent = await sendSystemEmail('aamrule90@gmail.com', `New Booking Alert - ${studentName}`, emailHtml)
-        
-        if (!studentEmailSent || !adminEmailSent) {
-          throw new Error('Email notification delivery failed')
-        }
+        await sendSystemEmail(studentEmail, `Booking Confirmed - ${courseName}`, emailHtml)
+        const adminEmail = process.env.ADMIN_EMAIL || 'aamrule90@gmail.com'
+        await sendSystemEmail(adminEmail, `New Booking Alert - ${studentName}`, emailHtml)
       } catch (emailErr) {
-        console.error('Email sending failed, rolling back booking and payment from database:', emailErr)
-        
-        await prisma.$transaction(async (tx) => {
-          await tx.booking.delete({ where: { id: bookingId } }).catch(() => {})
-          await tx.payment.deleteMany({ where: { orderId: orderId } }).catch(() => {})
-          
-          const user = await tx.user.findUnique({
-            where: { email: studentEmail.toLowerCase() }
-          })
-          if (user) {
-            const enrolled = user.enrolledCourses.filter(c => c !== courseId)
-            await tx.user.update({
-              where: { email: studentEmail.toLowerCase() },
-              data: { enrolledCourses: enrolled }
-            })
-          }
-        })
-        
-        throw new Error('Booking rolled back: Notification emails failed to send.')
+        console.error('[EMAIL ERROR] Failed to send booking notification emails, but keeping the database records intact:', emailErr)
       }
 
       // Get course details for additional success info
@@ -276,6 +320,9 @@ export async function POST(request: NextRequest) {
           details: `Purchased course: ${courseName} (Amount: ₹${amount}, Payment ID: ${paymentId})`
         }
       })
+    }, {
+      maxWait: 8000,
+      timeout: 15000
     })
 
     // Grant access to course
@@ -329,7 +376,8 @@ export async function POST(request: NextRequest) {
         </table>
       </div>
     `
-    await sendSystemEmail('aamrule90@gmail.com', 'New Course Purchase Alert', adminHtml)
+    const adminEmail = process.env.ADMIN_EMAIL || 'aamrule90@gmail.com'
+    await sendSystemEmail(adminEmail, 'New Course Purchase Alert', adminHtml)
 
     return NextResponse.json({
       success: true,

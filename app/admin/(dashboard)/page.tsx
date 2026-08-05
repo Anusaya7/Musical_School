@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
+import { useSiteSettings } from '@/contexts/SiteSettingsContext'
+
 import {
   LayoutDashboard,
   BookOpen,
@@ -70,6 +72,45 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [loading, setLoading] = useState(true)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  // CMS Settings States
+  const { settings, updateSetting } = useSiteSettings()
+  const [cmsSettings, setCmsSettings] = useState<any>(null)
+
+  const [heroForm, setHeroForm] = useState<any>({ banner: '', tagline: '', subtitle: '', description: '', primaryButtonText: '', primaryButtonUrl: '', searchPlaceholder: '' })
+  const [aboutForm, setAboutForm] = useState<any>({ title: '', description: '', statYearVal: '', statYearLbl: '', statStudentVal: '', statStudentLbl: '', statExcellenceVal: '', statExcellenceLbl: '', founderName: '', founderRole: '', founderBio: '' })
+  const [contactForm, setContactForm] = useState<any>({ email: '', phone: '', address: '', facebook: '', instagram: '', youtube: '', twitter: '' })
+  const [footerForm, setFooterForm] = useState<any>({ copyrightText: '', footerText: '' })
+  const [seoForm, setSeoForm] = useState<any>({ title: '', description: '', keywords: '' })
+
+  useEffect(() => {
+    if (settings) {
+      setCmsSettings(settings)
+      if (settings.homepage_hero) setHeroForm(settings.homepage_hero)
+      if (settings.homepage_about) setAboutForm(settings.homepage_about)
+      if (settings.contact_details) setContactForm(settings.contact_details)
+      if (settings.footer) setFooterForm(settings.footer)
+      if (settings.seo_metadata) setSeoForm(settings.seo_metadata)
+    }
+  }, [settings])
+
+  const handleUpdateCmsSetting = async (key: string, data: any) => {
+    const success = await updateSetting(key, data)
+    if (success) {
+      if (typeof window !== 'undefined' && (window as any).showToast) {
+        (window as any).showToast(`${key.replace('_', ' ')} settings updated successfully.`, 'success')
+      } else {
+        alert(`${key.replace('_', ' ')} settings updated successfully.`)
+      }
+    } else {
+      if (typeof window !== 'undefined' && (window as any).showToast) {
+        (window as any).showToast(`Failed to update ${key.replace('_', ' ')} settings.`, 'error')
+      } else {
+        alert(`Failed to update ${key.replace('_', ' ')} settings.`)
+      }
+    }
+  }
+
 
   // Live Database States
   const [courses, setCourses] = useState<any[]>([])
@@ -345,12 +386,44 @@ export default function AdminDashboard() {
   const [inquiryPage, setInquiryPage] = useState(1)
   const inquiriesPerPage = 8
 
+  // Booking Search and Filter states
+  const [bookingSearch, setBookingSearch] = useState('')
+  const [bookingFilterStatus, setBookingFilterStatus] = useState('all')
+
+  const filteredBookings = useMemo(() => {
+    let result = [...bookings]
+
+    if (bookingSearch.trim()) {
+      const q = bookingSearch.toLowerCase()
+      result = result.filter(b => 
+        (b.studentName || '').toLowerCase().includes(q) ||
+        (b.courseName || '').toLowerCase().includes(q) ||
+        (b.studentEmail || '').toLowerCase().includes(q)
+      )
+    }
+
+    if (bookingFilterStatus !== 'all') {
+      result = result.filter(b => {
+        const status = b.status?.toLowerCase() || ''
+        if (bookingFilterStatus === 'approved') {
+          return status === 'approved' || status === 'booked' || status === 'confirmed'
+        }
+        if (bookingFilterStatus === 'rejected') {
+          return status === 'rejected' || status === 'cancelled'
+        }
+        return status === bookingFilterStatus
+      })
+    }
+
+    return result
+  }, [bookings, bookingSearch, bookingFilterStatus])
+
   // Fetch data
   const loadDatabaseData = async () => {
     setLoading(true)
     try {
       const [coursesRes, bookingsRes, workshopsRes, videosRes, holidaysRes, schedulesRes, inquiriesRes, notificationsRes, studentsRes, instructorsRes, paymentsRes, logsRes, instrumentsRes] = await Promise.all([
-        fetch('/api/courses').then(r => r.json()).catch(() => []),
+        fetch('/api/courses?includeDrafts=true').then(r => r.json()).catch(() => []),
         fetch('/api/bookings').then(r => r.json()).catch(() => []),
         fetch('/api/workshops').then(r => r.json()).catch(() => []),
         fetch('/api/recorded-sessions').then(r => r.json()).catch(() => []),
@@ -525,6 +598,10 @@ export default function AdminDashboard() {
         body: JSON.stringify(payload)
       })
       if (res.ok) {
+        const resData = await res.json()
+        if (resData.message) {
+          alert(resData.message)
+        }
         setIsAddCourseOpen(false)
         setCourseTitle('')
         setCoursePrice(4999)
@@ -546,7 +623,8 @@ export default function AdminDashboard() {
         setCourseThumbnail('')
         loadDatabaseData()
       } else {
-        alert('Failed to add course')
+        const err = await res.json()
+        alert(`Failed to add course: ${err.error || 'Unknown error'}`)
       }
     } catch (err) {
       console.error(err)
@@ -592,7 +670,12 @@ export default function AdminDashboard() {
         body: JSON.stringify(payload)
       })
       if (res.ok) {
+        const resData = await res.json()
+        if (resData.message) {
+          alert(resData.message)
+        }
         setEditingCourse(null)
+        setIsAddCourseOpen(false)
         setCourseTitle('')
         setCourseDescription('')
         setCourseDiscountPrice(0)
@@ -612,7 +695,8 @@ export default function AdminDashboard() {
         setCourseThumbnail('')
         loadDatabaseData()
       } else {
-        alert('Failed to update course')
+        const err = await res.json()
+        alert(`Failed to update course: ${err.error || 'Unknown error'}`)
       }
     } catch (err) {
       console.error(err)
@@ -627,7 +711,8 @@ export default function AdminDashboard() {
       if (res.ok) {
         loadDatabaseData()
       } else {
-        alert('Failed to delete course')
+        const err = await res.json()
+        alert(`Failed to delete course: ${err.error || 'Unknown error'}`)
       }
     } catch (err) {
       console.error(err)
@@ -2082,6 +2167,32 @@ export default function AdminDashboard() {
                   <p className="text-xs text-slate-400 font-medium mt-0.5">Track and authorize demo slots and regular batch bookings</p>
                 </div>
 
+                {/* Search & Filter controls */}
+                <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-[#FAFBFF] p-4 border border-[#E6EEFF] rounded-2xl">
+                  <div className="relative w-full sm:max-w-xs">
+                    <span className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+                    <input
+                      type="text"
+                      placeholder="Search by student, course, or email..."
+                      value={bookingSearch}
+                      onChange={(e) => setBookingSearch(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 bg-white border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                    />
+                  </div>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <select
+                      value={bookingFilterStatus}
+                      onChange={(e) => setBookingFilterStatus(e.target.value)}
+                      className="px-4 py-2 bg-white border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="pending">Pending</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
@@ -2097,63 +2208,78 @@ export default function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {bookings.map(b => (
-                        <tr key={b.id} className="border-b border-slate-50 hover:bg-[#FAFBFF] text-xs font-bold text-slate-600 transition-colors">
-                          <td className="p-4 text-[#0F1E4A] font-extrabold">{b.studentName}</td>
-                          <td className="p-4 text-[#0F1E4A]">{b.courseName}</td>
-                          <td className="p-4">{b.instructor}</td>
-                          <td className="p-4 text-slate-400">{b.date}</td>
-                          <td className="p-4 capitalize">
-                            <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${
-                              b.batchTiming === 'morning' ? 'bg-amber-50 text-amber-600' : 'bg-purple-50 text-purple-600'
-                            }`}>
-                              {b.batchTiming}
-                            </span>
-                          </td>
-                          <td className="p-4 text-[#5EA8FF]">{b.timeSlot}</td>
-                          <td className="p-4">
-                            <span className={`px-2.5 py-0.5 rounded-full text-[9px] uppercase font-black ${
-                              b.status === 'Booked' ? 'bg-green-50 text-green-700' : b.status === 'Cancelled' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
-                            }`}>
-                              {b.status}
-                            </span>
-                          </td>
-                          <td className="p-4 flex gap-2">
-                            {b.status === 'Pending' && (
-                              <>
-                                <button
-                                  onClick={() => handleUpdateBookingStatus(b.id, 'Booked')}
-                                  className="px-2 py-1 bg-green-50 hover:bg-green-100 border border-green-200 text-[10px] font-extrabold rounded-lg text-green-700 transition-all"
-                                >
-                                  Accept
-                                </button>
-                                <button
-                                  onClick={() => handleUpdateBookingStatus(b.id, 'Cancelled')}
-                                  className="px-2 py-1 bg-amber-50 hover:bg-amber-100 border-amber-200 text-[10px] font-extrabold rounded-lg text-amber-700 transition-all"
-                                >
-                                  Reject
-                                </button>
-                              </>
-                            )}
-                            <button
-                              onClick={() => {
-                                setReschedulingBooking(b)
-                                setRescheduleDate(b.date)
-                                setRescheduleTimeSlot(b.timeSlot)
-                              }}
-                              className="px-2 py-1 bg-slate-50 hover:bg-[#E6EEFF] border border-[#E6EEFF] text-[10px] font-extrabold rounded-lg text-slate-600 transition-all"
-                            >
-                              Reschedule
-                            </button>
-                            <button
-                              onClick={() => handleDeleteBooking(b.id)}
-                              className="px-2 py-1 bg-red-50 hover:bg-red-100 border border-red-200 text-[10px] font-extrabold rounded-lg text-red-600 transition-all"
-                            >
-                              Delete
-                            </button>
+                      {filteredBookings.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="p-8 text-center text-slate-400 text-xs font-bold">
+                            No matching bookings found.
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        filteredBookings.map(b => (
+                          <tr key={b.id} className="border-b border-slate-50 hover:bg-[#FAFBFF] text-xs font-bold text-slate-600 transition-colors">
+                            <td className="p-4 text-[#0F1E4A] font-extrabold">
+                              <div>{b.studentName}</div>
+                              <div className="text-[10px] text-slate-455 font-medium">{b.studentEmail}</div>
+                            </td>
+                            <td className="p-4 text-[#0F1E4A]">{b.courseName}</td>
+                            <td className="p-4">{b.instructor}</td>
+                            <td className="p-4 text-slate-400">{b.date}</td>
+                            <td className="p-4 capitalize">
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${
+                                b.batchTiming === 'morning' ? 'bg-amber-50 text-amber-600' : 'bg-purple-50 text-purple-600'
+                              }`}>
+                                {b.batchTiming}
+                              </span>
+                            </td>
+                            <td className="p-4 text-[#5EA8FF]">{b.timeSlot}</td>
+                            <td className="p-4">
+                              <span className={`px-2.5 py-0.5 rounded-full text-[9px] uppercase font-black ${
+                                b.status === 'Approved' || b.status === 'Booked' || b.status === 'Confirmed'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : b.status === 'Rejected' || b.status === 'Cancelled'
+                                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                  : 'bg-amber-50 text-amber-700 border border-amber-200'
+                              }`}>
+                                {b.status === 'Booked' ? 'Approved' : b.status === 'Cancelled' ? 'Rejected' : b.status}
+                              </span>
+                            </td>
+                            <td className="p-4 flex gap-2">
+                              {b.status === 'Pending' && (
+                                <>
+                                  <button
+                                    onClick={() => handleUpdateBookingStatus(b.id, 'Approved')}
+                                    className="px-2 py-1 bg-green-50 hover:bg-green-100 border border-green-200 text-[10px] font-extrabold rounded-lg text-green-700 transition-all"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={() => handleUpdateBookingStatus(b.id, 'Rejected')}
+                                    className="px-2 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-[10px] font-extrabold rounded-lg text-rose-700 transition-all"
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setReschedulingBooking(b)
+                                  setRescheduleDate(b.date)
+                                  setRescheduleTimeSlot(b.timeSlot)
+                                }}
+                                className="px-2 py-1 bg-slate-50 hover:bg-[#E6EEFF] border border-[#E6EEFF] text-[10px] font-extrabold rounded-lg text-slate-600 transition-all"
+                              >
+                                Reschedule
+                              </button>
+                              <button
+                                onClick={() => handleDeleteBooking(b.id)}
+                                className="px-2 py-1 bg-red-50 hover:bg-red-100 border border-red-200 text-[10px] font-extrabold rounded-lg text-red-600 transition-all"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -2596,7 +2722,439 @@ export default function AdminDashboard() {
 
             {/* TAB: SETTINGS (Includes Integrations, Operating Hours, and Holidays Planner) */}
             {activeTab === 'settings' && (
-              <div className="space-y-8 animate-fadeIn">
+              <div className="space-y-8 animate-fadeIn font-sans">
+                {/* CMS WEBSITE CONTENT MANAGEMENT SECTION */}
+                <div className="bg-slate-50 border border-[#E6EEFF] rounded-[32px] p-6 md:p-8 space-y-8">
+                  <div>
+                    <h2 className="text-xl font-black text-[#0F1E4A] flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-[#FF6FAF]" /> Public Website CMS Management
+                    </h2>
+                    <p className="text-xs text-slate-400 font-medium mt-1">Control all content blocks, SEO settings, and business parameters on the public website dynamically.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                    {/* CARD 1: HERO SECTION CMS */}
+                    <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-sm space-y-4">
+                      <div className="border-b border-[#E6EEFF] pb-3 flex justify-between items-center">
+                        <h3 className="font-extrabold text-[#0F1E4A] text-sm flex items-center gap-2">
+                          <span className="text-blue-500">✨</span> Homepage Hero Configuration
+                        </h3>
+                        <span className="text-[9px] bg-blue-55 text-blue-500 px-2 py-0.5 rounded font-extrabold uppercase">Live View</span>
+                      </div>
+                      <form onSubmit={(e) => { e.preventDefault(); handleUpdateCmsSetting('homepage_hero', heroForm); }} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Tagline (Main Title)</label>
+                            <input
+                              type="text"
+                              value={heroForm.tagline}
+                              onChange={(e) => setHeroForm({ ...heroForm, tagline: e.target.value })}
+                              placeholder="e.g. Elevate Your Musical Journey"
+                              className="w-full px-3.5 py-2.5 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Subtitle (Highlights)</label>
+                            <input
+                              type="text"
+                              value={heroForm.subtitle}
+                              onChange={(e) => setHeroForm({ ...heroForm, subtitle: e.target.value })}
+                              placeholder="e.g. Unlock Your True Creative Potential"
+                              className="w-full px-3.5 py-2.5 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Hero Description</label>
+                          <textarea
+                            value={heroForm.description}
+                            onChange={(e) => setHeroForm({ ...heroForm, description: e.target.value })}
+                            placeholder="Detailed paragraph explaining classes, certified directors, and lessons..."
+                            rows={3}
+                            className="w-full px-3.5 py-2.5 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none resize-none"
+                            required
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Button Text</label>
+                            <input
+                              type="text"
+                              value={heroForm.primaryButtonText}
+                              onChange={(e) => setHeroForm({ ...heroForm, primaryButtonText: e.target.value })}
+                              placeholder="e.g. Explore Courses"
+                              className="w-full px-3.5 py-2.5 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Button Redirect Link</label>
+                            <input
+                              type="text"
+                              value={heroForm.primaryButtonUrl}
+                              onChange={(e) => setHeroForm({ ...heroForm, primaryButtonUrl: e.target.value })}
+                              placeholder="e.g. #courses"
+                              className="w-full px-3.5 py-2.5 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Search Placeholder</label>
+                            <input
+                              type="text"
+                              value={heroForm.searchPlaceholder || ''}
+                              onChange={(e) => setHeroForm({ ...heroForm, searchPlaceholder: e.target.value })}
+                              placeholder="e.g. What instrument do you want to learn?"
+                              className="w-full px-3.5 py-2.5 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Background Banner URL / Path</label>
+                            <input
+                              type="text"
+                              value={heroForm.banner}
+                              onChange={(e) => setHeroForm({ ...heroForm, banner: e.target.value })}
+                              placeholder="e.g. /images/hero-bg.jpg"
+                              className="w-full px-3.5 py-2.5 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="pt-2">
+                          <button
+                            type="submit"
+                            className="w-full py-2.5 bg-gradient-to-r from-blue-500 to-[#5EA8FF] text-white text-xs font-extrabold rounded-xl hover:shadow-md transition-all active:scale-[0.98]"
+                          >
+                            Save Hero Settings
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+
+                    {/* CARD 2: ABOUT US & BIO CMS */}
+                    <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-sm space-y-4">
+                      <div className="border-b border-[#E6EEFF] pb-3 flex justify-between items-center">
+                        <h3 className="font-extrabold text-[#0F1E4A] text-sm flex items-center gap-2">
+                          <span className="text-purple-500">📖</span> About Us & Founder Bio Config
+                        </h3>
+                        <span className="text-[9px] bg-purple-55 text-purple-500 px-2 py-0.5 rounded font-extrabold uppercase">Dynamic About</span>
+                      </div>
+                      <form onSubmit={(e) => { e.preventDefault(); handleUpdateCmsSetting('homepage_about', aboutForm); }} className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
+                        <div>
+                          <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">About Section Title</label>
+                          <input
+                            type="text"
+                            value={aboutForm.title}
+                            onChange={(e) => setAboutForm({ ...aboutForm, title: e.target.value })}
+                            placeholder="e.g. Empowering Musicians Since 2012"
+                            className="w-full px-3.5 py-2.5 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">About Section Description</label>
+                          <textarea
+                            value={aboutForm.description}
+                            onChange={(e) => setAboutForm({ ...aboutForm, description: e.target.value })}
+                            placeholder="Write about the legacy, courses, and certifications of the school..."
+                            rows={3}
+                            className="w-full px-3.5 py-2.5 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none resize-none"
+                            required
+                          />
+                        </div>
+
+                        <div className="border-t border-slate-100 pt-3">
+                          <span className="block text-[10px] font-black text-[#0F1E4A] mb-2 uppercase">Achievements Stats</span>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <label className="block text-[8px] font-bold text-slate-450 uppercase mb-1">Years (Val / Lbl)</label>
+                              <input
+                                type="text"
+                                value={aboutForm.statYearVal}
+                                onChange={(e) => setAboutForm({ ...aboutForm, statYearVal: e.target.value })}
+                                placeholder="12+"
+                                className="w-full px-2 py-1.5 border border-[#E6EEFF] rounded-lg text-xs font-bold mb-1"
+                              />
+                              <input
+                                type="text"
+                                value={aboutForm.statYearLbl}
+                                onChange={(e) => setAboutForm({ ...aboutForm, statYearLbl: e.target.value })}
+                                placeholder="Years legacy"
+                                className="w-full px-2 py-1.5 border border-[#E6EEFF] rounded-lg text-[10px] font-bold"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[8px] font-bold text-slate-450 uppercase mb-1">Students (Val / Lbl)</label>
+                              <input
+                                type="text"
+                                value={aboutForm.statStudentVal}
+                                onChange={(e) => setAboutForm({ ...aboutForm, statStudentVal: e.target.value })}
+                                placeholder="5,000+"
+                                className="w-full px-2 py-1.5 border border-[#E6EEFF] rounded-lg text-xs font-bold mb-1"
+                              />
+                              <input
+                                type="text"
+                                value={aboutForm.statStudentLbl}
+                                onChange={(e) => setAboutForm({ ...aboutForm, statStudentLbl: e.target.value })}
+                                placeholder="Students trained"
+                                className="w-full px-2 py-1.5 border border-[#E6EEFF] rounded-lg text-[10px] font-bold"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[8px] font-bold text-slate-450 uppercase mb-1">Excellence (Val / Lbl)</label>
+                              <input
+                                type="text"
+                                value={aboutForm.statExcellenceVal}
+                                onChange={(e) => setAboutForm({ ...aboutForm, statExcellenceVal: e.target.value })}
+                                placeholder="100%"
+                                className="w-full px-2 py-1.5 border border-[#E6EEFF] rounded-lg text-xs font-bold mb-1"
+                              />
+                              <input
+                                type="text"
+                                value={aboutForm.statExcellenceLbl}
+                                onChange={(e) => setAboutForm({ ...aboutForm, statExcellenceLbl: e.target.value })}
+                                placeholder="Practical focus"
+                                className="w-full px-2 py-1.5 border border-[#E6EEFF] rounded-lg text-[10px] font-bold"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="border-t border-slate-100 pt-3">
+                          <span className="block text-[10px] font-black text-[#0F1E4A] mb-2 uppercase">Founder Bio details</span>
+                          <div className="grid grid-cols-2 gap-3 mb-2">
+                            <div>
+                              <input
+                                type="text"
+                                value={aboutForm.founderName || ''}
+                                onChange={(e) => setAboutForm({ ...aboutForm, founderName: e.target.value })}
+                                placeholder="Founder name (e.g. Ajinkya Amrule)"
+                                className="w-full px-3 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold"
+                              />
+                            </div>
+                            <div>
+                              <input
+                                type="text"
+                                value={aboutForm.founderRole || ''}
+                                onChange={(e) => setAboutForm({ ...aboutForm, founderRole: e.target.value })}
+                                placeholder="Founder role (e.g. Director)"
+                                className="w-full px-3 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold"
+                              />
+                            </div>
+                          </div>
+                          <textarea
+                            value={aboutForm.founderBio || ''}
+                            onChange={(e) => setAboutForm({ ...aboutForm, founderBio: e.target.value })}
+                            placeholder="Write a brief overview of the founder's certifications, credentials, and vision..."
+                            rows={3}
+                            className="w-full px-3.5 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold resize-none"
+                          />
+                        </div>
+
+                        <div className="pt-2">
+                          <button
+                            type="submit"
+                            className="w-full py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs font-extrabold rounded-xl hover:shadow-md transition-all active:scale-[0.98]"
+                          >
+                            Save About & Founder Bio
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+
+                    {/* CARD 3: CONTACT DETAILS & SOCIALS CMS */}
+                    <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-sm space-y-4">
+                      <div className="border-b border-[#E6EEFF] pb-3 flex justify-between items-center">
+                        <h3 className="font-extrabold text-[#0F1E4A] text-sm flex items-center gap-2">
+                          <span className="text-[#FF6FAF]">📞</span> Contact info & Social Coordinates
+                        </h3>
+                        <span className="text-[9px] bg-pink-55 text-pink-500 px-2 py-0.5 rounded font-extrabold uppercase">Site settings</span>
+                      </div>
+                      <form onSubmit={(e) => { e.preventDefault(); handleUpdateCmsSetting('contact_details', contactForm); }} className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Official email</label>
+                            <input
+                              type="email"
+                              value={contactForm.email}
+                              onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                              placeholder="e.g. aamrule90@gmail.com"
+                              className="w-full px-3.5 py-2.5 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Official phone</label>
+                            <input
+                              type="text"
+                              value={contactForm.phone}
+                              onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
+                              placeholder="e.g. +91 77688 38832"
+                              className="w-full px-3.5 py-2.5 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">School Physical Address</label>
+                          <textarea
+                            value={contactForm.address}
+                            onChange={(e) => setContactForm({ ...contactForm, address: e.target.value })}
+                            placeholder="Complete address with lane number, landmark, pin code..."
+                            rows={2}
+                            className="w-full px-3.5 py-2.5 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none resize-none"
+                            required
+                          />
+                        </div>
+
+                        <div className="border-t border-slate-100 pt-3 space-y-3">
+                          <span className="block text-[10px] font-black text-[#0F1E4A] uppercase">Social Media Profile Links</span>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[8px] font-bold text-slate-400 uppercase mb-1">Facebook URL</label>
+                              <input
+                                type="text"
+                                value={contactForm.facebook || ''}
+                                onChange={(e) => setContactForm({ ...contactForm, facebook: e.target.value })}
+                                placeholder="Facebook page link"
+                                className="w-full px-3 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[8px] font-bold text-slate-400 uppercase mb-1">Instagram URL</label>
+                              <input
+                                type="text"
+                                value={contactForm.instagram || ''}
+                                onChange={(e) => setContactForm({ ...contactForm, instagram: e.target.value })}
+                                placeholder="Instagram handle link"
+                                className="w-full px-3 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[8px] font-bold text-slate-400 uppercase mb-1">YouTube URL</label>
+                              <input
+                                type="text"
+                                value={contactForm.youtube || ''}
+                                onChange={(e) => setContactForm({ ...contactForm, youtube: e.target.value })}
+                                placeholder="YouTube channel link"
+                                className="w-full px-3 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[8px] font-bold text-slate-400 uppercase mb-1">Twitter / X URL</label>
+                              <input
+                                type="text"
+                                value={contactForm.twitter || ''}
+                                onChange={(e) => setContactForm({ ...contactForm, twitter: e.target.value })}
+                                placeholder="Twitter profile link"
+                                className="w-full px-3 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="pt-2">
+                          <button
+                            type="submit"
+                            className="w-full py-2.5 bg-gradient-to-r from-pink-500 to-[#FF6FAF] text-white text-xs font-extrabold rounded-xl hover:shadow-md transition-all active:scale-[0.98]"
+                          >
+                            Save Contacts & Socials
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+
+                    {/* CARD 4: SEO METADATA & FOOTER IDENTITY CMS */}
+                    <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-sm space-y-4">
+                      <div className="border-b border-[#E6EEFF] pb-3 flex justify-between items-center">
+                        <h3 className="font-extrabold text-[#0F1E4A] text-sm flex items-center gap-2">
+                          <span className="text-emerald-500">🛡</span> SEO Configuration & Footer Branding
+                        </h3>
+                        <span className="text-[9px] bg-emerald-55 text-emerald-500 px-2 py-0.5 rounded font-extrabold uppercase">Meta configs</span>
+                      </div>
+                      <form onSubmit={(e) => { e.preventDefault(); handleUpdateCmsSetting('seo_metadata', seoForm); handleUpdateCmsSetting('footer', footerForm); }} className="space-y-4">
+                        <div>
+                          <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Meta Browser Title</label>
+                          <input
+                            type="text"
+                            value={seoForm.title}
+                            onChange={(e) => setSeoForm({ ...seoForm, title: e.target.value })}
+                            placeholder="e.g. Ajinkya's Music School - Pune"
+                            className="w-full px-3.5 py-2.5 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Meta Snippet Description</label>
+                          <textarea
+                            value={seoForm.description}
+                            onChange={(e) => setSeoForm({ ...seoForm, description: e.target.value })}
+                            placeholder="Describe classes, location, and specialties for Google Search indexing..."
+                            rows={2}
+                            className="w-full px-3.5 py-2.5 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none resize-none"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">Keywords (Comma Separated)</label>
+                          <input
+                            type="text"
+                            value={seoForm.keywords || ''}
+                            onChange={(e) => setSeoForm({ ...seoForm, keywords: e.target.value })}
+                            placeholder="music school, piano classes Pune, guitar learning..."
+                            className="w-full px-3.5 py-2.5 border border-[#E6EEFF] focus:border-[#5EA8FF] rounded-xl text-xs font-bold focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="border-t border-slate-100 pt-3">
+                          <span className="block text-[10px] font-black text-[#0F1E4A] mb-2 uppercase">Footer & Branding Info</span>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[8px] font-bold text-slate-400 uppercase mb-1">Copyright Text</label>
+                              <input
+                                type="text"
+                                value={footerForm.copyrightText || ''}
+                                onChange={(e) => setFooterForm({ ...footerForm, copyrightText: e.target.value })}
+                                placeholder="© 2026 Ajinkya's Music School. All rights reserved."
+                                className="w-full px-3 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[8px] font-bold text-slate-400 uppercase mb-1">Footer Tagline/Text</label>
+                              <input
+                                type="text"
+                                value={footerForm.footerText || ''}
+                                onChange={(e) => setFooterForm({ ...footerForm, footerText: e.target.value })}
+                                placeholder="Inspiring music creation"
+                                className="w-full px-3 py-2 border border-[#E6EEFF] rounded-xl text-xs font-bold"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="pt-2">
+                          <button
+                            type="submit"
+                            className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-extrabold rounded-xl hover:shadow-md transition-all active:scale-[0.98]"
+                          >
+                            Save SEO & Footer configs
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* WhatsApp Connection Toggles */}
                   <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)] space-y-4">
@@ -3465,11 +4023,11 @@ export default function AdminDashboard() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-[28px] p-8 w-full max-w-lg border border-[#E6EEFF] shadow-2xl space-y-6 animate-scaleUp max-h-[90vh] overflow-y-auto">
             <div>
-              <h3 className="text-lg font-black text-[#0F1E4A]">Add New Course Level</h3>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">Register a new instrument level and advanced parameters.</p>
+              <h3 className="text-lg font-black text-[#0F1E4A]">{editingCourse ? 'Edit Course Level' : 'Add New Course Level'}</h3>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">{editingCourse ? 'Modify course level and advanced parameters.' : 'Register a new instrument level and advanced parameters.'}</p>
             </div>
             
-            <form onSubmit={handleAddCourse} className="space-y-4">
+            <form onSubmit={editingCourse ? handleSaveCourseEdit : handleAddCourse} className="space-y-4">
               <div>
                 <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Course / Level Title</label>
                 <input
@@ -3714,7 +4272,10 @@ export default function AdminDashboard() {
               <div className="flex space-x-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsAddCourseOpen(false)}
+                  onClick={() => {
+                    setIsAddCourseOpen(false)
+                    setEditingCourse(null)
+                  }}
                   className="flex-1 py-2.5 border border-[#E6EEFF] text-slate-500 hover:bg-slate-50 text-xs font-bold rounded-xl transition-all"
                 >
                   Cancel
@@ -3723,7 +4284,7 @@ export default function AdminDashboard() {
                   type="submit"
                   className="flex-1 py-2.5 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white text-xs font-bold rounded-xl hover:shadow-lg transition-all"
                 >
-                  Add Course
+                  {editingCourse ? 'Save Changes' : 'Add Course'}
                 </button>
               </div>
             </form>

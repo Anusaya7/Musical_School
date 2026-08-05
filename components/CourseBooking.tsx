@@ -403,95 +403,57 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
     setIsBooking(true)
 
     try {
-      // 1. Create order on the backend
-      const orderRes = await fetch('/api/payment/create-order', {
+      const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: Math.round(course.price * 100), // Razorpay amount in paise
-          currency: 'INR',
-          receipt: `receipt_${Date.now()}`,
-          notes: {
-            purchaseType: 'booking',
-            courseId: course.id,
-            courseName: course.title,
-            instructor: course.instructor,
-            date: selectedDate,
-            timeSlot: selectedTimeSlot,
-            batchTiming: selectedBatch,
-            studentName,
-            studentEmail,
-            studentPhone,
-            amount: course.price
-          }
+          courseId: course.id,
+          courseName: course.title,
+          instructor: course.instructor,
+          date: selectedDate,
+          timeSlot: selectedTimeSlot,
+          batchTiming: selectedBatch,
+          studentName,
+          studentEmail,
+          amount: course.price
         })
       })
 
-      const resData = await orderRes.json()
-      if (!resData.success) {
-        throw new Error(resData.error || 'Failed to initialize payment order')
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to submit booking request')
       }
 
-      // Intercept mock mode
-      if (resData.isMock) {
-        setMockOrderId(resData.id)
-        setShowMockPaymentModal(true)
-        setIsBooking(false)
-        return
-      }
+      // Clear local inputs
+      setSelectedDate('')
+      setSelectedBatch('')
+      setSelectedTimeSlot('')
+      setStudentName('')
+      setStudentEmail('')
+      setStudentPhone('')
+      setShowPayment(false)
+      setShowBookingModal(false)
 
-      // 2. Open Razorpay Checkout Dialog
-      const Razorpay = (window as any).Razorpay
-      if (!Razorpay) {
-        throw new Error('Razorpay SDK failed to load. Please verify your internet connection.')
-      }
-
-      const options = {
-        key: resData.key,
-        amount: resData.amount,
-        currency: resData.currency,
-        name: '2nd Inversion Music School',
-        description: `Class Booking: ${course.title}`,
-        image: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?q=80&w=100&auto=format&fit=crop',
-        order_id: resData.id,
-        handler: async function (response: any) {
-          try {
-            await startProcessingAndVerify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature
-            })
-          } catch (verifyErr: any) {
-            console.error('Signature verification failed:', verifyErr)
-            window.location.href = `/payment/failed?error=${encodeURIComponent(verifyErr.message || 'Signature verification failed')}`
-          }
-        },
-        prefill: {
-          name: studentName,
-          email: studentEmail,
-          contact: studentPhone
-        },
-        theme: {
-          color: '#2563EB'
-        },
-        modal: {
-          ondismiss: function () {
-            setIsBooking(false)
-            alert('Payment checkout was closed by the user.')
-          }
-        }
-      }
-
-      const rzp = new Razorpay(options)
-      rzp.on('payment.failed', function (resp: any) {
-        console.error('Razorpay payment failed:', resp.error)
-        window.location.href = `/payment/failed?error=${encodeURIComponent(resp.error.description || 'Payment transaction failed')}`
+      // Redirect to Success Page with parameters
+      const queryParams = new URLSearchParams({
+        bookingId: data.booking.id,
+        courseName: data.booking.courseName,
+        paymentId: 'DirectBooking',
+        amount: String(data.booking.amount || course.price),
+        paymentDate: new Date().toLocaleString(),
+        studentEmail: data.booking.studentEmail,
+        instructorName: data.booking.instructor,
+        courseDuration: '3 Months',
+        bookedSlot: `${data.booking.date} at ${data.booking.timeSlot} (${data.booking.batchTiming})`,
+        expectedStartDate: data.booking.date
       })
-      rzp.open()
+
+      window.location.href = `/payment/success?${queryParams.toString()}`
 
     } catch (err: any) {
-      console.error('Checkout launch error:', err)
-      alert(err.message || 'Could not launch Razorpay checkout.')
+      console.error('Booking submission error:', err)
+      alert(err.message || 'Could not process booking request.')
+    } finally {
       setIsBooking(false)
     }
   }

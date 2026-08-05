@@ -1,19 +1,34 @@
 import { NextResponse } from 'next/server'
-import { createUser, addNotification, addAuditLog, getUserByEmail } from '@/lib/db'
-import { sendSystemEmail } from '@/lib/email'
+import { createUser, addNotification, addAuditLog, getUserByEmail, createVerificationToken } from '@/lib/db'
+import { sendSystemEmail, getSignupVerificationEmail, getAdminNewStudentEmail } from '@/lib/email'
 import { prisma } from '@/lib/prisma'
+import { OtpService } from '@/lib/services/otp'
+import { WhatsAppService } from '@/lib/services/whatsapp'
 import bcrypt from 'bcryptjs'
+import { z } from 'zod'
+import crypto from 'crypto'
+
+const registerSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters')
+})
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password } = await request.json()
-
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 })
+    const body = await request.json()
+    const validation = registerSchema.safeParse(body)
+    
+    if (!validation.success) {
+      const errorMsg = validation.error.issues.map(e => e.message).join(', ')
+      return NextResponse.json({ error: errorMsg }, { status: 400 })
     }
 
+    const { name, email, password } = validation.data
+    const lowerEmail = email.toLowerCase()
+
     // Check if user already exists
-    const existing = await getUserByEmail(email)
+    const existing = await getUserByEmail(lowerEmail)
     if (existing) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 400 })
     }
@@ -24,10 +39,10 @@ export async function POST(request: Request) {
     const user = {
       id: userId,
       name,
-      email,
+      email: lowerEmail,
       passwordHash,
       role: 'STUDENT' as const,
-      isVerified: true,
+      isVerified: false, // Must be verified via email first
       status: 'Active' as const,
       enrolledCourses: [],
       createdAt: new Date().toISOString()
@@ -41,7 +56,7 @@ export async function POST(request: Request) {
           data: {
             id: userId,
             name,
-            email: email.toLowerCase(),
+            email: lowerEmail,
             status: 'Active'
           }
         })
@@ -49,40 +64,43 @@ export async function POST(request: Request) {
         console.error('Failed to create Student model record:', studentErr)
       }
 
-      // 2. Create Admin Notification
+      // 2. Generate 6-digit OTP
+      const otp = await OtpService.generateOTP(lowerEmail)
+
+      // 3. Create Admin Notification
       await addNotification({
         id: `notif-${Date.now()}`,
         title: 'New Student Registered',
-        message: `Name: ${name}\nEmail: ${email}`,
+        message: `Name: ${name}\nEmail: ${lowerEmail} (Awaiting OTP Verification)`,
         createdAt: new Date().toISOString(),
         isRead: false
       })
 
-      // 3. Log Activity
+      // 4. Log Activity
       await addAuditLog({
         id: `log-${Date.now()}`,
-        userEmail: email,
+        userEmail: lowerEmail,
         action: 'Student Registered',
-        details: `New student signed up: ${name} (${email})`,
+        details: `New student signed up: ${name} (${lowerEmail}) - Awaiting OTP verification`,
         createdAt: new Date().toISOString()
       })
 
-      // 4. Send Email Notification to Admin
-      const adminHtml = `
-        <div style="font-family: sans-serif; padding: 20px; color: #1e293b; max-width: 600px; margin: 0 auto; border: 1.5px solid #e6eeff; border-radius: 12px; background-color: #fafafa;">
-          <h2 style="color: #2563eb; margin-top: 0;">New Student Registered</h2>
-          <p>A new student has registered on the Music School LMS platform.</p>
-          <div style="background-color: #ffffff; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #e6eeff;">
-            <p style="margin: 6px 0; font-size: 13px;"><strong>Name:</strong> ${name}</p>
-            <p style="margin: 6px 0; font-size: 13px;"><strong>Email:</strong> ${email}</p>
-            <p style="margin: 6px 0; font-size: 13px;"><strong>Date:</strong> ${new Date().toLocaleString()}</p>
-          </div>
-          <p style="font-size: 13px; color: #64748b; margin-bottom: 0;">Regards,<br/>2nd Inversion LMS System</p>
-        </div>
-      `
-      await sendSystemEmail('aamrule90@gmail.com', `New Student Registered - ${name}`, adminHtml)
+      // 5. Send Verification Email to Student with OTP
+      const studentHtml = getSignupVerificationEmail(name, otp)
+      await sendSystemEmail(lowerEmail, 'Verify Your Email Address', studentHtml)
 
-      return NextResponse.json({ success: true, user: { name, email, role: 'STUDENT' } })
+      // 6. Send Email Notification to Admin
+      const adminHtml = getAdminNewStudentEmail(name, lowerEmail)
+      const adminEmail = process.env.ADMIN_EMAIL || 'aamrule90@gmail.com'
+      await sendSystemEmail(adminEmail, `New Student Registered - ${name}`, adminHtml)
+
+      // 7. Send WhatsApp Notification to Admin
+      await WhatsAppService.sendMessage('917768838832', `Hello Admin, a new student has registered on the 2nd Inversion LMS:
+Name: ${name}
+Email: ${lowerEmail}
+Status: Awaiting OTP Verification`)
+
+      return NextResponse.json({ success: true, message: 'Registration successful! Verification email sent.', user: { name, email: lowerEmail, role: 'STUDENT' } })
     }
 
     return NextResponse.json({ error: 'Failed to register student' }, { status: 500 })

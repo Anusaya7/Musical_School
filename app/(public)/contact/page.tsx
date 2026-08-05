@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Header from '@/components/Header'
+import { useSiteSettings } from '@/contexts/SiteSettingsContext'
 import { 
   MapPin, 
   Phone, 
@@ -23,6 +24,8 @@ import {
 } from 'lucide-react'
 
 export default function ContactPage() {
+  const { settings } = useSiteSettings()
+  const contactDetails = settings.contact_details || {}
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -131,7 +134,8 @@ ${formData.message}
 
 Submitted from the website.`
 
-      const waUrl = `https://wa.me/917768838832?text=${encodeURIComponent(whatsappMsg)}`
+      const cleanPhone = contactDetails.phone ? contactDetails.phone.replace(/\D/g, '') : "917768838832"
+      const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMsg)}`
       
       try {
         window.open(waUrl, '_blank')
@@ -177,15 +181,7 @@ Submitted from the website.`
     }
   }
 
-  const fullAddress = `Sr. No. 56/2/30,
-House No. B2/30,
-Kawade Nagar,
-Lane No. 2,
-Behind Ganesh Mangal Kendra,
-Pimple Gurav (New Sangvi),
-Pune – 411061,
-Maharashtra,
-India`
+  const fullAddress = contactDetails.address || `Sr. No. 56/2/30, House No. B2/30, Kawade Nagar, Lane No. 2, Behind Ganesh Mangal Kendra, Pimple Gurav, Pune – 411061`
 
   const handleCopyAddress = () => {
     navigator.clipboard.writeText(fullAddress)
@@ -319,13 +315,7 @@ India`
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 mb-4">📍 Address</h3>
                 <div className="text-slate-600 text-sm leading-relaxed whitespace-pre-line font-semibold">
-                  {`Sr. No. 56/2/30
-House No. B2/30
-Kawade Nagar
-Lane No. 2
-Behind Ganesh Mangal Kendra
-Pimple Gurav (New Sangvi)
-Pune – 411061`}
+                  {contactDetails.address || `Sr. No. 56/2/30, House No. B2/30, Kawade Nagar, Lane No. 2, Behind Ganesh Mangal Kendra, Pimple Gurav, Pune – 411061`}
                 </div>
               </div>
               <div className="mt-8">
@@ -349,7 +339,7 @@ Pune – 411061`}
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 mb-4">📞 Call Us</h3>
                 <p className="text-2xl font-black text-[#2563EB] mb-3 tracking-tight">
-                  +91 77688 38832
+                  {contactDetails.phone || "+91 77688 38832"}
                 </p>
                 <p className="text-slate-500 text-xs font-semibold leading-relaxed">
                   Tuesday – Sunday<br />
@@ -358,7 +348,7 @@ Pune – 411061`}
               </div>
               <div className="mt-8">
                 <a 
-                  href="tel:+917768838832"
+                  href={`tel:${contactDetails.phone ? contactDetails.phone.replace(/\s+/g, '') : "+917768838832"}`}
                   onClick={handleCallNow}
                   className="flex items-center justify-center gap-2 text-xs font-bold text-white bg-gradient-to-r from-[#2563EB] to-[#38BDF8] hover:opacity-95 py-3.5 px-4 rounded-xl shadow-md transition-all w-full text-center active:scale-[0.98]"
                 >
@@ -376,7 +366,7 @@ Pune – 411061`}
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 mb-4">✉ Email</h3>
                 <p className="text-lg font-bold text-[#7C3AED] truncate mb-3 tracking-tight">
-                  aamrule90@gmail.com
+                  {contactDetails.email || "aamrule90@gmail.com"}
                 </p>
                 <p className="text-slate-500 text-xs font-semibold leading-relaxed">
                   We'll reply within 24 hours.
@@ -384,7 +374,7 @@ Pune – 411061`}
               </div>
               <div className="mt-8">
                 <a 
-                  href="mailto:aamrule90@gmail.com?subject=Website%20Inquiry&body=Hello,%0A%0AI%20would%20like%20to%20inquire%20about%20your%20music%20classes.%0A%0ARegards,"
+                  href={`mailto:${contactDetails.email || "aamrule90@gmail.com"}?subject=Website%20Inquiry&body=Hello,%0A%0AI%20would%20like%20to%20inquire%20about%20your%20music%20classes.%0A%0ARegards,`}
                   onClick={handleSendEmail}
                   className="flex items-center justify-center gap-2 text-xs font-bold text-white bg-gradient-to-r from-[#7C3AED] to-purple-600 hover:opacity-95 py-3.5 px-4 rounded-xl w-full text-center active:scale-[0.98]"
                 >

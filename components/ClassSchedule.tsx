@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { generateClassSchedules, getBookings, addBooking, generateBookingId } from '@/data/bookingData'
 import BookingModal from './BookingModal'
@@ -12,11 +12,48 @@ interface ClassScheduleProps {
 
 export default function ClassSchedule({ onClassSelect }: ClassScheduleProps) {
   const { theme } = useTheme()
-  const scheduleData = generateClassSchedules()
+  const [scheduleData, setScheduleData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [selectedClass, setSelectedClass] = useState<any>(null)
   const [booking, setBooking] = useState<any>(null)
+
+  useEffect(() => {
+    fetch('/api/schedules')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map((s: any) => {
+            let level = 'All Levels'
+            let days = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+            if (s.id.toLowerCase().includes('morning') || s.name.toLowerCase().includes('morning')) {
+              level = 'Beginner to Advanced'
+            } else if (s.id.toLowerCase().includes('vocal')) {
+              level = 'Beginner to Intermediate'
+            }
+            return {
+              id: s.id === 'morning' ? 'morning-piano' : (s.id === 'evening' ? 'evening-guitar' : s.id),
+              name: s.name,
+              time: `${s.startTime} - ${s.endTime}`,
+              days: days,
+              instructor: 'Ajinkya Amrule',
+              level: level,
+              timeSlots: s.timeSlots.map((ts: string, idx: number) => ({ id: `${s.id}-${idx}`, time: ts, available: true }))
+            }
+          })
+          setScheduleData(mapped)
+        } else {
+          setScheduleData(generateClassSchedules())
+        }
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('Error fetching schedules:', err)
+        setScheduleData(generateClassSchedules())
+        setLoading(false)
+      })
+  }, [])
 
   const handleBookClass = (classItem: any) => {
     setSelectedClass(classItem)

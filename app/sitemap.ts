@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://musical-school-nine.vercel.app'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://musical-school-nine.vercel.app'
 
   const routes = [
     '',
@@ -13,7 +13,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/admin/login',
     '/instructor',
     '/student/dashboard',
-    '/practice'
+    '/practice',
+    '/privacy-policy',
+    '/terms',
+    '/faq'
   ].map(route => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date().toISOString(),

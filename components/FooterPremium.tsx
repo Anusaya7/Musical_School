@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import logoEmblem from '@/public/images/logo_emblem.png'
+import { useSiteSettings } from '@/contexts/SiteSettingsContext'
 import { 
   Music, 
   Home, 
@@ -21,6 +23,10 @@ import {
 
 export default function FooterPremium() {
   const [email, setEmail] = useState('')
+  const { settings } = useSiteSettings()
+  
+  const contactDetails = settings.contact_details || {}
+  const footerSettings = settings.footer || {}
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,10 +35,10 @@ export default function FooterPremium() {
   }
 
   const socialLinks = [
-    { name: 'IG', href: '#', color: 'hover:bg-pink-500' },
-    { name: 'YT', href: '#', color: 'hover:bg-red-500' },
-    { name: 'FB', href: '#', color: 'hover:bg-blue-500' },
-    { name: 'WA', href: '#', color: 'hover:bg-green-500' }
+    { name: 'IG', href: contactDetails.instagram || '#', color: 'hover:bg-pink-500' },
+    { name: 'YT', href: contactDetails.youtube || '#', color: 'hover:bg-red-500' },
+    { name: 'FB', href: contactDetails.facebook || '#', color: 'hover:bg-blue-500' },
+    { name: 'TW', href: contactDetails.twitter || '#', color: 'hover:bg-sky-500' }
   ]
 
   const quickLinks = [
@@ -48,6 +54,7 @@ export default function FooterPremium() {
     { name: 'Guitar Mastery', icon: Guitar },
     { name: 'Vocal Training', icon: Mic }
   ]
+
 
   return (
     <>
@@ -117,9 +124,8 @@ export default function FooterPremium() {
                 </div>
               </div>
               
-              <p className="text-gray-300 font-medium">Master Music with Passion</p>
               <p className="text-gray-400 text-sm leading-relaxed">
-                Learn piano, guitar, vocals & more with expert instructors.
+                {footerSettings.footerText || "Learn piano, guitar, vocals & more with expert instructors."}
               </p>
               
               <div className="inline-flex items-center space-x-2 px-3 py-1 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-full border border-yellow-500/30">
@@ -179,16 +185,16 @@ export default function FooterPremium() {
               <div className="space-y-3">
                 <div className="flex items-center space-x-3 text-gray-400">
                   <Phone className="w-4 h-4 text-purple-400" />
-                  <span>+91 7768838832</span>
+                  <span>{contactDetails.phone || "+91 7768838832"}</span>
                 </div>
                 <div className="flex items-center space-x-3 text-gray-400">
                   <MapPin className="w-4 h-4 text-purple-400" />
-                  <span>Kawade Nagar, Pimple Gurav, Pune – 411061</span>
+                  <span>{contactDetails.address || "Kawade Nagar, Pimple Gurav, Pune – 411061"}</span>
                 </div>
                 <div className="flex items-center space-x-3 text-gray-400">
                   <Mail className="w-4 h-4 text-purple-400" />
-                  <a href="mailto:aamrule90@gmail.com" className="hover:text-purple-400 transition-colors">
-                    aamrule90@gmail.com
+                  <a href={`mailto:${contactDetails.email || "aamrule90@gmail.com"}`} className="hover:text-purple-400 transition-colors">
+                    {contactDetails.email || "aamrule90@gmail.com"}
                   </a>
                 </div>
               </div>
@@ -236,16 +242,19 @@ export default function FooterPremium() {
           {/* Bottom Bar */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-gray-400 text-sm">
-              © 2026 2nd Inversion Musical School. All rights reserved.
+              {footerSettings.copyrightText || "© 2026 2nd Inversion Musical School. All rights reserved."}
             </p>
             <div className="flex space-x-6 text-sm">
-              <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">
+              <Link href="/privacy-policy" className="text-gray-400 hover:text-purple-400 transition-colors">
                 Privacy Policy
-              </a>
-              <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">
+              </Link>
+              <Link href="/terms" className="text-gray-400 hover:text-purple-400 transition-colors">
                 Terms
-              </a>
-              <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">
+              </Link>
+              <Link href="/faq" className="text-gray-400 hover:text-purple-400 transition-colors">
+                FAQ
+              </Link>
+              <a href="/sitemap.xml" className="text-gray-400 hover:text-purple-400 transition-colors">
                 Sitemap
               </a>
             </div>

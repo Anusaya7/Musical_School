@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getInquiries, addInquiry, updateInquiryStatus, deleteInquiry, addNotification } from '@/lib/db'
-import nodemailer from 'nodemailer'
-import { sendSystemEmail } from '@/lib/email'
+import { sendSystemEmail, getContactFormConfirmationEmail, getAdminNewContactInquiryEmail } from '@/lib/email'
+import { WhatsAppService } from '@/lib/services/whatsapp'
 
 // Basic input sanitization to prevent XSS
 function sanitize(input: string): string {
@@ -26,28 +26,6 @@ const validatePhone = (phone: string) => {
   // Matches basic international or 10-digit formats (e.g., +917768838832, 9876543210, etc.)
   const re = /^\+?[0-9\s\-()]{10,20}$/
   return re.test(phone)
-}
-
-// Helper to configure SMTP transporter
-function getTransporter() {
-  const host = process.env.SMTP_HOST
-  const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587
-  const user = process.env.SMTP_USER
-  const pass = process.env.SMTP_PASS
-
-  if (!host || !user || !pass) {
-    return null
-  }
-
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465, // True for 465, false for other ports
-    auth: {
-      user,
-      pass
-    }
-  })
 }
 
 // GET Handler - Admin dashboard query
@@ -102,10 +80,33 @@ export async function GET(request: Request) {
   }
 }
 
+
 // POST Handler - Form submissions
 export async function POST(request: Request) {
   try {
     const ip = request.headers.get('x-forwarded-for') || '127.0.0.1'
+    
+    // Verify required environment variables exist
+    const host = process.env.SMTP_HOST
+    const port = process.env.SMTP_PORT
+    const user = process.env.SMTP_USER
+    const pass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD
+    const from = process.env.SMTP_FROM
+    const admin = process.env.ADMIN_EMAIL
+
+    if (!host || !port || !user || !pass || !from || !admin) {
+      const missing = []
+      if (!host) missing.push('SMTP_HOST')
+      if (!port) missing.push('SMTP_PORT')
+      if (!user) missing.push('SMTP_USER')
+      if (!pass) missing.push('SMTP_PASS/SMTP_PASSWORD')
+      if (!from) missing.push('SMTP_FROM')
+      if (!admin) missing.push('ADMIN_EMAIL')
+      return NextResponse.json({ 
+        error: `Server Configuration Error: Missing required environment variables: ${missing.join(', ')}` 
+      }, { status: 500 })
+    }
+
     const body = await request.json()
     const { fullName, email, phone, purpose, message } = body
 
@@ -128,16 +129,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid phone number.' }, { status: 400 })
     }
 
-    // 2. Spam protection / Rate Limiting (Check same email/IP in last 60s)
+    // 2. Spam protection / Rate Limiting (Check same email/IP in last 2s)
     const inquiries = await getInquiries()
     const now = new Date()
     const spamCheck = inquiries.find(i => 
       (i.email === sEmail || i.ipAddress === ip) && 
-      (now.getTime() - new Date(i.createdAt).getTime()) < 60000
+      (now.getTime() - new Date(i.createdAt).getTime()) < 2000
     )
 
     if (spamCheck) {
-      return NextResponse.json({ error: 'You have submitted an inquiry recently. Please wait 60 seconds before submitting again.' }, { status: 429 })
+      return NextResponse.json({ error: 'You have submitted an inquiry recently. Please wait a moment before submitting again.' }, { status: 429 })
     }
 
     // 3. Save to database
@@ -176,20 +177,52 @@ export async function POST(request: Request) {
     await addNotification(newNotification)
 
     // 5. Send Emails via Nodemailer
-    const adminText = `New Inquiry Received:\n\nFull Name: ${sFullName}\nEmail: ${sEmail}\nPhone: ${sPhone}\nPurpose: ${sPurpose}\nMessage:\n${sMessage}\n\nSubmitted On: ${dateStr} ${timeStr}\nIP Address: ${ip}`
-    const userText = `Hello ${sFullName},\n\nThank you for contacting 2ND INVERSION Music School.\nWe have successfully received your inquiry.\nOur team will contact you within 24 hours.\n\nIf your inquiry is urgent, please contact us directly.\n\nPhone:\n+91 77688 38832\n\nEmail:\naamrule90@gmail.com\n\nRegards,\n2ND INVERSION Music School`
-
-    const sentAdmin = await sendSystemEmail('aamrule90@gmail.com', 'New Inquiry - 2ND INVERSION Music School', adminText.replace(/\n/g, '<br/>'))
-    const sentUser = await sendSystemEmail(sEmail, 'Thank you for contacting 2ND INVERSION Music School', userText.replace(/\n/g, '<br/>'))
+    let emailSent = false
+    let emailErrorMsg = ''
     
-    const emailSent = sentAdmin && sentUser
-    const smtpMissing = !process.env.SMTP_HOST
+    const dateTimeStr = now.toLocaleString('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    })
+
+    try {
+      const adminHtml = getAdminNewContactInquiryEmail(sFullName, sEmail, sPhone, sPurpose, sMessage, dateTimeStr, ip)
+      const userHtml = getContactFormConfirmationEmail(sFullName, sPurpose, sMessage, dateTimeStr)
+
+      const sentAdmin = await sendSystemEmail(admin, '🔔 New Contact Inquiry Received', adminHtml)
+      const sentUser = await sendSystemEmail(sEmail, 'Thank You for Contacting 2nd Inversion Musical School', userHtml)
+      emailSent = sentAdmin && sentUser
+    } catch (mailErr: any) {
+      console.error('[Inquiries Route] Email notification failed:', mailErr)
+      emailErrorMsg = mailErr.message || 'SMTP connection failed'
+    }
+    
+    // Send WhatsApp messages asynchronously
+    WhatsAppService.sendMessage('917768838832', `Hello Admin, a new contact form inquiry has been submitted:
+Name: ${sFullName}
+Phone: ${sPhone}
+Email: ${sEmail}
+Purpose: ${sPurpose}
+Message: ${sMessage}`)
+      .catch(err => console.error('[Inquiries Route] Failed to send admin WhatsApp inquiry notify:', err))
+
+    WhatsAppService.sendMessage(sPhone, `Hello ${sFullName}, thank you for contacting 2ND INVERSION Music School! We have received your inquiry regarding "${sPurpose}". Our team will get back to you within 24 hours.`)
+      .catch(err => console.error('[Inquiries Route] Failed to send student WhatsApp inquiry confirmation:', err))
+
+    if (!emailSent) {
+      return NextResponse.json({
+        success: true,
+        partialSuccess: true,
+        inquiryId: id,
+        message: 'Inquiry saved successfully, but email dispatch failed.',
+        error: emailErrorMsg
+      })
+    }
 
     return NextResponse.json({
       success: true,
       inquiryId: id,
-      emailSent,
-      smtpMissing,
+      emailSent: true,
       message: 'Inquiry submitted successfully.'
     })
   } catch (error) {

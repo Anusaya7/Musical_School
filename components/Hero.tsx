@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSiteSettings } from '@/contexts/SiteSettingsContext'
 
 interface MusicalNote {
   id: number
@@ -25,6 +26,8 @@ interface FloatingElement {
 
 export default function Hero() {
   const router = useRouter()
+  const { settings } = useSiteSettings()
+  const heroSettings = settings.homepage_hero || {}
   const [mounted, setMounted] = useState(false)
   const [musicalNotes, setMusicalNotes] = useState<MusicalNote[]>([])
   const [floatingElements, setFloatingElements] = useState<FloatingElement[]>([])
@@ -57,9 +60,21 @@ export default function Hero() {
     setFloatingElements(newFloatingElements)
   }, [])
 
-  const handleExploreCourses = () => {
-    router.push('/courses')
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchTerm.trim()) {
+      router.push(`/courses?search=${encodeURIComponent(searchTerm.trim().toLowerCase())}`)
+    } else {
+      router.push('/courses')
+    }
   }
+
+  const handleExploreCourses = () => {
+    router.push(heroSettings.primaryButtonUrl || '/courses')
+  }
+
   return (
     <>
       <section className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white py-32 overflow-hidden">
@@ -127,36 +142,41 @@ export default function Hero() {
           <div className="mb-12">
             <span className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-6 py-2 text-white text-sm font-medium">
               <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-              Empowering 10,000+ aspiring musicians across India
+              {heroSettings.banner || "Empowering 10,000+ aspiring musicians across India"}
             </span>
           </div>
 
           {/* Main Heading */}
           <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white leading-tight">
-            Start Your Musical Journey
+            {heroSettings.tagline || "Start Your Musical Journey"}
             <span className="block text-4xl md:text-5xl bg-gradient-to-r from-yellow-200 to-orange-200 bg-clip-text text-transparent">
-              with Confidence
+              {heroSettings.subtitle || "with Confidence"}
             </span>
           </h1>
 
           {/* Subheading */}
           <p className="text-xl md:text-2xl mb-12 text-purple-100 max-w-4xl mx-auto leading-relaxed">
-            Learn piano, guitar, vocals, drums and more with expert instructors. Whether you're a beginner or advancing your skills, build real confidence with structured lessons and practical guidance.
+            {heroSettings.description || "Learn piano, guitar, vocals, drums and more with expert instructors. Whether you're a beginner or advancing your skills, build real confidence with structured lessons and practical guidance."}
           </p>
 
           {/* Search Bar */}
-          <div className="max-w-2xl mx-auto mb-12">
+          <form onSubmit={handleSearchSubmit} className="max-w-2xl mx-auto mb-12">
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search courses, instruments, or instructors..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder={heroSettings.searchPlaceholder || "Search courses, instruments, or instructors..."}
                 className="w-full px-6 py-4 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 text-lg"
               />
-              <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-white text-indigo-700 px-6 py-2 rounded-full font-semibold hover:bg-yellow-100 transition-colors">
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white text-indigo-700 px-6 py-2 rounded-full font-semibold hover:bg-yellow-100 transition-colors"
+              >
                 Search
               </button>
             </div>
-          </div>
+          </form>
 
           {/* Primary CTA */}
           <div className="flex justify-center">
@@ -164,7 +184,9 @@ export default function Hero() {
               onClick={handleExploreCourses}
               className="relative group bg-white text-indigo-700 px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-100 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] shadow-xl hover:shadow-2xl"
             >
-              <span className="relative z-10 transition-transform duration-300 group-hover:translate-x-1">Explore Courses</span>
+              <span className="relative z-10 transition-transform duration-300 group-hover:translate-x-1">
+                {heroSettings.primaryButtonText || "Explore Courses"}
+              </span>
               <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-lg opacity-0 group-hover:opacity-30 transition-opacity duration-300" />
             </button>
           </div>

@@ -49,7 +49,8 @@ const serverProviders: any[] = [
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.role
+          role: user.role,
+          isVerified: user.isVerified
         }
       } catch (error) {
         console.error("AUTH ERROR", error)

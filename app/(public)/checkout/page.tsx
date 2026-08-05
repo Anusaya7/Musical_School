@@ -44,150 +44,78 @@ export default function CheckoutPage() {
     
     // Validate form
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
-      alert('Please fill in all required fields')
+      if (typeof window !== 'undefined' && (window as any).showToast) {
+        (window as any).showToast('Please fill in all required fields.', 'error')
+      } else {
+        alert('Please fill in all required fields')
+      }
       return
     }
 
     setIsProcessing(true)
 
-    let orderData: any = null
     try {
-      // Create Razorpay order
-      const response = await fetch('/api/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: total * 100, // Convert to paise
-          currency: 'INR',
-          receipt: `receipt_${Date.now()}`,
-          notes: {
-            customerName: `${formData.firstName} ${formData.lastName}`,
-            customerEmail: formData.email,
-            customerPhone: formData.phone,
-            courses: items.map(item => item.title).join(', ')
-          }
-        })
-      })
+      const customerName = `${formData.firstName} ${formData.lastName}`
+      const studentEmail = formData.email.toLowerCase()
 
-      orderData = await response.json()
-
-      if (orderData.success) {
-        // Initialize Razorpay
-        const Razorpay = (window as any).Razorpay
+      // Process each course in the cart
+      for (const item of items) {
+        const orderId = `order_mock_checkout_${Date.now()}`
+        const paymentId = `pay_mock_checkout_${Date.now()}`
         
-        const options = {
-          key: orderData.key,
-          amount: orderData.amount,
-          currency: orderData.currency,
-          name: '2nd Inversion Musical School',
-          description: `${itemCount} Course${itemCount > 1 ? 's' : ''} Purchase`,
-          order_id: orderData.id,
-          handler: async function (response: any) {
-            // Verify payment
-            const verifyResponse = await fetch('/api/verify-payment', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                orderData: orderData
-              })
-            })
-
-            const verifyData = await verifyResponse.json()
-
-            if (verifyData.success) {
-              // Store purchase in localStorage
-              const purchases = JSON.parse(localStorage.getItem('purchases') || '[]')
-              const newPurchase = {
-                id: Date.now(),
-                courses: items,
-                total: total,
-                customerInfo: formData,
-                paymentId: response.razorpay_payment_id,
-                orderId: response.razorpay_order_id,
-                date: new Date().toISOString()
-              }
-              purchases.push(newPurchase)
-              localStorage.setItem('purchases', JSON.stringify(purchases))
-              
-              // Clear cart
-              clearCart()
-              
-              // Redirect to success page
-              router.push('/payment-success')
-            } else {
-              // Log failure if verification fails
-              await fetch('/api/payment/failed', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  studentEmail: formData.email,
-                  studentName: `${formData.firstName} ${formData.lastName}`,
-                  courseId: items[0]?.id || 'unknown',
-                  courseName: items[0]?.title || 'Unknown Course',
-                  amount: total,
-                  errorDescription: 'Verification response failed status',
-                  orderId: orderData.id
-                })
-              }).catch(err => console.error(err))
-              alert('Payment verification failed. Please contact support.')
+        const verifyResponse = await fetch('/api/payment/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            razorpay_order_id: orderId,
+            razorpay_payment_id: paymentId,
+            razorpay_signature: 'mock_signature',
+            orderData: {
+              amount: item.price,
+              studentEmail,
+              studentName: customerName,
+              courseId: item.id,
+              courseName: item.title,
+              purchaseType: 'course'
             }
-          },
-          modal: {
-            ondismiss: async function() {
-              // Log failure when user closes Razorpay dialog before paying
-              await fetch('/api/payment/failed', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  studentEmail: formData.email,
-                  studentName: `${formData.firstName} ${formData.lastName}`,
-                  courseId: items[0]?.id || 'unknown',
-                  courseName: items[0]?.title || 'Unknown Course',
-                  amount: total,
-                  errorDescription: 'User closed checkout popup',
-                  orderId: orderData.id
-                })
-              }).catch(err => console.error(err))
-            }
-          },
-          prefill: {
-            name: `${formData.firstName} ${formData.lastName}`,
-            email: formData.email,
-            contact: formData.phone
-          },
-          theme: {
-            color: '#1e40af'
-          }
-        }
-
-        const rzp = new Razorpay(options)
-        rzp.open()
-      } else {
-        alert('Failed to create payment order. Please try again.')
-      }
-    } catch (error: any) {
-      console.error('Payment error:', error)
-      await fetch('/api/payment/failed', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          studentEmail: formData.email,
-          studentName: `${formData.firstName} ${formData.lastName}`,
-          courseId: items[0]?.id || 'unknown',
-          courseName: items[0]?.title || 'Unknown Course',
-          amount: total,
-          errorDescription: error.message || 'Payment launch exception',
-          orderId: orderData?.id || 'unknown'
+          })
         })
-      }).catch(err => console.error(err))
-      alert('Payment failed. Please try again.')
+
+        const verifyData = await verifyResponse.json()
+        if (!verifyResponse.ok || !verifyData.success) {
+          throw new Error(verifyData.error || `Failed to verify checkout for ${item.title}`)
+        }
+      }
+
+      // Store purchase in localStorage
+      const purchases = JSON.parse(localStorage.getItem('purchases') || '[]')
+      const newPurchase = {
+        id: Date.now(),
+        courses: items,
+        total: total,
+        customerInfo: formData,
+        paymentId: `pay_mock_checkout_${Date.now()}`,
+        orderId: `order_mock_checkout_${Date.now()}`,
+        date: new Date().toISOString()
+      }
+      purchases.push(newPurchase)
+      localStorage.setItem('purchases', JSON.stringify(purchases))
+      
+      // Clear cart
+      clearCart()
+      
+      // Redirect to success page
+      router.push('/payment-success')
+
+    } catch (error: any) {
+      console.error('Checkout error:', error)
+      if (typeof window !== 'undefined' && (window as any).showToast) {
+        (window as any).showToast(error.message || 'Checkout failed. Please try again.', 'error')
+      } else {
+        alert(error.message || 'Checkout failed. Please try again.')
+      }
     } finally {
       setIsProcessing(false)
     }

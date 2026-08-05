@@ -71,8 +71,8 @@ export default function LoginPage() {
       const checkData = await checkRes.json()
 
       if (!checkRes.ok || !checkData.success) {
-        console.log(`[AUTH] Login failed: ${checkData.error || 'Invalid credentials'}. Redirecting to unauthorized page...`)
-        window.location.replace(`/unauthorized?error=${encodeURIComponent('Invalid admin email or password.')}`)
+        console.log(`[AUTH] Login failed: ${checkData.error || 'Invalid credentials'}.`)
+        setErrors({ email: checkData.error || 'Invalid email or password.' })
         setIsLoading(false)
         return
       }
@@ -89,7 +89,7 @@ export default function LoginPage() {
 
       if (res?.error) {
         console.error(`[AUTH] NextAuth credentials session creation failed: ${res.error}`)
-        window.location.replace(`/unauthorized?error=${encodeURIComponent('Invalid admin email or password.')}`)
+        setErrors({ email: 'Invalid email or password.' })
       } else {
         setLoginSuccess(true)
         const name = role === 'SUPER_ADMIN' ? 'Ajinkya Amrule' : role === 'INSTRUCTOR' ? 'Ajinkya Amrule' : 'John Doe'

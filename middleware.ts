@@ -18,6 +18,11 @@ export default auth((req) => {
     }
 
     const role = (req.auth?.user as any)?.role?.toUpperCase() || "STUDENT"
+    const isVerified = (req.auth?.user as any)?.isVerified
+
+    if (isStudentRoute && role === "STUDENT" && !isVerified) {
+      return Response.redirect(new URL("/verify-email", nextUrl))
+    }
     
     if (isAdminRoute && role !== "SUPER_ADMIN") {
       return Response.redirect(new URL("/unauthorized", nextUrl))

@@ -16,8 +16,13 @@ export default function StudentLayout({
 
     if (status === 'authenticated' && session?.user) {
       const role = (session.user as any).role?.toUpperCase()
+      const isVerified = (session.user as any).isVerified
       if (role !== 'STUDENT' && role !== 'INSTRUCTOR' && role !== 'SUPER_ADMIN') {
         window.location.replace('/unauthorized')
+        return
+      }
+      if (role === 'STUDENT' && !isVerified) {
+        window.location.replace('/verify-email')
         return
       }
       setLoading(false)
@@ -32,8 +37,13 @@ export default function StudentLayout({
     try {
       const savedUser = JSON.parse(savedUserStr)
       const role = savedUser.role?.toUpperCase()
+      const isVerified = savedUser.isVerified
       if (role !== 'STUDENT' && role !== 'INSTRUCTOR' && role !== 'SUPER_ADMIN') {
         window.location.replace('/unauthorized')
+        return
+      }
+      if (role === 'STUDENT' && !isVerified) {
+        window.location.replace('/verify-email')
         return
       }
       setLoading(false)

@@ -23,12 +23,23 @@ function CoursesPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const category = searchParams.get('category')
+  const searchQuery = searchParams.get('search') || ''
   const [levelFilter, setLevelFilter] = useState<CourseLevel | 'All'>('All')
   const [allDbCourses, setAllDbCourses] = useState<Course[]>([])
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([])
+  const [searchInput, setSearchInput] = useState(searchQuery)
 
   useEffect(() => {
-    fetch('/api/courses')
+    setSearchInput(searchQuery)
+  }, [searchQuery])
+
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (searchQuery) params.set('search', searchQuery)
+    if (category) params.set('category', category)
+
+    const url = `/api/courses${params.toString() ? `?${params.toString()}` : ''}`
+    fetch(url)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -36,7 +47,7 @@ function CoursesPageContent() {
         }
       })
       .catch(err => console.error('Failed to load courses:', err))
-  }, [])
+  }, [searchQuery, category])
 
   const baseCourses = useMemo(() => {
     if (category) return allDbCourses.filter(c => c.category === category)
@@ -51,7 +62,20 @@ function CoursesPageContent() {
     setFilteredCourses(result)
   }, [baseCourses, levelFilter])
 
-  const clearFilter = () => router.push('/courses')
+  const clearFilter = () => {
+    setSearchInput('')
+    setLevelFilter('All')
+    router.push('/courses')
+  }
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchInput.trim()) {
+      router.push(`/courses?search=${encodeURIComponent(searchInput.trim().toLowerCase())}`)
+    } else {
+      router.push('/courses')
+    }
+  }
 
   const handleAddToCart = (course: Course) => {
     addItem({
@@ -83,10 +107,16 @@ function CoursesPageContent() {
               Premium Music Academy
             </div>
             <h1 className="mb-4 text-3xl font-extrabold tracking-tight text-[#0F1E4A] md:text-4xl">
-              {category ? `${getCategoryDisplayName(category)} Courses` : 'Our Music Courses'}
+              {searchQuery
+                ? `Search Results for "${searchQuery}"`
+                : category
+                ? `${getCategoryDisplayName(category)} Courses`
+                : 'Our Music Courses'}
             </h1>
             <p className="mx-auto max-w-2xl text-sm md:text-base text-slate-500 leading-relaxed font-medium">
-              {category
+              {searchQuery
+                ? `Showing published courses matching "${searchQuery}".`
+                : category
                 ? `Master ${getCategoryDisplayName(category)} with instructor Ajinkya Amrule — structured Beginner, Intermediate, and Advanced pathways.`
                 : 'Explore every instrument with structured learning paths taught by Ajinkya Amrule.'}
             </p>
@@ -96,53 +126,72 @@ function CoursesPageContent() {
           </div>
         </section>
 
-        {/* Filters */}
-        <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-2">
-            <Filter className="h-4 w-4 text-slate-400" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Level Filter:</span>
-            {(['All', ...LEVELS] as const).map((level) => (
-              <button
-                key={level}
-                onClick={() => setLevelFilter(level)}
-                className={`btn-premium-base px-5 py-2 text-xs font-bold ${
-                  levelFilter === level
-                    ? 'btn-premium-gradient'
-                    : 'btn-premium-secondary'
-                }`}
-              >
-                {level}
-              </button>
-            ))}
-          </div>
-
-          {category && (
+        {/* Search & Filters Row */}
+        <div className="mb-10 flex flex-col gap-4">
+          <form onSubmit={handleSearchSubmit} className="relative max-w-xl mx-auto w-full mb-2">
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search by instrument name, course title, or description..."
+              className="w-full px-5 py-3.5 rounded-full bg-white border border-gray-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-400 shadow-sm text-sm"
+            />
             <button
-              onClick={clearFilter}
-              className="btn-premium-base btn-premium-secondary px-4 py-2.5 text-xs font-bold inline-flex items-center gap-2 self-start sm:self-auto"
+              type="submit"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-purple-600 text-white px-5 py-2 rounded-full font-semibold text-xs hover:bg-purple-700 transition-colors shadow-sm"
             >
-              <X className="h-3.5 w-3.5" />
-              Clear category filter
+              Search
             </button>
-          )}
+          </form>
+
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <Filter className="h-4 w-4 text-slate-400" />
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Level Filter:</span>
+              {(['All', ...LEVELS] as const).map((level) => (
+                <button
+                  key={level}
+                  onClick={() => setLevelFilter(level)}
+                  className={`btn-premium-base px-5 py-2 text-xs font-bold ${
+                    levelFilter === level
+                      ? 'btn-premium-gradient'
+                      : 'btn-premium-secondary'
+                  }`}
+                >
+                  {level}
+                </button>
+              ))}
+            </div>
+
+            {(category || searchQuery) && (
+              <button
+                onClick={clearFilter}
+                className="btn-premium-base btn-premium-secondary px-4 py-2.5 text-xs font-bold inline-flex items-center gap-2 self-start sm:self-auto"
+              >
+                <X className="h-3.5 w-3.5" />
+                Clear filter / search
+              </button>
+            )}
+          </div>
         </div>
 
-        {category && (
+        {(category || searchQuery) && (
           <p className="mb-6 text-center text-xs font-bold text-slate-400 uppercase tracking-widest">
-            Showing {filteredCourses.length} {getCategoryDisplayName(category)} course
-            {filteredCourses.length !== 1 ? 's' : ''}
+            Showing {filteredCourses.length} {searchQuery ? `result${filteredCourses.length !== 1 ? 's' : ''} for "${searchQuery}"` : `${getCategoryDisplayName(category)} course${filteredCourses.length !== 1 ? 's' : ''}`}
             {levelFilter !== 'All' ? ` · ${levelFilter} level` : ''}
           </p>
         )}
 
         {filteredCourses.length === 0 ? (
-          <div className="rounded-[24px] border border-gray-100 bg-white py-20 text-center shadow-sm">
-            <p className="text-sm text-slate-500 font-medium">No courses match your filters.</p>
+          <div className="rounded-[24px] border border-gray-100 bg-white py-20 px-6 text-center shadow-sm">
+            <p className="text-base text-slate-600 font-semibold mb-4">
+              {searchQuery ? `No courses found for '${searchQuery}'.` : 'No courses match your filters.'}
+            </p>
             <button
-              onClick={() => setLevelFilter('All')}
-              className="mt-4 text-xs font-bold text-purple-600 underline hover:text-purple-500 active:scale-95 transition-transform"
+              onClick={clearFilter}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs font-bold rounded-full shadow-md hover:shadow-lg hover:from-purple-700 hover:to-indigo-700 active:scale-95 transition-all"
             >
-              Reset level filter
+              View All Courses
             </button>
           </div>
         ) : (

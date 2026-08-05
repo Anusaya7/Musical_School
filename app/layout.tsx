@@ -3,6 +3,7 @@ import './globals.css'
 import { CartProvider } from '@/contexts/CartContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import { SiteSettingsProvider } from '@/contexts/SiteSettingsContext'
 import Toast from '@/components/Toast'
 import Script from 'next/script'
 import { SessionProvider } from 'next-auth/react'
@@ -27,12 +28,14 @@ export default function RootLayout({
       <body className={inter.className}>
         <SessionProvider>
           <ThemeProvider>
-            <AuthProvider>
-              <CartProvider>
-                {children}
-                <Toast />
-              </CartProvider>
-            </AuthProvider>
+            <SiteSettingsProvider>
+              <AuthProvider>
+                <CartProvider>
+                  {children}
+                  <Toast />
+                </CartProvider>
+              </AuthProvider>
+            </SiteSettingsProvider>
           </ThemeProvider>
         </SessionProvider>
       </body>

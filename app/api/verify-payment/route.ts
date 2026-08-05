@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { addPayment, addEnrolledCourse, addNotification, addAuditLog } from '@/lib/db'
 import { sendSystemEmail } from '@/lib/email'
+import { prisma } from '@/lib/prisma'
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,12 +23,19 @@ export async function POST(request: NextRequest) {
       console.log('[RAZORPAY MOCK MODE] Bypassing signature verification for mock order:', razorpay_order_id)
       isAuthentic = true
     } else {
-      const key_secret = process.env.RAZORPAY_KEY_SECRET || '1234567890'
+      const key_secret = process.env.RAZORPAY_KEY_SECRET
+      if (!key_secret) {
+        console.error('[PAYMENT] RAZORPAY_KEY_SECRET is not configured in production environment variables!')
+        return NextResponse.json(
+          { success: false, error: 'Payment gateway configuration missing' },
+          { status: 500 }
+        )
+      }
       const body = `${razorpay_order_id}|${razorpay_payment_id}`
       const expectedSignature = crypto
-        .createHmac('sha256', key_secret)
-        .update(body.toString())
-        .digest('hex')
+          .createHmac('sha256', key_secret)
+          .update(body.toString())
+          .digest('hex')
 
       isAuthentic = expectedSignature === razorpay_signature
     }
@@ -38,15 +48,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const paymentId = razorpay_payment_id
+    const orderId = razorpay_order_id
+
+    // Duplicate payment prevention
+    const existingPayment = await prisma.payment.findFirst({
+      where: { paymentId }
+    })
+    if (existingPayment) {
+      console.log('[PAYMENT] Duplicate payment detected and bypassed:', paymentId)
+      return NextResponse.json({
+        success: true,
+        message: 'Payment already verified and saved',
+        paymentId,
+        orderId
+      })
+    }
+
     // Extract order notes
     const studentEmail = orderData?.notes?.studentEmail || orderData?.studentEmail || 'student@2ndinversion.com'
     const studentName = orderData?.notes?.studentName || orderData?.studentName || 'John Doe'
     const courseId = orderData?.notes?.courseId || orderData?.courseId || 'piano-beginner'
     const courseName = orderData?.notes?.courseName || orderData?.courseName || 'Piano Beginner'
     const amount = Number(orderData?.amount || 4999)
-
-    const paymentId = razorpay_payment_id
-    const orderId = razorpay_order_id
     const invoiceNumber = `INV-${Date.now().toString().substring(3, 11)}`
 
     // 1. Save payment details to database
@@ -141,7 +165,8 @@ export async function POST(request: NextRequest) {
         </table>
       </div>
     `
-    await sendSystemEmail('aamrule90@gmail.com', 'New Course Purchase Alert', adminHtml)
+    const adminEmail = process.env.ADMIN_EMAIL || 'aamrule90@gmail.com'
+    await sendSystemEmail(adminEmail, 'New Course Purchase Alert', adminHtml)
 
     return NextResponse.json({
       success: true,

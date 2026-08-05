@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { mapCourseToFrontend, mapCourseToDb } from '@/lib/db'
 import { z } from 'zod'
-import { DEFAULT_COURSES } from '@/lib/fallback-data'
+import { DEFAULT_COURSES, DEFAULT_CATEGORIES } from '@/lib/fallback-data'
+import { auth } from '@/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +29,7 @@ const courseInputSchema = z.object({
   hasCertificate: z.boolean().optional(),
   curriculum: z.array(z.string()).optional(),
   learningOutcomes: z.array(z.string()).optional(),
+  prerequisites: z.array(z.string()).optional(),
   faq: z.array(z.object({ q: z.string(), a: z.string() })).optional(),
   faqs: z.array(z.string()).optional(),
   maxStudents: z.number().optional(),
@@ -47,6 +49,30 @@ const statusUpdateSchema = z.object({
   id: z.string().min(1, 'ID is required'),
   isDisabled: z.boolean()
 })
+
+async function generateUniqueSlug(instrumentId: string, baseSlug: string, excludeCourseId?: string) {
+  let slug = baseSlug
+  let counter = 1
+  let exists = true
+
+  while (exists) {
+    const course = await prisma.course.findFirst({
+      where: {
+        instrumentId,
+        slug,
+        ...(excludeCourseId ? { id: { not: excludeCourseId } } : {})
+      }
+    })
+    if (!course) {
+      exists = false
+    } else {
+      slug = `${baseSlug}-${counter}`
+      counter++
+    }
+  }
+
+  return slug
+}
 
 async function updateCategoryStats(categoryId: string, tx: any) {
   const activeCourses = await tx.course.findMany({
@@ -114,6 +140,7 @@ export async function GET(request: Request) {
     const search = searchParams.get('search') || ''
     const category = searchParams.get('category') || ''
     const level = searchParams.get('level') || ''
+    const includeDrafts = searchParams.get('includeDrafts') === 'true'
     const paginated = searchParams.get('paginated') === 'true'
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '100')
@@ -125,10 +152,18 @@ export async function GET(request: Request) {
     if (!dbError) {
       try {
         const where: any = {}
+
+        if (!includeDrafts) {
+          where.isDisabled = false
+          where.status = 'PUBLISHED'
+        }
+
         if (search) {
           where.OR = [
             { title: { contains: search, mode: 'insensitive' } },
-            { description: { contains: search, mode: 'insensitive' } }
+            { description: { contains: search, mode: 'insensitive' } },
+            { Instrument: { name: { contains: search, mode: 'insensitive' } } },
+            { instrumentId: { contains: search, mode: 'insensitive' } }
           ]
         }
         if (category) {
@@ -144,9 +179,24 @@ export async function GET(request: Request) {
         total = await prisma.course.count({ where })
         list = await prisma.course.findMany({
           where,
+          include: {
+            Instrument: true
+          },
           skip: paginated ? skip : undefined,
           take: paginated ? limit : undefined,
-          orderBy: { title: 'asc' }
+          orderBy: [
+            {
+              Instrument: {
+                name: 'asc'
+              }
+            },
+            {
+              title: 'asc'
+            },
+            {
+              level: 'asc'
+            }
+          ]
         })
       } catch (err) {
         console.warn('Prisma courses fetch failed. Using fallback data.', err)
@@ -158,9 +208,17 @@ export async function GET(request: Request) {
 
     if (dbError || list.length === 0) {
       courses = DEFAULT_COURSES.filter(c => {
+        if (!includeDrafts) {
+          if (c.isDisabled || (c.status && c.status.toLowerCase() !== 'published')) {
+            return false
+          }
+        }
         if (search) {
           const s = search.toLowerCase()
-          if (!c.title.toLowerCase().includes(s) && !c.description.toLowerCase().includes(s)) {
+          const matchTitle = (c.title || '').toLowerCase().includes(s)
+          const matchDesc = (c.description || '').toLowerCase().includes(s)
+          const matchCategory = (c.category || '').toLowerCase().includes(s)
+          if (!matchTitle && !matchDesc && !matchCategory) {
             return false
           }
         }
@@ -171,16 +229,41 @@ export async function GET(request: Request) {
           if (c.level.toLowerCase() !== level.toLowerCase()) return false
         }
         return true
+      }).map(c => {
+        const cat = DEFAULT_CATEGORIES.find(i => i.id === c.category)
+        const name = cat ? cat.name : c.category
+        return {
+          ...c,
+          instrumentName: name === 'Vocals' ? 'Vocal Training' : name
+        }
       })
       
       total = courses.length
-      courses.sort((a, b) => a.title.localeCompare(b.title))
+      courses.sort((a, b) => {
+        const instA = a.instrumentName || ''
+        const instB = b.instrumentName || ''
+        const instCompare = instA.localeCompare(instB)
+        if (instCompare !== 0) return instCompare
+        
+        const titleCompare = (a.title || '').localeCompare(b.title || '')
+        if (titleCompare !== 0) return titleCompare
+        
+        const lvlA = a.level || ''
+        const lvlB = b.level || ''
+        return lvlA.localeCompare(lvlB)
+      })
       
       if (paginated) {
         courses = courses.slice(skip, skip + limit)
       }
     } else {
-      courses = list.map(c => mapCourseToFrontend(c, instructorMap))
+      courses = list.map(c => {
+        const mapped = mapCourseToFrontend(c, instructorMap)
+        return {
+          ...mapped,
+          instrumentName: c.Instrument?.name === 'Vocals' ? 'Vocal Training' : (c.Instrument?.name || c.instrumentId)
+        }
+      })
     }
 
     if (paginated) {
@@ -204,6 +287,15 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
+    }
+    const role = (session.user as any).role?.toUpperCase()
+    if (role !== 'SUPER_ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized: Super Admin role required' }, { status: 403 })
+    }
+
     const body = await request.json()
     
     // Check if it's a price-only update for backwards compatibility
@@ -220,7 +312,7 @@ export async function POST(request: Request) {
         })
         await tx.auditLog.create({
           data: {
-            userEmail: 'admin@2ndinversion.com',
+            userEmail: session.user?.email || 'admin@2ndinversion.com',
             action: 'Course Price Updated',
             details: `Updated price of course ${course.title} to ₹${parsed.data.price}`
           }
@@ -267,8 +359,33 @@ export async function POST(request: Request) {
       instructorId = instructorObj.id
     }
     
+    // Check if course with same title and level exists for this instrument
+    const existingCourse = await prisma.course.findFirst({
+      where: {
+        instrumentId: data.category,
+        title: { equals: data.title, mode: 'insensitive' },
+        level: data.level.toUpperCase() as any
+      }
+    })
+    if (existingCourse) {
+      return NextResponse.json({ error: "This course already exists for the selected instrument." }, { status: 400 })
+    }
+
+    const rawSlug = body.slug || data.title
+    const baseSlug = String(rawSlug).toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') || 'course'
+
+    const uniqueSlug = await generateUniqueSlug(data.category, baseSlug)
+    let warningMessage = undefined
+    if (uniqueSlug !== baseSlug) {
+      warningMessage = "A similar URL already exists. A new unique URL has been generated."
+    }
+
     // Map to DB structure
-    const dbPayload = mapCourseToDb({ ...data, id: courseId, instructorId })
+    const dbPayload = mapCourseToDb({ ...data, id: courseId, instructorId, slug: uniqueSlug })
 
     const newCourse = await prisma.$transaction(async (tx) => {
       const course = await tx.course.create({
@@ -278,9 +395,57 @@ export async function POST(request: Request) {
           ...dbPayload
         }
       })
+
+      // Create related content models to keep relations intact
+      await tx.courseContent.create({
+        data: {
+          courseId: courseId,
+          about: data.aboutCourse || data.description || ''
+        }
+      })
+
+      if (data.learningOutcomes && data.learningOutcomes.length > 0) {
+        await tx.learningOutcome.createMany({
+          data: data.learningOutcomes.map((outcome: string) => ({
+            courseId: courseId,
+            outcome
+          }))
+        })
+      }
+
+      const defaultPrereqs = ['Basic understanding of the instrument', 'Interest in music']
+      await tx.prerequisite.createMany({
+        data: (data.prerequisites || defaultPrereqs).map((req: string) => ({
+          courseId: courseId,
+          requirement: req
+        }))
+      })
+
+      const defaultTopics = data.curriculum || ['Introduction and Fundamentals', 'Basic Techniques', 'Repertoire Practice']
+      await tx.topicsCovered.createMany({
+        data: defaultTopics.map((topic: string) => ({
+          courseId: courseId,
+          topic
+        }))
+      })
+
+      await tx.curriculum.create({
+        data: {
+          courseId: courseId,
+          modules: {
+            create: [
+              {
+                moduleName: 'Module 1: Introduction',
+                topics: defaultTopics
+              }
+            ]
+          }
+        }
+      })
+
       await tx.auditLog.create({
         data: {
-          userEmail: 'admin@2ndinversion.com',
+          userEmail: session.user?.email || 'admin@2ndinversion.com',
           action: 'Course Added',
           details: `Added new course: ${data.title} (${data.level})`
         }
@@ -297,18 +462,37 @@ export async function POST(request: Request) {
 
     const instructors = await prisma.instructor.findMany()
     const instructorMap = new Map(instructors.map(i => [i.id, i.name]))
-    return NextResponse.json({ success: true, course: mapCourseToFrontend(newCourse, instructorMap) })
-  } catch (error) {
-    console.error(error)
-    return NextResponse.json({ error: 'Failed to process course request' }, { status: 500 })
+    return NextResponse.json({ 
+      success: true, 
+      course: mapCourseToFrontend(newCourse, instructorMap),
+      message: warningMessage 
+    })
+  } catch (error: any) {
+    console.error('[POST /api/courses] SERVER ERROR:', error)
+    let userMessage = 'Failed to process course request'
+    if (error.code?.startsWith('P') || error.message?.includes('Prisma')) {
+      userMessage = 'A database constraint error occurred. Please verify that details are unique.'
+    }
+    return NextResponse.json({ error: userMessage }, { status: 500 })
   }
 }
 
 export async function PUT(request: Request) {
   try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
+    }
+    const role = (session.user as any).role?.toUpperCase()
+    if (role !== 'SUPER_ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized: Super Admin role required' }, { status: 403 })
+    }
+
     const body = await request.json()
+    console.log('[PUT /api/courses] Incoming payload:', JSON.stringify(body, null, 2))
 
     if (!body.id) {
+      console.warn('[PUT /api/courses] Missing course ID in request body')
       return NextResponse.json({ error: 'Missing course ID' }, { status: 400 })
     }
 
@@ -316,9 +500,11 @@ export async function PUT(request: Request) {
     if (body.isDisabled !== undefined && !body.title) {
       const parsed = statusUpdateSchema.safeParse(body)
       if (!parsed.success) {
+        console.warn('[PUT /api/courses] Status validation failed:', parsed.error.message)
         return NextResponse.json({ error: parsed.error.message }, { status: 400 })
       }
 
+      console.log('[PUT /api/courses] Processing status-only update for ID:', parsed.data.id)
       const updated = await prisma.$transaction(async (tx) => {
         const course = await tx.course.update({
           where: { id: parsed.data.id },
@@ -326,7 +512,7 @@ export async function PUT(request: Request) {
         })
         await tx.auditLog.create({
           data: {
-            userEmail: 'admin@2ndinversion.com',
+            userEmail: session.user?.email || 'admin@2ndinversion.com',
             action: 'Course Status Changed',
             details: `${parsed.data.isDisabled ? 'Disabled' : 'Enabled'} course ID: ${parsed.data.id}`
           }
@@ -349,10 +535,16 @@ export async function PUT(request: Request) {
     // Full course update validation
     const parsed = courseInputSchema.safeParse(body)
     if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error.message }, { status: 400 })
+      console.warn('[PUT /api/courses] Zod Validation Failed details:', JSON.stringify(parsed.error.format(), null, 2))
+      return NextResponse.json({ 
+        error: 'Validation failed', 
+        details: parsed.error.format(),
+        errors: parsed.error.issues 
+      }, { status: 400 })
     }
 
     const data = parsed.data
+    console.log('[PUT /api/courses] Course update validation passed for ID:', data.id)
 
     // Resolve instructorId by name
     let instructorId = data.instructorId || 'instructor-1'
@@ -372,10 +564,39 @@ export async function PUT(request: Request) {
       instructorId = instructorObj.id
     }
 
-    const dbPayload = mapCourseToDb({ ...data, instructorId })
+    // Check if another course with same title and level exists for this instrument
+    const existingCourse = await prisma.course.findFirst({
+      where: {
+        instrumentId: data.category,
+        title: { equals: data.title, mode: 'insensitive' },
+        level: data.level.toUpperCase() as any,
+        id: { not: data.id }
+      }
+    })
+    if (existingCourse) {
+      return NextResponse.json({ error: "This course already exists for the selected instrument." }, { status: 400 })
+    }
+
+    const rawSlug = body.slug || data.title
+    const baseSlug = String(rawSlug).toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') || 'course'
+
+    const uniqueSlug = await generateUniqueSlug(data.category, baseSlug, data.id)
+    let warningMessage = undefined
+    if (uniqueSlug !== baseSlug) {
+      warningMessage = "A similar URL already exists. A new unique URL has been generated."
+    }
+
+    const dbPayload = mapCourseToDb({ ...data, instructorId, slug: uniqueSlug })
 
     const updated = await prisma.$transaction(async (tx) => {
       const original = await tx.course.findUnique({ where: { id: data.id } })
+      if (!original) {
+        throw new Error(`Course not found in database with ID: ${data.id}`)
+      }
       const course = await tx.course.update({
         where: { id: data.id },
         data: {
@@ -383,9 +604,56 @@ export async function PUT(request: Request) {
           ...dbPayload
         }
       })
+
+      // Upsert CourseContent
+      await tx.courseContent.upsert({
+        where: { courseId: data.id },
+        update: { about: data.aboutCourse || data.description || '' },
+        create: { courseId: data.id, about: data.aboutCourse || data.description || '' }
+      })
+
+      // Update LearningOutcomes
+      if (data.learningOutcomes) {
+        await tx.learningOutcome.deleteMany({ where: { courseId: data.id } })
+        if (data.learningOutcomes.length > 0) {
+          await tx.learningOutcome.createMany({
+            data: data.learningOutcomes.map((outcome: string) => ({
+              courseId: data.id,
+              outcome
+            }))
+          })
+        }
+      }
+
+      // Update Prerequisites
+      if (data.prerequisites) {
+        await tx.prerequisite.deleteMany({ where: { courseId: data.id } })
+        if (data.prerequisites.length > 0) {
+          await tx.prerequisite.createMany({
+            data: data.prerequisites.map((req: string) => ({
+              courseId: data.id,
+              requirement: req
+            }))
+          })
+        }
+      }
+
+      // Update Topics Covered
+      if (data.curriculum) {
+        await tx.topicsCovered.deleteMany({ where: { courseId: data.id } })
+        if (data.curriculum.length > 0) {
+          await tx.topicsCovered.createMany({
+            data: data.curriculum.map((topic: string) => ({
+              courseId: data.id,
+              topic
+            }))
+          })
+        }
+      }
+
       await tx.auditLog.create({
         data: {
-          userEmail: 'admin@2ndinversion.com',
+          userEmail: session.user?.email || 'admin@2ndinversion.com',
           action: 'Course Updated',
           details: `Updated details for course: ${course.title}`
         }
@@ -405,15 +673,32 @@ export async function PUT(request: Request) {
 
     const instructors = await prisma.instructor.findMany()
     const instructorMap = new Map(instructors.map(i => [i.id, i.name]))
-    return NextResponse.json({ success: true, course: mapCourseToFrontend(updated, instructorMap) })
-  } catch (error) {
-    console.error(error)
-    return NextResponse.json({ error: 'Failed to update course' }, { status: 500 })
+    return NextResponse.json({ 
+      success: true, 
+      course: mapCourseToFrontend(updated, instructorMap),
+      message: warningMessage 
+    })
+  } catch (error: any) {
+    console.error('[PUT /api/courses] SERVER ERROR:', error)
+    let userMessage = 'Failed to update course'
+    if (error.code?.startsWith('P') || error.message?.includes('Prisma')) {
+      userMessage = 'A database constraint error occurred. Please verify that details are unique.'
+    }
+    return NextResponse.json({ error: userMessage }, { status: 500 })
   }
 }
 
 export async function DELETE(request: Request) {
   try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
+    }
+    const role = (session.user as any).role?.toUpperCase()
+    if (role !== 'SUPER_ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized: Super Admin role required' }, { status: 403 })
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     if (!id) {
@@ -427,7 +712,7 @@ export async function DELETE(request: Request) {
       })
       await tx.auditLog.create({
         data: {
-          userEmail: 'admin@2ndinversion.com',
+          userEmail: session.user?.email || 'admin@2ndinversion.com',
           action: 'Course Deleted',
           details: `Deleted course ID: ${id}`
         }
@@ -446,6 +731,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true, message: 'Course deleted successfully' })
   } catch (error) {
     console.error(error)
-    return NextResponse.json({ error: 'Failed to delete course' }, { status: 550 })
+    return NextResponse.json({ error: 'Failed to delete course' }, { status: 500 })
   }
 }

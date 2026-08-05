@@ -1,4 +1,13 @@
+'use client'
+
+import { useSiteSettings } from '@/contexts/SiteSettingsContext'
+import { useRouter } from 'next/navigation'
+
 export default function CTASection() {
+  const router = useRouter()
+  const { settings } = useSiteSettings()
+  const ctaSettings = settings.homepage_cta || {}
+
   return (
     <section className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16 relative overflow-hidden">
       {/* Yellow Corner Accents */}
@@ -17,29 +26,38 @@ export default function CTASection() {
       <div className="container mx-auto px-4 text-center relative z-10">
         {/* Title with Animation */}
         <h2 className="text-4xl md:text-5xl font-bold mb-6 animate-fade-in-up">
-          Ready to Start Your Musical Journey? 🎵
+          {ctaSettings.title || "Ready to Start Your Musical Journey? 🎵"}
         </h2>
         
         {/* Subtitle */}
         <p className="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto mb-12 leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-          Join our community of passionate musicians and unlock your full potential with expert guidance and comprehensive training.
+          {ctaSettings.description || "Join our community of passionate musicians and unlock your full potential with expert guidance and comprehensive training."}
         </p>
 
         {/* Buttons Container */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
           {/* Browse Courses - Primary Light Button */}
-          <button className="px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 hover:bg-gray-50">
-            Browse Courses
+          <button 
+            onClick={() => router.push(ctaSettings.primaryButtonUrl || '/courses')}
+            className="px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 hover:bg-gray-50"
+          >
+            {ctaSettings.primaryButtonText || "Browse Courses"}
           </button>
 
           {/* Get in Touch - Outline Button */}
-          <button className="px-8 py-4 border-2 border-white text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 hover:bg-white hover:text-blue-600">
-            Get in Touch
+          <button 
+            onClick={() => router.push(ctaSettings.secondaryButtonUrl || '/contact')}
+            className="px-8 py-4 border-2 border-white text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 hover:bg-white hover:text-blue-600"
+          >
+            {ctaSettings.secondaryButtonText || "Get in Touch"}
           </button>
 
           {/* Sign Up Now - Highlight Gradient Button */}
-          <button className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 hover:from-yellow-500 hover:to-orange-600">
-            Sign Up Now
+          <button 
+            onClick={() => router.push(ctaSettings.highlightButtonUrl || '/signup')}
+            className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 hover:from-yellow-500 hover:to-orange-600"
+          >
+            {ctaSettings.highlightButtonText || "Sign Up Now"}
           </button>
         </div>
       </div>

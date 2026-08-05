@@ -15,6 +15,7 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
     message: ''
   })
   const [coursesList, setCoursesList] = useState<any[]>([])
+  const [selectedCourseInfo, setSelectedCourseInfo] = useState<any | null>(null)
 
   useEffect(() => {
     fetch('/api/courses')
@@ -33,17 +34,112 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
     }
   }, [selectedClass])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Sync selectedCourseInfo when coursesList or formData.classId changes
+  useEffect(() => {
+    const course = coursesList.find((c: any) => c.id === formData.classId)
+    if (course) {
+      setSelectedCourseInfo({
+        courseId: course.id,
+        courseTitle: course.title,
+        instrumentId: course.category,
+        instrumentName: course.instrumentName || course.category,
+        level: course.level,
+        price: course.price
+      })
+    } else {
+      setSelectedCourseInfo(null)
+    }
+  }, [formData.classId, coursesList])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Booking submitted:', formData)
-    alert('Booking request submitted! We will contact you soon.')
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      classId: '',
-      message: ''
-    })
+    if (!formData.name || !formData.email || !formData.phone || !formData.classId) {
+      alert('Please fill in all required fields.')
+      return
+    }
+
+    const selectedCourse = selectedCourseInfo || coursesList.find((c: any) => c.id === formData.classId)
+    const amount = selectedCourse ? selectedCourse.price * 100 : 499900
+
+    try {
+      const res = await fetch('/api/payment/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount,
+          currency: 'INR',
+          receipt: `rcpt_bk_${Date.now()}`,
+          notes: {
+            purchaseType: 'booking',
+            studentName: formData.name,
+            studentEmail: formData.email,
+            studentPhone: formData.phone,
+            courseId: selectedCourse?.courseId || formData.classId,
+            courseName: selectedCourse?.courseTitle || selectedCourse?.title || 'Music Course Session',
+            courseTitle: selectedCourse?.courseTitle || selectedCourse?.title || 'Music Course Session',
+            instrumentId: selectedCourse?.instrumentId || selectedCourse?.category || '',
+            instrumentName: selectedCourse?.instrumentName || '',
+            level: selectedCourse?.level || '',
+            price: selectedCourse?.price || 0,
+            date: new Date().toISOString().split('T')[0],
+            timeSlot: '10:00 AM - 11:00 AM',
+            batchTiming: 'Morning'
+          }
+        })
+      })
+
+      const orderData = await res.json()
+      if (!orderData.success) {
+        const errorMsg = typeof orderData.error === 'object' ? JSON.stringify(orderData.error) : (orderData.error || 'Failed to create payment order.')
+        alert(errorMsg)
+        return
+      }
+
+      const Razorpay = (window as any).Razorpay
+      if (!Razorpay) {
+        alert('Razorpay Checkout SDK is loading. Please try again in a moment.')
+        return
+      }
+
+      const options = {
+        key: orderData.key,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: '2nd Inversion Musical School',
+        description: `Class Booking: ${selectedCourse?.title || 'Music Session'}`,
+        order_id: orderData.id,
+        prefill: {
+          name: formData.name,
+          email: formData.email,
+          contact: formData.phone
+        },
+        theme: { color: '#5EA8FF' },
+        handler: async function (response: any) {
+          const verifyRes = await fetch('/api/payment/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              orderData
+            })
+          })
+          const verifyData = await verifyRes.json()
+          if (verifyData.success) {
+            window.location.href = `/payment-success?paymentId=${response.razorpay_payment_id}&orderId=${response.razorpay_order_id}`
+          } else {
+            alert(verifyData.error || 'Payment verification failed.')
+          }
+        }
+      }
+
+      const rzp = new Razorpay(options)
+      rzp.open()
+    } catch (err: any) {
+      console.error('Booking payment error:', err)
+      alert('Payment processing error. Please try again.')
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -164,12 +260,26 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
                     required
                     className="h-[56px] w-full px-4 pr-10 border-2 border-[#B8D4FF] hover:border-[#5EA8FF] rounded-[14px] bg-white text-[#0F1E4A] font-medium text-sm transition-all duration-300 focus:outline-none focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/12 appearance-none cursor-pointer"
                   >
-                    <option value="">Choose a class...</option>
-                    {coursesList.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.title} ({c.level}) - ₹{c.price.toLocaleString('en-IN')}
-                      </option>
-                    ))}
+                    {coursesList.length === 0 ? (
+                      <option value="">No published classes available.</option>
+                    ) : (
+                      <>
+                        <option value="">Choose a class...</option>
+                        {coursesList.map((c) => {
+                          const displayInstrument = c.instrumentName || c.category || ''
+                          const formattedInstrument = displayInstrument
+                            .split('-')
+                            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                            .join(' ')
+                          
+                          return (
+                            <option key={c.id} value={c.id}>
+                              {formattedInstrument} - {c.level}
+                            </option>
+                          )
+                        })}
+                      </>
+                    )}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-[#94A3B8]">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

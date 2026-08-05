@@ -45,7 +45,7 @@ export default function StudentDashboard() {
   const { addItem } = useCart()
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'courses' | 'workshops' | 'recorded' | 'schedule' | 'payments' | 'profile' | 'settings'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'courses' | 'workshops' | 'recorded' | 'schedule' | 'bookings' | 'payments' | 'profile' | 'settings'>('dashboard')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showNotification, setShowNotification] = useState(false)
@@ -183,6 +183,7 @@ export default function StudentDashboard() {
     { id: 'workshops', label: 'Workshops', emoji: '🎤' },
     { id: 'recorded', label: 'Recorded Sessions', emoji: '🎥' },
     { id: 'schedule', label: 'Class Schedule', emoji: '📅' },
+    { id: 'bookings', label: 'My Bookings', emoji: '📝' },
     { id: 'payments', label: 'Payments & Invoices', emoji: '💳' },
     { id: 'profile', label: 'My Profile', emoji: '👤' },
     { id: 'settings', label: 'Settings', emoji: '⚙️' },
@@ -755,6 +756,64 @@ export default function StudentDashboard() {
                         </button>
                       </div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB: MY BOOKINGS */}
+              {activeTab === 'bookings' && (
+                <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-sm space-y-6 animate-fadeIn">
+                  <div>
+                    <h2 className="font-extrabold text-lg text-[#0F1E4A] flex items-center gap-2">
+                      <span>📝</span> My Booked Slots
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">Review the status of your demo classes and course booking slots.</p>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-[#FAFBFF] border-b border-[#E6EEFF] text-slate-400 text-[10px] font-extrabold uppercase tracking-wider">
+                          <th className="p-4">Course</th>
+                          <th className="p-4">Booking Date & Time</th>
+                          <th className="p-4">Instructor</th>
+                          <th className="p-4">Amount</th>
+                          <th className="p-4">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bookings.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="p-8 text-center text-slate-400 text-xs font-bold">
+                              No class bookings found.
+                            </td>
+                          </tr>
+                        ) : (
+                          bookings.map((b: any, idx: number) => (
+                            <tr key={idx} className="border-b border-slate-50 hover:bg-[#FAFBFF] text-xs font-bold text-slate-600 transition-colors">
+                              <td className="p-4 text-[#0F1E4A] font-extrabold">{b.courseName}</td>
+                              <td className="p-4">
+                                <span className="block text-[#0F1E4A]">{b.date}</span>
+                                <span className="text-[10px] text-slate-400 font-medium">{b.timeSlot} ({b.batchTiming})</span>
+                              </td>
+                              <td className="p-4 text-slate-500">{b.instructor}</td>
+                              <td className="p-4 text-[#2563EB] font-black">{b.amount ? `₹${b.amount.toLocaleString('en-IN')}` : 'Free Trial'}</td>
+                              <td className="p-4">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-[9px] uppercase font-black ${
+                                  b.status === 'Approved' || b.status === 'Confirmed' || b.status === 'Booked'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : b.status === 'Rejected' || b.status === 'Cancelled'
+                                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                }`}>
+                                  {b.status === 'Booked' ? 'Approved' : b.status === 'Cancelled' ? 'Rejected' : b.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}

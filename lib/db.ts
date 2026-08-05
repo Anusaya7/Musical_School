@@ -2,6 +2,7 @@ import { prisma } from './prisma'
 import { CourseLevel, CourseDifficulty, CourseStatus } from '@/lib/generated/prisma'
 import bcrypt from 'bcryptjs'
 import { DEFAULT_CATEGORIES, DEFAULT_COURSES } from './fallback-data'
+import { DEFAULT_SITE_SETTINGS } from './settings-defaults'
 
 // Database interfaces
 export interface Course {
@@ -297,14 +298,11 @@ export function mapCourseToDb(c: any) {
     maxStudents: c.maxStudents ? Number(c.maxStudents) : 30,
     language: c.language || 'English',
     difficulty: diffEnum,
-    certificateAvailable: c.certificateAvailable !== false,
+    certificateAvailable: c.hasCertificate !== undefined ? c.hasCertificate : (c.certificateAvailable !== false),
     status: statusEnum,
-    aboutCourse: c.aboutCourse || c.description || '',
-    curriculum: Array.isArray(c.curriculum) ? JSON.stringify(c.curriculum) : String(c.curriculum),
-    learningOutcomes: c.learningOutcomes || [],
-    faqs: Array.isArray(c.faq) 
-      ? c.faq.map((item: any) => `Q: ${item.q || item.question} A: ${item.a || item.answer}`) 
-      : Array.isArray(c.faqs) ? c.faqs : [],
+    curriculum: Array.isArray(c.curriculum) 
+      ? JSON.stringify(c.curriculum) 
+      : (c.curriculum && c.curriculum !== 'undefined' ? String(c.curriculum) : null),
     isDisabled,
     featured: c.featured || false,
     upcoming: c.upcoming || false,
@@ -841,6 +839,44 @@ export async function getUserByEmail(email: string): Promise<DbUser | null> {
     }
   }
 
+  if (!u && normalizedEmail === 'instructor@2ndinversion.com') {
+    console.log('[AUTH] Instructor user missing in database, seeding automatically on-the-fly...')
+    try {
+      const instHash = await bcrypt.hash('Instructor@123', 10)
+      u = await prisma.user.create({
+        data: {
+          id: 'instructor-user-1',
+          name: 'Ajinkya Amrule',
+          email: normalizedEmail,
+          passwordHash: instHash,
+          role: 'INSTRUCTOR',
+          isVerified: true,
+          status: 'Active'
+        }
+      })
+      
+      // Also ensure Instructor details exist
+      await prisma.instructor.upsert({
+        where: { email: normalizedEmail },
+        update: { isActive: true },
+        create: {
+          id: 'instructor-1',
+          name: 'Ajinkya Amrule',
+          email: normalizedEmail,
+          expertise: 'Piano, Guitar, Vocals, Music Theory, Bass Guitar',
+          rating: 4.9,
+          students: 500,
+          avatar: 'AA',
+          isActive: true,
+          photo: '/images/instructor_portrait.jpg',
+          certificates: ['Trinity College London Certified', 'Associated Board of the Royal Schools of Music (ABRSM)']
+        }
+      })
+    } catch (err) {
+      console.error('Error seeding instructor automatically:', err)
+    }
+  }
+
   if (!u) return null
   return {
     id: u.id,
@@ -1315,3 +1351,127 @@ export async function rescheduleBooking(id: string, date: string, timeSlot: stri
     return false
   }
 }
+
+// Verification Token functions
+export async function createVerificationToken(email: string, token: string, expires: Date) {
+  try {
+    return await prisma.verificationToken.create({
+      data: {
+        email: email.toLowerCase(),
+        token,
+        expires
+      }
+    })
+  } catch (err) {
+    console.error('Failed to create verification token:', err)
+    return null
+  }
+}
+
+export async function getVerificationTokenByToken(token: string) {
+  try {
+    return await prisma.verificationToken.findUnique({
+      where: { token }
+    })
+  } catch (err) {
+    console.error('Failed to get verification token:', err)
+    return null
+  }
+}
+
+export async function deleteVerificationToken(id: string) {
+  try {
+    await prisma.verificationToken.delete({
+      where: { id }
+    })
+    return true
+  } catch (err) {
+    console.error('Failed to delete verification token:', err)
+    return false
+  }
+}
+
+// Password Reset Token functions
+export async function createPasswordResetToken(email: string, token: string, expires: Date) {
+  try {
+    return await prisma.passwordResetToken.create({
+      data: {
+        email: email.toLowerCase(),
+        token,
+        expires
+      }
+    })
+  } catch (err) {
+    console.error('Failed to create password reset token:', err)
+    return null
+  }
+}
+
+export async function getPasswordResetTokenByToken(token: string) {
+  try {
+    return await prisma.passwordResetToken.findUnique({
+      where: { token }
+    })
+  } catch (err) {
+    console.error('Failed to get password reset token:', err)
+    return null
+  }
+}
+
+export async function deletePasswordResetToken(id: string) {
+  try {
+    await prisma.passwordResetToken.delete({
+      where: { id }
+    })
+    return true
+  } catch (err) {
+    console.error('Failed to delete password reset token:', err)
+    return false
+  }
+}
+
+// Site Settings / CMS Configuration
+
+
+export async function getSiteSettings(): Promise<Record<string, any>> {
+  try {
+    const list = await prisma.siteSetting.findMany()
+    const dbSettings: Record<string, any> = {}
+    
+    // Parse JSON string values
+    for (const setting of list) {
+      try {
+        dbSettings[setting.key] = JSON.parse(setting.value)
+      } catch {
+        dbSettings[setting.key] = setting.value
+      }
+    }
+    
+    // Merge database settings with defaults
+    const mergedSettings: Record<string, any> = {}
+    for (const key of Object.keys(DEFAULT_SITE_SETTINGS)) {
+      mergedSettings[key] = dbSettings[key] !== undefined ? dbSettings[key] : DEFAULT_SITE_SETTINGS[key]
+    }
+    
+    return mergedSettings
+  } catch (err) {
+    console.warn('getSiteSettings database call failed. Returning default fallbacks.', err)
+    return DEFAULT_SITE_SETTINGS
+  }
+}
+
+export async function updateSiteSetting(key: string, value: any): Promise<boolean> {
+  try {
+    const valueStr = typeof value === 'string' ? value : JSON.stringify(value)
+    await prisma.siteSetting.upsert({
+      where: { key },
+      update: { value: valueStr },
+      create: { key, value: valueStr }
+    })
+    return true
+  } catch (err) {
+    console.error(`Failed to update site settings for key ${key}:`, err)
+    return false
+  }
+}
+

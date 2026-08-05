@@ -8,8 +8,8 @@ const connectionString = process.env.DATABASE_URL
 
 const pool = new Pool({
   connectionString: connectionString || undefined,
-  connectionTimeoutMillis: 3000,
-  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 10000, // 10 seconds to allow serverless DB wakeup
+  idleTimeoutMillis: 30000,
   max: 10,
   ssl: connectionString?.includes('sslmode=') || process.env.NODE_ENV === 'production'
     ? { rejectUnauthorized: false }

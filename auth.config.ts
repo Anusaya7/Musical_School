@@ -48,6 +48,7 @@ export default {
         token.role = (user as any).role || "STUDENT"
         token.id = user.id
         token.name = user.name
+        token.isVerified = (user as any).isVerified
       }
       return token
     },
@@ -55,10 +56,11 @@ export default {
       if (session.user) {
         (session.user as any).role = token.role as string;
         (session.user as any).id = token.id as string;
+        (session.user as any).isVerified = token.isVerified as boolean;
         if (token.name) {
           session.user.name = token.name as string
         }
-        console.log(`[AUTH] Session created for user: ${session.user.email}, name: ${session.user.name}, role: ${(session.user as any).role}`)
+        console.log(`[AUTH] Session created for user: ${session.user.email}, name: ${session.user.name}, role: ${(session.user as any).role}, isVerified: ${(session.user as any).isVerified}`)
       }
       return session
     }
