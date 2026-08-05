@@ -255,11 +255,17 @@ export async function POST(request: NextRequest) {
       `
       
       try {
-        await sendSystemEmail(studentEmail, `Booking Confirmed - ${courseName}`, emailHtml)
         const adminEmail = process.env.ADMIN_EMAIL || 'aamrule90@gmail.com'
-        await sendSystemEmail(adminEmail, `New Booking Alert - ${studentName}`, emailHtml)
-      } catch (emailErr) {
-        console.error('[EMAIL ERROR] Failed to send booking notification emails, but keeping the database records intact:', emailErr)
+        await Promise.all([
+          sendSystemEmail(studentEmail, `Booking Confirmed - ${courseName}`, emailHtml),
+          sendSystemEmail(adminEmail, `New Booking Alert - ${studentName}`, emailHtml)
+        ])
+      } catch (emailErr: any) {
+        console.error('[EMAIL ERROR] Failed to send booking notification emails:', emailErr)
+        return NextResponse.json(
+          { success: false, error: `Email delivery failed: ${emailErr.message || emailErr}` },
+          { status: 500 }
+        )
       }
 
       // Get course details for additional success info
@@ -343,8 +349,6 @@ export async function POST(request: NextRequest) {
         <p>Regards,<br/>2nd Inversion Team</p>
       </div>
     `
-    await sendSystemEmail(studentEmail, `Enrollment Confirmation - ${courseName}`, studentHtml)
-
     const adminHtml = `
       <div style="font-family: sans-serif; padding: 20px; color: #1e293b;">
         <h2 style="color: #6d28d9;">New Course Purchase Notification</h2>
@@ -376,8 +380,20 @@ export async function POST(request: NextRequest) {
         </table>
       </div>
     `
-    const adminEmail = process.env.ADMIN_EMAIL || 'aamrule90@gmail.com'
-    await sendSystemEmail(adminEmail, 'New Course Purchase Alert', adminHtml)
+
+    try {
+      const adminEmail = process.env.ADMIN_EMAIL || 'aamrule90@gmail.com'
+      await Promise.all([
+        sendSystemEmail(studentEmail, `Enrollment Confirmation - ${courseName}`, studentHtml),
+        sendSystemEmail(adminEmail, 'New Course Purchase Alert', adminHtml)
+      ])
+    } catch (emailErr: any) {
+      console.error('[EMAIL ERROR] Failed to send course enrollment notification emails:', emailErr)
+      return NextResponse.json(
+        { success: false, error: `Email delivery failed: ${emailErr.message || emailErr}` },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,

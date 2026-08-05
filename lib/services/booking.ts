@@ -116,7 +116,7 @@ export class BookingService {
       throw new Error(`Database transaction failed: ${dbError.message || dbError}`)
     }
 
-    // 4. Send emails asynchronously AFTER transaction has committed successfully
+    // 4. Send emails AFTER transaction has committed successfully
     if (booking) {
       const isTrial = !amount || amount === 0
 
@@ -124,25 +124,31 @@ export class BookingService {
         ? getTrialBookingConfirmationEmail(studentName, courseName, date, timeSlot)
         : getCourseBookingConfirmationEmail(studentName, courseName, date, timeSlot, batchTiming)
 
-      sendSystemEmail(
-        studentEmail,
-        isTrial ? 'Trial Class Booking Received' : 'Course Booking Received',
-        studentEmailHtml
-      )
-        .then(() => console.log(`[BookingService] Student confirmation email successfully sent to ${studentEmail}`))
-        .catch(err => console.error('[BookingService] Failed to send student booking confirmation email:', err))
-
       const adminEmailHtml = isTrial
         ? getAdminNewTrialBookingEmail(studentName, studentEmail, courseName, date, timeSlot)
         : getAdminNewCourseBookingEmail(studentName, studentEmail, courseName, date, timeSlot, batchTiming)
 
-      sendSystemEmail(
-        'aamrule90@gmail.com',
-        isTrial ? 'New Trial Booking Request' : 'New Course Booking Request',
-        adminEmailHtml
-      )
-        .then(() => console.log(`[BookingService] Admin alert email successfully sent to aamrule90@gmail.com`))
-        .catch(err => console.error('[BookingService] Failed to send admin booking alert email:', err))
+      const adminEmail = process.env.ADMIN_EMAIL || 'aamrule90@gmail.com'
+
+      console.log(`[BookingService] Dispatching confirmation emails to Student (${studentEmail}) and Admin (${adminEmail})...`)
+      try {
+        await Promise.all([
+          sendSystemEmail(
+            studentEmail,
+            isTrial ? 'Trial Class Booking Received' : 'Course Booking Received',
+            studentEmailHtml
+          ),
+          sendSystemEmail(
+            adminEmail,
+            isTrial ? 'New Trial Booking Request' : 'New Course Booking Request',
+            adminEmailHtml
+          )
+        ])
+        console.log(`[BookingService] All booking emails sent successfully.`)
+      } catch (err: any) {
+        console.error('[BookingService] SMTP email delivery failed:', err)
+        throw new Error(`Email delivery failed: ${err.message || err}`)
+      }
 
       // 5. Send WhatsApp Alerts
       WhatsAppService.sendMessage('917768838832', `Hello Admin, a new ${isTrial ? 'Trial' : 'Course'} Booking Request has been received:
@@ -222,19 +228,24 @@ Your request is currently Pending Approval. We will notify you once it's confirm
       throw new Error(`Database transaction failed: ${dbError.message || dbError}`)
     }
 
-    // Send status update email to student asynchronously AFTER transaction has committed successfully
+    // Send status update email to student AFTER transaction has committed successfully
     if (booking) {
       const emailHtml = status === 'Approved'
         ? getBookingApprovedEmail(booking.studentName, booking.courseName, booking.date, booking.timeSlot)
         : getBookingRejectedEmail(booking.studentName, booking.courseName, booking.date, booking.timeSlot)
 
-      sendSystemEmail(
-        booking.studentEmail,
-        `Booking Request ${status} - ${booking.courseName}`,
-        emailHtml
-      )
-        .then(() => console.log(`[BookingService] Student status notification email successfully sent to ${booking.studentEmail}`))
-        .catch(err => console.error('[BookingService] Failed to send status update email to student:', err))
+      console.log(`[BookingService] Dispatching status update email to student (${booking.studentEmail})...`)
+      try {
+        await sendSystemEmail(
+          booking.studentEmail,
+          `Booking Request ${status} - ${booking.courseName}`,
+          emailHtml
+        )
+        console.log(`[BookingService] Student status update email sent successfully.`)
+      } catch (err: any) {
+        console.error('[BookingService] Student status update email delivery failed:', err)
+        throw new Error(`Email delivery failed: ${err.message || err}`)
+      }
 
       // Notify Student via WhatsApp (if phone exists)
       if (studentPhone) {

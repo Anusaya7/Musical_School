@@ -127,9 +127,6 @@ export async function POST(request: NextRequest) {
         <p>Regards,<br/>2nd Inversion Team</p>
       </div>
     `
-    await sendSystemEmail(studentEmail, `Enrollment Confirmation - ${courseName}`, studentHtml)
-
-    // 6. Send Notification Email to Admin
     const adminHtml = `
       <div style="font-family: sans-serif; padding: 20px; color: #1e293b;">
         <h2 style="color: #6d28d9;">New Course Purchase Notification</h2>
@@ -165,8 +162,20 @@ export async function POST(request: NextRequest) {
         </table>
       </div>
     `
-    const adminEmail = process.env.ADMIN_EMAIL || 'aamrule90@gmail.com'
-    await sendSystemEmail(adminEmail, 'New Course Purchase Alert', adminHtml)
+
+    try {
+      const adminEmail = process.env.ADMIN_EMAIL || 'aamrule90@gmail.com'
+      await Promise.all([
+        sendSystemEmail(studentEmail, `Enrollment Confirmation - ${courseName}`, studentHtml),
+        sendSystemEmail(adminEmail, 'New Course Purchase Alert', adminHtml)
+      ])
+    } catch (emailErr: any) {
+      console.error('[EMAIL ERROR] Failed to send enrollment notification emails:', emailErr)
+      return NextResponse.json(
+        { success: false, error: `Email delivery failed: ${emailErr.message || emailErr}` },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
