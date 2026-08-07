@@ -43,14 +43,22 @@ export default function Footer() {
           {/* Right Column - Contact */}
           <div className="text-center md:text-right">
             <h4 className="text-lg font-semibold mb-4">Contact</h4>
-            <div className="space-y-2 text-gray-400">
+            <div className="space-y-2 text-gray-400 text-xs leading-relaxed">
+              <p className="flex items-center justify-center md:justify-end gap-2 font-bold text-white">
+                <span>👤</span>
+                <span>Ajinkya Uddhav Amrule</span>
+              </p>
               <p className="flex items-center justify-center md:justify-end gap-2">
                 <span>📞</span>
-                <span>+91 7768838832</span>
+                <a href="tel:+917768838832" className="hover:text-white transition-colors">+91 77688 38832</a>
+              </p>
+              <p className="flex items-center justify-center md:justify-end gap-2">
+                <span>✉️</span>
+                <a href="mailto:aamrule90@gmail.com" className="hover:text-white transition-colors">aamrule90@gmail.com</a>
               </p>
               <p className="flex items-center justify-center md:justify-end gap-2">
                 <span>📍</span>
-                <span>Kawade Nagar, Pimple Gurav, Pune – 411061</span>
+                <span>Sr. No. 56/2/30, House No. B2/30, Kawade Nagar, Lane No. 2, Behind Ganesh Mangal Kendra, Pimple Gurav (New Sangvi), Pune – 411061</span>
               </p>
             </div>
           </div>

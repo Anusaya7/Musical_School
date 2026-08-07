@@ -1,12 +1,6 @@
 import './globals.css'
-// import { Inter } from 'next/font/google'
-import { CartProvider } from '@/contexts/CartContext'
-import { AuthProvider } from '@/contexts/AuthContext'
-import { ThemeProvider } from '@/contexts/ThemeContext'
-import { SiteSettingsProvider } from '@/contexts/SiteSettingsContext'
-import Toast from '@/components/Toast'
 import Script from 'next/script'
-import { SessionProvider } from 'next-auth/react'
+import Providers from '@/components/Providers'
 
 const inter = { className: 'antialiased font-sans' }
 
@@ -24,20 +18,43 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="beforeInteractive" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'MusicSchool',
+              'name': '2nd Inversion Musical School',
+              'url': 'https://musical-school-nine.vercel.app',
+              'logo': 'https://musical-school-nine.vercel.app/images/logo_emblem.png',
+              'founder': {
+                '@type': 'Person',
+                'name': 'Ajinkya Uddhav Amrule'
+              },
+              'contactPoint': {
+                '@type': 'ContactPoint',
+                'contactType': 'customer service',
+                'telephone': '+91-77688-38832',
+                'email': 'aamrule90@gmail.com'
+              },
+              'address': {
+                '@type': 'PostalAddress',
+                'streetAddress': 'Sr. No. 56/2/30, House No. B2/30, Kawade Nagar, Lane No. 2, Behind Ganesh Mangal Kendra, Pimple Gurav (New Sangvi)',
+                'addressLocality': 'Pune',
+                'addressRegion': 'Maharashtra',
+                'postalCode': '411061',
+                'addressCountry': 'IN'
+              },
+              'telephone': '+91-77688-38832',
+              'email': 'aamrule90@gmail.com'
+            })
+          }}
+        />
       </head>
       <body className={inter.className}>
-        <SessionProvider>
-          <ThemeProvider>
-            <SiteSettingsProvider>
-              <AuthProvider>
-                <CartProvider>
-                  {children}
-                  <Toast />
-                </CartProvider>
-              </AuthProvider>
-            </SiteSettingsProvider>
-          </ThemeProvider>
-        </SessionProvider>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   )

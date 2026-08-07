@@ -18,9 +18,9 @@ export const DEFAULT_SITE_SETTINGS: Record<string, any> = {
     statStudentLbl: "Students",
     statExcellenceVal: "6+",
     statExcellenceLbl: "Years Excellence",
-    founderName: "Ajinkya Amrule",
+    founderName: "Ajinkya Uddhav Amrule",
     founderRole: "Founder & Director",
-    founderBio: "Ajinkya Amrule is a distinguished pianist, music educator, and sound engineer based in Pune, Maharashtra. Known for his musical sensitivity and disciplined approach, he has built a reputation for nurturing both technical excellence and artistic depth in his students. He holds a graduate degree in Sound Engineering, bringing a rare blend of performance insight and production expertise to his teaching. Through performance, pedagogy, and mentorship, Ajinkya continues to contribute meaningfully to Pune's growing classical and contemporary music landscape."
+    founderBio: "Ajinkya Uddhav Amrule is a distinguished pianist, music educator, and sound engineer based in Pune, Maharashtra. Known for his musical sensitivity and disciplined approach, he has built a reputation for nurturing both technical excellence and artistic depth in his students. He holds a graduate degree in Sound Engineering, bringing a rare blend of performance insight and production expertise to his teaching. Through performance, pedagogy, and mentorship, Ajinkya continues to contribute meaningfully to Pune's growing classical and contemporary music landscape."
   },
   why_choose_us: {
     title: "Why Choose 2nd Inversion Musical School?",
@@ -53,9 +53,10 @@ export const DEFAULT_SITE_SETTINGS: Record<string, any> = {
     ]
   },
   contact_details: {
-    email: "contact@2ndinversion.com",
-    phone: "+91 98765 43210",
-    address: "2nd Inversion Music School, Pune, Maharashtra, India",
+    email: "aamrule90@gmail.com",
+    phone: "+91 77688 38832",
+    contactPerson: "Ajinkya Uddhav Amrule",
+    address: "Sr. No. 56/2/30, House No. B2/30, Kawade Nagar, Lane No. 2, Behind Ganesh Mangal Kendra, Pimple Gurav (New Sangvi), Pune – 411061, Maharashtra, India",
     facebook: "https://facebook.com/2ndinversion",
     instagram: "https://instagram.com/2ndinversion",
     youtube: "https://youtube.com/2ndinversion",

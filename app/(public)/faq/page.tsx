@@ -70,8 +70,8 @@ export default function FAQPage() {
               }`}>
                 <Phone className="w-5 h-5 text-purple-500" />
                 <span className="text-xs font-bold">Call Us</span>
-                <Link href="tel:+919876543210" className="text-xs text-purple-500 hover:underline">
-                  +91 98765 43210
+                <Link href="tel:+917768838832" className="text-xs text-purple-500 hover:underline">
+                  +91 77688 38832
                 </Link>
               </div>
 

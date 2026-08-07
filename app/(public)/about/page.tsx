@@ -135,7 +135,7 @@ export default function About() {
       <section className="py-20 bg-gradient-to-br from-purple-50 to-pink-50">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">
-            About {aboutSettings.founderName || "Ajinkya Amrule"}
+            About {aboutSettings.founderName || "Ajinkya Uddhav Amrule"}
           </h2>
           
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -151,7 +151,7 @@ export default function About() {
                       <Star className="w-4 h-4 text-yellow-300 fill-yellow-300 mr-2" />
                       <span className="font-semibold">{aboutSettings.founderRole || "Founder & Director"}</span>
                     </div>
-                    <p className="text-lg">{aboutSettings.founderName || "Ajinkya Amrule"}</p>
+                    <p className="text-lg">{aboutSettings.founderName || "Ajinkya Uddhav Amrule"}</p>
                   </div>
                 </div>
               </div>
@@ -160,7 +160,7 @@ export default function About() {
             {/* Right: Text */}
             <div className="space-y-6 order-1 md:order-2">
               <p className="text-lg leading-relaxed text-gray-700 whitespace-pre-line">
-                {aboutSettings.founderBio || "Ajinkya Amrule is a distinguished pianist, music educator, and sound engineer based in Pune, Maharashtra. Known for his musical sensitivity and disciplined approach, he has built a strong reputation for nurturing both technical excellence and artistic depth in his students. Through performance, pedagogy, and mentorship, Ajinkya continues to contribute meaningfully to Pune's growing classical and contemporary music landscape."}
+                {aboutSettings.founderBio || "Ajinkya Uddhav Amrule is a distinguished pianist, music educator, and sound engineer based in Pune, Maharashtra. Known for his musical sensitivity and disciplined approach, he has built a strong reputation for nurturing both technical excellence and artistic depth in his students. Through performance, pedagogy, and mentorship, Ajinkya continues to contribute meaningfully to Pune's growing classical and contemporary music landscape."}
               </p>
               
               {/* Qualifications */}

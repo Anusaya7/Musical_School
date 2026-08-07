@@ -181,7 +181,7 @@ Submitted from the website.`
     }
   }
 
-  const fullAddress = contactDetails.address || `Sr. No. 56/2/30, House No. B2/30, Kawade Nagar, Lane No. 2, Behind Ganesh Mangal Kendra, Pimple Gurav, Pune – 411061`
+  const fullAddress = contactDetails.address || `Sr. No. 56/2/30, House No. B2/30, Kawade Nagar, Lane No. 2, Behind Ganesh Mangal Kendra, Pimple Gurav (New Sangvi), Pune – 411061, Maharashtra, India`
 
   const handleCopyAddress = () => {
     navigator.clipboard.writeText(fullAddress)

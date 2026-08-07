@@ -151,8 +151,9 @@ function getBaseTemplate({ title, preheader, contentHtml }: EmailBaseParams): st
                 <!-- Footer -->
                 <div class="footer">
                   <p>© ${new Date().getFullYear()} 2nd Inversion Music School. All rights reserved.</p>
-                  <p>Pune, Maharashtra, India | Phone: +91 77688 38832</p>
-                  <p>Email: <a href="mailto:aamrule90@gmail.com">aamrule90@gmail.com</a></p>
+                  <p><strong>Ajinkya Uddhav Amrule</strong> | Founder & Director</p>
+                  <p>Sr. No. 56/2/30, House No. B2/30, Kawade Nagar, Lane No. 2, Behind Ganesh Mangal Kendra, Pimple Gurav (New Sangvi), Pune – 411061, Maharashtra, India</p>
+                  <p>Phone: <a href="tel:+917768838832">+91 77688 38832</a> | Email: <a href="mailto:aamrule90@gmail.com">aamrule90@gmail.com</a></p>
                 </div>
               </div>
             </td>

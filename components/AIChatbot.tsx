@@ -35,9 +35,9 @@ export default function AIChatbot() {
     timing: "Our class timings are:\n- Monday: Closed\n- Tuesday to Sunday:\n  🌅 Morning: 4:00 AM – 12:00 PM\n  🌇 Evening: 3:00 PM – 9:00 PM",
     fees: "Course fees vary by instrument and duration:\n- Piano: $199-$399\n- Guitar: $149-$299\n- Drums: $279-$449\n- Vocals: $299-$499\n- Violin: $349-$599\n- Music Theory: $99-$199",
     enrollment: "Enrollment is simple! You can:\n1. Visit our courses page\n2. Add courses to cart\n3. Complete checkout\n4. Start learning immediately!",
-    instructor: "Our lead instructor is Ajinkya Amrule, a distinguished pianist, music educator, and sound engineer with a graduate degree in Sound Engineering.",
+    instructor: "Our lead instructor is Ajinkya Uddhav Amrule, a distinguished pianist, music educator, and sound engineer with a graduate degree in Sound Engineering.",
     location: "We're located at Sr. No. 56/2/30, House No. B2/30, Kawade Nagar, Lane No. 2, Behind Ganesh Mangal Kendra, Pimple Gurav (New Sangvi), Pune – 411061, Maharashtra, India.",
-    contact: "You can reach us at:\n- Phone: +91 77688 38832\n- Email: aamrule90@gmail.com\n- WhatsApp: Click the green WhatsApp button",
+    contact: "You can reach us at:\n- Contact Person: Ajinkya Uddhav Amrule\n- Phone: +91 77688 38832\n- Email: aamrule90@gmail.com\n- WhatsApp: Click the green WhatsApp button",
     default: "I understand you're interested in our music school. Let me help you with that. Could you tell me more about what specific information you're looking for?"
   }
 

@@ -154,9 +154,9 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
       {/* Soft Top/Bottom Pastel Accents */}
       <div className="absolute top-0 left-0 w-64 h-64 bg-[#DCEEFF]/20 rounded-br-full opacity-60 pointer-events-none"></div>
       <div className="absolute bottom-0 right-0 w-64 h-64 bg-[#FFD6E8]/20 rounded-tl-full opacity-60 pointer-events-none"></div>
-      
+
       <div className="container mx-auto px-6 max-w-[1200px] relative z-10">
-        
+
         {/* Hero Section */}
         <div className="text-center pb-12 mb-16 border-b-2 border-[#DCEEFF]">
           <div className="flex justify-center mb-4">
@@ -179,13 +179,13 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
             <h3 className="text-base font-bold text-[#0F1E4A] mb-1">Expert Teachers</h3>
             <p className="text-xs text-slate-400 font-medium">Learn from experienced instructors</p>
           </div>
-          
+
           <div className="bg-white rounded-[20px] p-6 text-center shadow-[0_10px_25px_rgba(94,168,255,0.12)] border-2 border-[#C7DBFF] transition-all duration-300 hover:border-[#5EA8FF] hover:-translate-y-1 hover:shadow-lg">
             <div className="text-3xl mb-3">📅</div>
             <h3 className="text-base font-bold text-[#0F1E4A] mb-1">Flexible Scheduling</h3>
             <p className="text-xs text-slate-400 font-medium">Choose dates and time slots easily</p>
           </div>
-          
+
           <div className="bg-white rounded-[20px] p-6 text-center shadow-[0_10px_25px_rgba(94,168,255,0.12)] border-2 border-[#C7DBFF] transition-all duration-300 hover:border-[#5EA8FF] hover:-translate-y-1 hover:shadow-lg">
             <div className="text-3xl mb-3">🏆</div>
             <h3 className="text-base font-bold text-[#0F1E4A] mb-1">Certified Courses</h3>
@@ -212,7 +212,7 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
                   className="h-[56px] w-full px-4 border-2 border-[#B8D4FF] hover:border-[#5EA8FF] rounded-[14px] bg-white text-[#0F1E4A] placeholder-[#94A3B8] font-medium text-sm transition-all duration-300 focus:outline-none focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/12"
                 />
               </div>
-              
+
               <div>
                 <label htmlFor="email" className="block text-xs font-bold text-[#0F1E4A] mb-2 uppercase tracking-wider">
                   Email Address
@@ -229,7 +229,7 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
                 />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="phone" className="block text-xs font-bold text-[#0F1E4A] mb-2 uppercase tracking-wider">
@@ -246,7 +246,7 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
                   className="h-[56px] w-full px-4 border-2 border-[#B8D4FF] hover:border-[#5EA8FF] rounded-[14px] bg-white text-[#0F1E4A] placeholder-[#94A3B8] font-medium text-sm transition-all duration-300 focus:outline-none focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/12"
                 />
               </div>
-              
+
               <div>
                 <label htmlFor="classId" className="block text-xs font-bold text-[#0F1E4A] mb-2 uppercase tracking-wider">
                   Select Class
@@ -271,7 +271,7 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
                             .split('-')
                             .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
                             .join(' ')
-                          
+
                           return (
                             <option key={c.id} value={c.id}>
                               {formattedInstrument} - {c.level}
@@ -289,7 +289,7 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
                 </div>
               </div>
             </div>
-            
+
             <div>
               <label htmlFor="message" className="block text-xs font-bold text-[#0F1E4A] mb-2 uppercase tracking-wider">
                 Additional Message (Optional)
@@ -303,17 +303,17 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
                 className="h-[180px] w-full p-4 border-2 border-[#B8D4FF] hover:border-[#5EA8FF] rounded-[14px] bg-white text-[#0F1E4A] placeholder-[#94A3B8] font-medium text-sm transition-all duration-300 focus:outline-none focus:border-[#2563EB] focus:ring-4 focus:ring-[#2563EB]/12 resize-none"
               />
             </div>
-            
+
             <button
               type="submit"
               className="btn-premium-base btn-premium-submit w-full h-[60px] text-white font-bold text-[18px] tracking-[0.3px] flex items-center justify-center gap-2"
             >
               <span className="relative z-10">Submit Booking Request</span>
-              <svg 
-                className="w-5 h-5 relative z-10 transition-transform duration-300 ease-out group-hover/btn:translate-x-[6px] text-current" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth={3} 
+              <svg
+                className="w-5 h-5 relative z-10 transition-transform duration-300 ease-out group-hover/btn:translate-x-[6px] text-current"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={3}
                 viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />

@@ -13,23 +13,23 @@ interface CourseCardProps {
   onAddToCart?: (course: Course) => void
   showBooking?: boolean
   bookingSlot?: React.ReactNode
-  
+
   // Dashboard modes
   mode?: 'public' | 'admin' | 'instructor' | 'student'
-  
+
   // Admin triggers
   onEdit?: (course: Course) => void
   onDelete?: (course: Course) => void
   onToggleStatus?: (course: Course) => void
   onDuplicate?: (course: Course) => void
-  
+
   // Instructor triggers
   onManageAssignments?: (course: Course) => void
   onUploadVideos?: (course: Course) => void
   onQuizzes?: (course: Course) => void
   onAttendance?: (course: Course) => void
   onPerformance?: (course: Course) => void
-  
+
   // Student parameters
   progress?: number
   completedLessons?: number
@@ -154,11 +154,10 @@ const CourseCard = memo(({
                   e.stopPropagation()
                   onToggleFavorite?.(course)
                 }}
-                className={`absolute top-0 right-0 p-2 rounded-full border transition-all ${
-                  isFavorite 
+                className={`absolute top-0 right-0 p-2 rounded-full border transition-all ${isFavorite
                     ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800/50 text-red-500 shadow-sm'
                     : 'bg-white dark:bg-slate-850 border-slate-100 dark:border-slate-800 text-slate-400 hover:text-red-400'
-                }`}
+                  }`}
                 title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
               >
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
@@ -177,7 +176,7 @@ const CourseCard = memo(({
           <h3 className="text-[22px] font-bold text-[#0F1E4A] dark:text-slate-100 leading-tight">
             {course.title}
           </h3>
-          
+
           {/* Instructor Info */}
           <div className="flex items-center gap-2 text-sm pt-1">
             <User className={`w-4 h-4 ${style.instructorIcon}`} />
@@ -215,7 +214,7 @@ const CourseCard = memo(({
               ₹{course.price.toLocaleString('en-IN')}
             </p>
           </div>
-          
+
           {/* Fee Tag Badge */}
           <span className={`px-3 py-1 rounded-full border text-[11px] font-bold tracking-wider ${style.badge}`}>
             {course.level}
@@ -257,11 +256,10 @@ const CourseCard = memo(({
               {onAddToCart && (
                 <button
                   onClick={() => onAddToCart(course)}
-                  className={`btn-premium-base w-12 h-12 ${
-                    isInCart 
-                      ? 'bg-green-500 border-green-500 text-white shadow-sm shadow-green-200' 
+                  className={`btn-premium-base w-12 h-12 ${isInCart
+                      ? 'bg-green-500 border-green-500 text-white shadow-sm shadow-green-200'
                       : 'btn-premium-secondary'
-                  }`}
+                    }`}
                   title={isInCart ? 'Added to Cart' : 'Add to Cart'}
                 >
                   <ShoppingCart className="w-5 h-5" />
@@ -288,11 +286,10 @@ const CourseCard = memo(({
               </button>
               <button
                 onClick={() => onToggleStatus?.(course)}
-                className={`btn-premium-base h-10 border ${
-                  course.isDisabled 
+                className={`btn-premium-base h-10 border ${course.isDisabled
                     ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/30 text-green-700 dark:text-green-400 hover:bg-green-100'
                     : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100'
-                }`}
+                  }`}
               >
                 {course.isDisabled ? 'Enable' : 'Disable'}
               </button>
@@ -303,7 +300,7 @@ const CourseCard = memo(({
                 Delete
               </button>
             </div>
-            
+
             {/* Admin specific stats block */}
             <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 px-3 py-2 rounded-xl text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-2">
               <span>👨‍🎓 {course.students || 0} Enrolled</span>
@@ -358,7 +355,7 @@ const CourseCard = memo(({
                 Analytics
               </button>
             </div>
-            
+
             <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 px-3 py-2 rounded-xl text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-2">
               <span>👨‍🎓 {course.students || 0} Students</span>
               <span>{course.isDisabled ? '🚫 Draft' : '✅ Published'}</span>
@@ -375,7 +372,7 @@ const CourseCard = memo(({
                 <span>{progress}%</span>
               </div>
               <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] transition-all duration-500"
                   style={{ width: `${progress}%` }}
                 />

@@ -5,15 +5,15 @@ import Image from 'next/image'
 import Link from 'next/link'
 import logoEmblem from '@/public/images/logo_emblem.png'
 import { useSiteSettings } from '@/contexts/SiteSettingsContext'
-import { 
-  Music, 
-  Home, 
-  BookOpen, 
-  Users, 
-  Info, 
-  Phone, 
-  Mail, 
-  MapPin, 
+import {
+  Music,
+  Home,
+  BookOpen,
+  Users,
+  Info,
+  Phone,
+  Mail,
+  MapPin,
   Send,
   Star,
   Piano,
@@ -24,7 +24,7 @@ import {
 export default function FooterPremium() {
   const [email, setEmail] = useState('')
   const { settings } = useSiteSettings()
-  
+
   const contactDetails = settings.contact_details || {}
   const footerSettings = settings.footer || {}
 
@@ -66,7 +66,7 @@ export default function FooterPremium() {
             <div className="h-full w-full bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse" />
           </div>
         </div>
-        
+
         <div className="relative z-10 container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="text-white">
@@ -107,7 +107,7 @@ export default function FooterPremium() {
         <div className="relative z-10 container mx-auto px-4 py-16">
           {/* Main Footer Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-            
+
             {/* Brand Section */}
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
@@ -123,11 +123,11 @@ export default function FooterPremium() {
                   <p className="text-purple-300 text-sm">Musical School</p>
                 </div>
               </div>
-              
+
               <p className="text-gray-400 text-sm leading-relaxed">
                 {footerSettings.footerText || "Learn piano, guitar, vocals & more with expert instructors."}
               </p>
-              
+
               <div className="inline-flex items-center space-x-2 px-3 py-1 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-full border border-yellow-500/30">
                 <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                 <span className="text-yellow-300 text-sm font-medium">
@@ -181,18 +181,20 @@ export default function FooterPremium() {
             {/* Contact + Newsletter */}
             <div className="space-y-4">
               <h4 className="text-lg font-semibold text-white">Contact & Newsletter</h4>
-              
+
               <div className="space-y-3">
                 <div className="flex items-center space-x-3 text-gray-400">
-                  <Phone className="w-4 h-4 text-purple-400" />
-                  <span>{contactDetails.phone || "+91 7768838832"}</span>
+                  <Phone className="w-4 h-4 text-purple-400 shrink-0" />
+                  <a href={`tel:${(contactDetails.phone || "+91 77688 38832").replace(/\s+/g, '')}`} className="hover:text-purple-400 transition-colors">
+                    {contactDetails.phone || "+91 77688 38832"}
+                  </a>
+                </div>
+                <div className="flex items-start space-x-3 text-gray-400">
+                  <MapPin className="w-4 h-4 text-purple-400 shrink-0 mt-1" />
+                  <span className="text-xs leading-relaxed">{contactDetails.address || "Sr. No. 56/2/30, House No. B2/30, Kawade Nagar, Lane No. 2, Behind Ganesh Mangal Kendra, Pimple Gurav (New Sangvi), Pune – 411061, Maharashtra, India"}</span>
                 </div>
                 <div className="flex items-center space-x-3 text-gray-400">
-                  <MapPin className="w-4 h-4 text-purple-400" />
-                  <span>{contactDetails.address || "Kawade Nagar, Pimple Gurav, Pune – 411061"}</span>
-                </div>
-                <div className="flex items-center space-x-3 text-gray-400">
-                  <Mail className="w-4 h-4 text-purple-400" />
+                  <Mail className="w-4 h-4 text-purple-400 shrink-0" />
                   <a href={`mailto:${contactDetails.email || "aamrule90@gmail.com"}`} className="hover:text-purple-400 transition-colors">
                     {contactDetails.email || "aamrule90@gmail.com"}
                   </a>

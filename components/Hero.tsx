@@ -34,7 +34,7 @@ export default function Hero() {
 
   useEffect(() => {
     setMounted(true)
-    
+
     // Generate musical notes with deterministic values
     const newMusicalNotes: MusicalNote[] = Array.from({ length: 7 }, (_, i) => ({
       id: i,
@@ -46,7 +46,7 @@ export default function Hero() {
       symbol: ['\u266a', '\u266b', '\u266c', '\u2669', '\u266d', '\u266e', '\u266f'][i]
     }))
     setMusicalNotes(newMusicalNotes)
-    
+
     // Generate floating elements with deterministic values
     const newFloatingElements: FloatingElement[] = Array.from({ length: 12 }, (_, i) => ({
       id: i,
@@ -89,13 +89,13 @@ export default function Hero() {
           <div className="absolute top-20 right-20 w-32 h-32 bg-white rounded-full opacity-5 animate-pulse" />
           <div className="absolute bottom-20 left-20 w-24 h-24 bg-white rounded-full opacity-10 animate-pulse" />
           <div className="absolute bottom-10 right-10 w-16 h-16 bg-white rounded-full opacity-15 animate-pulse" />
-          
+
           {/* Additional Sparkle Elements */}
           <div className="absolute top-1/4 left-1/4 w-12 h-12 bg-yellow-300 rounded-full opacity-20 animate-ping" />
           <div className="absolute top-1/3 right-1/3 w-8 h-8 bg-pink-300 rounded-full opacity-30 animate-ping" />
           <div className="absolute bottom-1/4 left-1/3 w-16 h-16 bg-blue-300 rounded-full opacity-25 animate-ping" />
           <div className="absolute top-2/3 right-1/4 w-10 h-10 bg-purple-300 rounded-full opacity-35 animate-ping" />
-          
+
           {/* Floating Music Symbols */}
           <div className="absolute top-20 left-20 text-6xl text-white/20 animate-spin" style={{ animationDuration: '10s' }}>♪</div>
           <div className="absolute top-40 right-32 text-5xl text-white/15 animate-bounce" style={{ animationDelay: '1s' }}>♫</div>
@@ -119,7 +119,7 @@ export default function Hero() {
               {note.symbol}
             </div>
           ))}
-          
+
           {/* Additional Floating Music Elements */}
           {mounted && floatingElements.map((element) => (
             <div
@@ -180,7 +180,7 @@ export default function Hero() {
 
           {/* Primary CTA */}
           <div className="flex justify-center">
-            <button 
+            <button
               onClick={handleExploreCourses}
               className="relative group bg-white text-indigo-700 px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-100 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] shadow-xl hover:shadow-2xl"
             >

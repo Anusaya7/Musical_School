@@ -85,7 +85,7 @@ export default function TermsAndConditions() {
 
           <div className="border-t border-gray-200/20 mt-12 pt-8 text-center space-y-4">
             <p className="text-xs text-slate-400 font-medium">
-              By enrolling or using our site, you confirm you accept these terms. For legal inquiries, contact <Link href="mailto:aamrule90@gmail.com" className="text-purple-500 hover:underline">aamrule90@gmail.com</Link>
+              By enrolling or using our site, you confirm you accept these terms. For legal inquiries, contact <strong>Ajinkya Uddhav Amrule</strong> at <Link href="mailto:aamrule90@gmail.com" className="text-purple-500 hover:underline">aamrule90@gmail.com</Link> or <Link href="tel:+917768838832" className="text-purple-500 hover:underline">+91 77688 38832</Link>.
             </p>
             <div className="pt-2">
               <Link

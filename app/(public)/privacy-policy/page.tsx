@@ -85,7 +85,7 @@ export default function PrivacyPolicy() {
 
           <div className="border-t border-gray-200/20 mt-12 pt-8 text-center space-y-4">
             <p className="text-xs text-slate-400 font-medium">
-              If you have any questions or concern regarding this policy, contact our registrar at <Link href="mailto:aamrule90@gmail.com" className="text-purple-500 hover:underline">aamrule90@gmail.com</Link>
+              If you have any questions or concerns regarding this policy, contact <strong>Ajinkya Uddhav Amrule</strong> at <Link href="mailto:aamrule90@gmail.com" className="text-purple-500 hover:underline">aamrule90@gmail.com</Link> or <Link href="tel:+917768838832" className="text-purple-500 hover:underline">+91 77688 38832</Link> (Sr. No. 56/2/30, House No. B2/30, Kawade Nagar, Lane No. 2, Behind Ganesh Mangal Kendra, Pimple Gurav, Pune – 411061, India).
             </p>
             <div className="pt-2">
               <Link

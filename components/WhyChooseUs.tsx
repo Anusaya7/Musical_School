@@ -7,12 +7,12 @@ import { DEFAULT_SITE_SETTINGS } from '@/lib/settings-defaults'
 export default function WhyChooseUs() {
   const { theme } = useTheme()
   const { settings } = useSiteSettings()
-  
+
   const sectionSettings = settings.why_choose_us || {}
   const features = sectionSettings.features || DEFAULT_SITE_SETTINGS.why_choose_us.features
 
   const getIconColor = (color: string) => {
-    switch(color) {
+    switch (color) {
       case 'blue': return 'text-blue-600'
       case 'green': return 'text-green-600'
       case 'purple': return 'text-purple-600'
@@ -22,7 +22,7 @@ export default function WhyChooseUs() {
   }
 
   const getBgColor = (color: string) => {
-    switch(color) {
+    switch (color) {
       case 'blue': return 'bg-blue-100'
       case 'green': return 'bg-green-100'
       case 'purple': return 'bg-purple-100'
@@ -49,9 +49,8 @@ export default function WhyChooseUs() {
           {features.map((feature, index) => (
             <div
               key={index}
-              className={`text-center p-6 rounded-2xl transition-all duration-300 hover:shadow-xl ${
-                theme === 'dark' ? 'bg-gray-800 hover:bg-gray-750' : 'bg-gray-50 hover:bg-gray-100'
-              }`}
+              className={`text-center p-6 rounded-2xl transition-all duration-300 hover:shadow-xl ${theme === 'dark' ? 'bg-gray-800 hover:bg-gray-750' : 'bg-gray-50 hover:bg-gray-100'
+                }`}
             >
               {/* Icon */}
               <div className={`w-16 h-16 ${getBgColor(feature.color)} rounded-full flex items-center justify-center mx-auto mb-6`}>

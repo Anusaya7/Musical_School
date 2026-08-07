@@ -407,8 +407,8 @@ export default function InstructorProfile() {
   }
 
   const triggerResumeDownload = () => {
-    const resumeText = `AJINKYA UDDHAV AMRULE - RESUME\n\nRole: Senior Music Instructor & Piano Specialist\nAddress: Sr. No. 56/2/30, Pimple Gurav, Pune\nEmail: aamrule90@gmail.com\nPhone: +91 77688 38832\n\nEXPERIENCE:\n- Founder & Lead Instructor at 2nd Inversion Music School (2018 - Present)\n- Professional Music Educator & Tutor (2014 - Present)\n\nEDUCATION & CERTIFICATIONS:\n- Trinity College London Grade 8 Piano - Distinction (2025)\n- Trinity College London Grade 7 Piano - Distinction (2024)\n- Trinity College London Grade 6 Piano - Distinction (2023)\n- Trinity College London Grade 5 Piano - Distinction (2022)\n- Graduate Degree in Sound & Audio Engineering`;
-    handleDownloadFile("Ajinkya_Amrule_Resume.txt", resumeText);
+    const resumeText = `AJINKYA UDDHAV AMRULE - RESUME\n\nRole: Senior Music Instructor & Piano Specialist\nAddress: Sr. No. 56/2/30, House No. B2/30, Kawade Nagar, Lane No. 2, Behind Ganesh Mangal Kendra, Pimple Gurav (New Sangvi), Pune – 411061, Maharashtra, India\nEmail: aamrule90@gmail.com\nPhone: +91 77688 38832\n\nEXPERIENCE:\n- Founder & Lead Instructor at 2nd Inversion Music School (2018 - Present)\n- Professional Music Educator & Tutor (2014 - Present)\n\nEDUCATION & CERTIFICATIONS:\n- Trinity College London Grade 8 Piano - Distinction (2025)\n- Trinity College London Grade 7 Piano - Distinction (2024)\n- Trinity College London Grade 6 Piano - Distinction (2023)\n- Trinity College London Grade 5 Piano - Distinction (2022)\n- Graduate Degree in Sound & Audio Engineering`;
+    handleDownloadFile("Ajinkya_Uddhav_Amrule_Resume.txt", resumeText);
   }
 
   const triggerCertificateDownload = () => {
