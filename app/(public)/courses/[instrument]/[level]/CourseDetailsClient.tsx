@@ -242,8 +242,8 @@ export default function CourseDetailsClient({
 
       {/* Levels and Content Section */}
       <section className="container mx-auto px-6 py-16 max-w-7xl">
-        <div className="grid gap-12 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-10">
+        <div className="w-full">
+          <div className="space-y-10">
             {/* Level Selector Tabs */}
             <div className="space-y-4">
               <h2 className="text-sm font-extrabold uppercase tracking-widest text-slate-400">Department Tracks</h2>
@@ -568,30 +568,6 @@ export default function CourseDetailsClient({
               </div>
             </div>
           </div>
-
-          {/* Specs Panel */}
-          <aside className="space-y-6">
-            <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm space-y-4">
-              <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest border-b border-gray-100 pb-3">Course Specs</h3>
-              <dl className="space-y-3.5 text-xs font-semibold">
-                {[
-                  ['Instructor', course.instructorName],
-                  ['Level', course.level],
-                  ['Duration', course.duration],
-                  ['Lessons', `${course.lessons || 24} Sessions`],
-                  ['Projects', `${course.projects || 3} Projects`],
-                  ['Assignments', `${course.assignments || 5} Tasks`],
-                  ['Certificate', course.hasCertificate ? 'Available' : 'No'],
-                  ['Status', course.upcoming ? 'Coming Soon' : 'Active Enrollment']
-                ].map(([label, value]) => (
-                  <div key={label} className="flex justify-between border-b border-gray-50 pb-2">
-                    <dt className="text-slate-400">{label}</dt>
-                    <dd className="font-bold text-[#0F1E4A]">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </aside>
         </div>
       </section>
     </div>

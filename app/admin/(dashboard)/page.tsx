@@ -193,9 +193,6 @@ export default function AdminDashboard() {
   const [courseDescription, setCourseDescription] = useState('')
   const [courseInstructorName, setCourseInstructorName] = useState('Ajinkya Amrule')
   const [courseDiscountPrice, setCourseDiscountPrice] = useState<number>(0)
-  const [courseLessons, setCourseLessons] = useState<number>(24)
-  const [courseProjects, setCourseProjects] = useState<number>(3)
-  const [courseAssignments, setCourseAssignments] = useState<number>(5)
   const [courseHasCertificate, setCourseHasCertificate] = useState(true)
   const [courseFeatured, setCourseFeatured] = useState(false)
   const [courseUpcoming, setCourseUpcoming] = useState(false)
@@ -575,9 +572,6 @@ export default function AdminDashboard() {
       duration: courseDuration || '3 Months',
       description: courseDescription || '',
       discountPrice: Number(courseDiscountPrice),
-      lessons: Number(courseLessons),
-      projects: Number(courseProjects),
-      assignments: Number(courseAssignments),
       hasCertificate: courseHasCertificate,
       featured: courseFeatured,
       upcoming: courseUpcoming,
@@ -607,9 +601,6 @@ export default function AdminDashboard() {
         setCoursePrice(4999)
         setCourseDescription('')
         setCourseDiscountPrice(0)
-        setCourseLessons(24)
-        setCourseProjects(3)
-        setCourseAssignments(5)
         setCourseHasCertificate(true)
         setCourseFeatured(false)
         setCourseUpcoming(false)
@@ -647,9 +638,6 @@ export default function AdminDashboard() {
       description: courseDescription,
       isDisabled: editingCourse.isDisabled,
       discountPrice: Number(courseDiscountPrice),
-      lessons: Number(courseLessons),
-      projects: Number(courseProjects),
-      assignments: Number(courseAssignments),
       hasCertificate: courseHasCertificate,
       featured: courseFeatured,
       upcoming: courseUpcoming,
@@ -679,9 +667,6 @@ export default function AdminDashboard() {
         setCourseTitle('')
         setCourseDescription('')
         setCourseDiscountPrice(0)
-        setCourseLessons(24)
-        setCourseProjects(3)
-        setCourseAssignments(5)
         setCourseHasCertificate(true)
         setCourseFeatured(false)
         setCourseUpcoming(false)
@@ -1991,9 +1976,6 @@ export default function AdminDashboard() {
                 setCourseDescription={setCourseDescription}
                 setCourseInstructorName={setCourseInstructorName}
                 setCourseDiscountPrice={setCourseDiscountPrice}
-                setCourseLessons={setCourseLessons}
-                setCourseProjects={setCourseProjects}
-                setCourseAssignments={setCourseAssignments}
                 setCourseHasCertificate={setCourseHasCertificate}
                 setCourseFeatured={setCourseFeatured}
                 setCourseUpcoming={setCourseUpcoming}
@@ -4086,35 +4068,7 @@ export default function AdminDashboard() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Lessons</label>
-                  <input
-                    type="number"
-                    value={courseLessons}
-                    onChange={(e) => setCourseLessons(Number(e.target.value))}
-                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Projects</label>
-                  <input
-                    type="number"
-                    value={courseProjects}
-                    onChange={(e) => setCourseProjects(Number(e.target.value))}
-                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Assignments</label>
-                  <input
-                    type="number"
-                    value={courseAssignments}
-                    onChange={(e) => setCourseAssignments(Number(e.target.value))}
-                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
-                  />
-                </div>
-              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Duration</label>
@@ -4453,35 +4407,7 @@ export default function AdminDashboard() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Lessons</label>
-                  <input
-                    type="number"
-                    value={courseLessons}
-                    onChange={(e) => setCourseLessons(Number(e.target.value))}
-                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Projects</label>
-                  <input
-                    type="number"
-                    value={courseProjects}
-                    onChange={(e) => setCourseProjects(Number(e.target.value))}
-                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Assignments</label>
-                  <input
-                    type="number"
-                    value={courseAssignments}
-                    onChange={(e) => setCourseAssignments(Number(e.target.value))}
-                    className="w-full px-4 py-2.5 border border-[#E6EEFF] rounded-xl text-xs font-bold focus:outline-none focus:border-[#5EA8FF]"
-                  />
-                </div>
-              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[9px] font-extrabold text-slate-400 mb-1.5 uppercase tracking-wider">Duration</label>

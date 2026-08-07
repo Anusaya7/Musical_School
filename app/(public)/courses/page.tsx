@@ -202,19 +202,6 @@ function CoursesPageContent() {
                 course={course}
                 isInCart={isInCart(course.id)}
                 onAddToCart={handleAddToCart}
-                showBooking
-                bookingSlot={
-                  <CourseBooking
-                    course={{
-                      id: course.id,
-                      title: course.title,
-                      instructor: course.instructor,
-                      price: course.price,
-                      category: course.category,
-                    }}
-                    onBookingComplete={(booking) => addBooking(booking)}
-                  />
-                }
               />
             ))}
           </div>

@@ -31,9 +31,6 @@ interface AdminCoursesProps {
   setCourseDescription: (val: string) => void
   setCourseInstructorName: (val: string) => void
   setCourseDiscountPrice: (val: number) => void
-  setCourseLessons: (val: number) => void
-  setCourseProjects: (val: number) => void
-  setCourseAssignments: (val: number) => void
   setCourseHasCertificate: (val: boolean) => void
   setCourseFeatured: (val: boolean) => void
   setCourseUpcoming: (val: boolean) => void
@@ -75,9 +72,6 @@ export default function AdminCourses({
   setCourseDescription,
   setCourseInstructorName,
   setCourseDiscountPrice,
-  setCourseLessons,
-  setCourseProjects,
-  setCourseAssignments,
   setCourseHasCertificate,
   setCourseFeatured,
   setCourseUpcoming,
@@ -225,9 +219,6 @@ export default function AdminCourses({
               setCoursePrice(4999)
               setCourseDescription('')
               setCourseDiscountPrice(0)
-              setCourseLessons(24)
-              setCourseProjects(3)
-              setCourseAssignments(5)
               setCourseHasCertificate(true)
               setCourseFeatured(false)
               setCourseUpcoming(false)
@@ -475,9 +466,6 @@ export default function AdminCourses({
                                     setCourseDescription(course.description || '')
                                     setCourseInstructorName(course.instructor || 'Ajinkya Amrule')
                                     setCourseDiscountPrice(course.discountPrice || 0)
-                                    setCourseLessons(course.lessons || 24)
-                                    setCourseProjects(course.projects || 3)
-                                    setCourseAssignments(course.assignments || 5)
                                     setCourseHasCertificate(course.certificateAvailable !== false)
                                     setCourseFeatured(!!course.featured)
                                     setCourseUpcoming(!!course.upcoming)

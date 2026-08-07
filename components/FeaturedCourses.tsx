@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, memo, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { useCart } from '@/contexts/CartContext'
 import Link from 'next/link'
 import { Clock, Star, User, ShoppingCart } from 'lucide-react'
@@ -143,6 +144,22 @@ interface CourseCardProps {
 }
 
 const CourseCard = memo(({ course, isInCartAlready, onBookClick, onAddToCart }: CourseCardProps) => {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [showSpinner, setShowSpinner] = useState(false)
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout
+    if (isPending) {
+      timer = setTimeout(() => {
+        setShowSpinner(true)
+      }, 200)
+    } else {
+      setShowSpinner(false)
+    }
+    return () => clearTimeout(timer)
+  }, [isPending])
+
   const style = course.cardStyle
 
   return (
@@ -214,14 +231,6 @@ const CourseCard = memo(({ course, isInCartAlready, onBookClick, onAddToCart }: 
 
         {/* Action Buttons */}
         <div className="space-y-3">
-          {/* Primary button: Book Time Slot */}
-          <button
-            onClick={() => onBookClick(course)}
-            className="btn-premium-base btn-premium-gradient w-full h-12 text-sm font-bold flex items-center justify-center"
-          >
-            Book Time Slot
-          </button>
-
           {/* Secondary & Cart buttons row */}
           <div className="flex gap-3">
             {(() => {
@@ -231,8 +240,21 @@ const CourseCard = memo(({ course, isInCartAlready, onBookClick, onAddToCart }: 
               return (
                 <Link
                   href={`/courses/${instrument}/${level}`}
-                  className="btn-premium-base btn-premium-secondary flex-1 h-12 text-xs gap-1.5"
+                  onClick={(e) => {
+                    if (isPending) {
+                      e.preventDefault()
+                      return
+                    }
+                    e.preventDefault()
+                    startTransition(() => {
+                      router.push(`/courses/${instrument}/${level}`)
+                    })
+                  }}
+                  className={`btn-premium-base btn-premium-secondary flex-1 h-12 text-xs gap-1.5 ${isPending ? 'opacity-80 pointer-events-none' : ''}`}
                 >
+                  {showSpinner && (
+                    <span className="w-3.5 h-3.5 border-2 border-[#0F1E4A] border-t-transparent rounded-full animate-spin shrink-0 mr-0.5" />
+                  )}
                   <span>View Details</span>
                   <span className="text-sm">→</span>
                 </Link>

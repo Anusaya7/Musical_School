@@ -298,16 +298,38 @@ button, a {
   border: 2px solid #2563EB !important;
   background-color: #FFFFFF !important;
   color: #0F1E4A !important;
+  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 250ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 250ms cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .btn-premium-secondary:hover {
-  border-color: #1D4ED8 !important;
-  background-color: #F8FBFF !important;
-  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.15) !important;
+  transform: translateY(-2.5px) !important;
+  border-color: #3b82f6 !important;
+  background-color: #FAFCFF !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12), 0 0 0 1px rgba(59, 130, 246, 0.15) !important;
 }
 
 .btn-premium-secondary:active {
+  transform: translateY(-0.5px) scale(0.98) !important;
+  background-color: #F0F4FF !important;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.08) !important;
   border-color: #1E40AF !important;
+}
+
+.btn-premium-secondary:focus-visible,
+.btn-premium-secondary:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35) !important;
+}
+
+.btn-premium-secondary span:last-child {
+  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.btn-premium-secondary:hover span:last-child {
+  transform: translateX(5px) !important;
 }
 
 /* BOOK TIME SLOT / GRADIENT BUTTON */

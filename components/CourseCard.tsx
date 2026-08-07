@@ -1,6 +1,7 @@
 'use client'
 
-import React, { memo } from 'react'
+import React, { memo, useTransition, useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Star, Clock, User, ShoppingCart } from 'lucide-react'
 import { Course } from '@/data/coursesData'
@@ -63,6 +64,22 @@ const CourseCard = memo(({
   onToggleFavorite,
   onContinueLearning,
 }: CourseCardProps) => {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [showSpinner, setShowSpinner] = useState(false)
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout
+    if (isPending) {
+      timer = setTimeout(() => {
+        setShowSpinner(true)
+      }, 200)
+    } else {
+      setShowSpinner(false)
+    }
+    return () => clearTimeout(timer)
+  }, [isPending])
+
   // Determine card accent styling based on course level/title
   const getThemeConfig = (title: string, levelStr: string) => {
     const t = (title + ' ' + levelStr).toLowerCase()
@@ -208,12 +225,6 @@ const CourseCard = memo(({
         {/* Action Buttons depending on Mode */}
         {mode === 'public' && (
           <div className="space-y-3">
-            {showBooking && bookingSlot && (
-              <div className="w-full">
-                {bookingSlot}
-              </div>
-            )}
-
             <div className="flex gap-3">
               {(() => {
                 const parts = course.id.toLowerCase().split('-')
@@ -222,8 +233,21 @@ const CourseCard = memo(({
                 return (
                   <Link
                     href={`/courses/${instrument}/${level}`}
-                    className="btn-premium-base btn-premium-secondary flex-1 h-12 text-xs gap-1.5"
+                    onClick={(e) => {
+                      if (isPending) {
+                        e.preventDefault()
+                        return
+                      }
+                      e.preventDefault()
+                      startTransition(() => {
+                        router.push(`/courses/${instrument}/${level}`)
+                      })
+                    }}
+                    className={`btn-premium-base btn-premium-secondary flex-1 h-12 text-xs gap-1.5 ${isPending ? 'opacity-80 pointer-events-none' : ''}`}
                   >
+                    {showSpinner && (
+                      <span className="w-3.5 h-3.5 border-2 border-[#0F1E4A] border-t-transparent rounded-full animate-spin shrink-0 mr-0.5" />
+                    )}
                     <span>View Details</span>
                     <span className="text-sm">→</span>
                   </Link>
