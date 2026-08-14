@@ -233,19 +233,111 @@ function PaymentForm({ plan, onBack, onSuccess }: { plan: any; onBack: () => voi
     phone: '',
     paymentMethod: 'upi'
   })
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Simulate payment processing
-    setTimeout(() => {
-      onSuccess()
-    }, 2000)
+    setErrorMsg(null)
+    setIsProcessing(true)
+
+    try {
+      const numericPrice = Number(String(plan.price).replace(/,/g, ''))
+      const amountPaise = Math.round(numericPrice * 100)
+
+      const orderRes = await fetch('/api/payment/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amountPaise,
+          currency: 'INR',
+          receipt: `rcpt_plan_${Date.now()}`,
+          notes: {
+            purchaseType: 'plan',
+            plan: plan.name,
+            studentName: formData.name,
+            studentEmail: formData.email,
+            studentPhone: formData.phone
+          }
+        })
+      })
+
+      const orderData = await orderRes.json()
+      if (!orderRes.ok || !orderData.success) {
+        throw new Error(orderData.error || 'Razorpay Test Mode is not configured. Order creation failed.')
+      }
+
+      const Razorpay = (window as any).Razorpay
+      if (!Razorpay) {
+        throw new Error('Razorpay Checkout SDK is loading. Please try again.')
+      }
+
+      const options = {
+        key: orderData.key,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: '2nd Inversion Musical School',
+        description: `Subscription Plan: ${plan.name}`,
+        order_id: orderData.id,
+        prefill: {
+          name: formData.name,
+          email: formData.email,
+          contact: formData.phone
+        },
+        theme: { color: '#4F46E5' },
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await fetch('/api/payment/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderData: {
+                  amount: numericPrice,
+                  notes: {
+                    purchaseType: 'plan',
+                    plan: plan.name,
+                    studentName: formData.name,
+                    studentEmail: formData.email,
+                    studentPhone: formData.phone
+                  }
+                }
+              })
+            })
+            const verifyData = await verifyRes.json()
+            if (!verifyRes.ok || !verifyData.success) {
+              throw new Error(verifyData.error || 'Payment verification failed.')
+            }
+            onSuccess()
+          } catch (vErr: any) {
+            console.error('Plan payment verification error:', vErr)
+            setErrorMsg(vErr.message || 'Payment verification failed.')
+            setIsProcessing(false)
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false)
+          }
+        }
+      }
+
+      const rzp = new Razorpay(options)
+      rzp.open()
+    } catch (err: any) {
+      console.error('Plan payment error:', err)
+      setErrorMsg(err.message || 'Could not process plan payment request.')
+      setIsProcessing(false)
+    }
   }
 
   return (
     <div className="p-8">
       <button
         onClick={onBack}
+        disabled={isProcessing}
         className={`mb-6 flex items-center gap-2 ${
           theme === 'dark' ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'
         }`}
@@ -270,6 +362,12 @@ function PaymentForm({ plan, onBack, onSuccess }: { plan: any; onBack: () => voi
         </div>
       </div>
 
+      {errorMsg && (
+        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 text-sm font-medium text-center">
+          {errorMsg}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid md:grid-cols-2 gap-6">
           <div>
@@ -279,6 +377,7 @@ function PaymentForm({ plan, onBack, onSuccess }: { plan: any; onBack: () => voi
             <input
               type="text"
               required
+              disabled={isProcessing}
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
               className={`w-full px-4 py-3 rounded-xl border ${
@@ -294,6 +393,7 @@ function PaymentForm({ plan, onBack, onSuccess }: { plan: any; onBack: () => voi
             <input
               type="email"
               required
+              disabled={isProcessing}
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
               className={`w-full px-4 py-3 rounded-xl border ${
@@ -311,6 +411,7 @@ function PaymentForm({ plan, onBack, onSuccess }: { plan: any; onBack: () => voi
           <input
             type="tel"
             required
+            disabled={isProcessing}
             value={formData.phone}
             onChange={(e) => setFormData({...formData, phone: e.target.value})}
             className={`w-full px-4 py-3 rounded-xl border ${
@@ -320,35 +421,13 @@ function PaymentForm({ plan, onBack, onSuccess }: { plan: any; onBack: () => voi
           />
         </div>
 
-        <div>
-          <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-            Payment Method
-          </label>
-          <div className="grid grid-cols-3 gap-4">
-            {['upi', 'card', 'netbanking'].map((method) => (
-              <button
-                key={method}
-                type="button"
-                onClick={() => setFormData({...formData, paymentMethod: method})}
-                className={`p-4 rounded-xl border-2 transition-all ${
-                  formData.paymentMethod === method
-                    ? 'border-indigo-500 bg-indigo-50'
-                    : theme === 'dark' ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-white'
-                }`}
-              >
-                <div className="text-sm font-medium capitalize">
-                  {method === 'netbanking' ? 'Net Banking' : method.toUpperCase()}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
+          disabled={isProcessing}
+          className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          Complete Payment - {plan.currency === 'INR' ? 'Rs.' : '$'}{plan.price}
+          {isProcessing && <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+          {isProcessing ? 'Processing...' : `Proceed to Payment - ${plan.currency === 'INR' ? 'Rs.' : '$'}${plan.price}`}
         </button>
       </form>
     </div>

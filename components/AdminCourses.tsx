@@ -161,6 +161,8 @@ export default function AdminCourses({
     return instCourses
   }
 
+  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
   // 4. Archive Course
   const handleArchiveCourse = async (id: string) => {
     const course = courses.find(c => c.id === id)
@@ -176,18 +178,29 @@ export default function AdminCourses({
         })
       })
       if (res.ok) {
-        alert('Course archived successfully!')
+        setToastMessage({ type: 'success', text: 'Course archived successfully!' })
+        setTimeout(() => setToastMessage(null), 4000)
         await loadDatabaseData()
       } else {
-        alert('Failed to archive course')
+        setToastMessage({ type: 'error', text: 'Failed to archive course' })
+        setTimeout(() => setToastMessage(null), 4000)
       }
     } catch (err) {
       console.error(err)
+      setToastMessage({ type: 'error', text: 'An unexpected error occurred' })
+      setTimeout(() => setToastMessage(null), 4000)
     }
   }
 
   return (
     <div className="bg-white border border-[#E6EEFF] rounded-[24px] p-6 shadow-[0_15px_40px_rgba(94,168,255,0.03)] space-y-6 animate-fadeIn font-sans">
+      {toastMessage && (
+        <div className={`p-4 rounded-xl text-xs font-bold ${
+          toastMessage.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
+        }`}>
+          {toastMessage.text}
+        </div>
+      )}
       <div className="flex justify-between items-center border-b border-[#E6EEFF] pb-4">
         <div>
           <h2 className="text-lg font-extrabold text-[#0F1E4A]">LMS Program & Course Levels Redesign</h2>
@@ -203,7 +216,7 @@ export default function AdminCourses({
               setCatIcon('M9 19V6l12-3v13')
               setCatStatus('Active')
               setCatIsVisible(true)
-              setCatStartingPrice(4999)
+              setCatStartingPrice(3500)
               setCatLevels(['Beginner', 'Intermediate', 'Advanced'])
               setEditingCategory(null)
               setIsAddCategoryOpen(true)
@@ -216,7 +229,7 @@ export default function AdminCourses({
             onClick={() => {
               setEditingCourse(null)
               setCourseTitle('')
-              setCoursePrice(4999)
+              setCoursePrice(3500)
               setCourseDescription('')
               setCourseDiscountPrice(0)
               setCourseHasCertificate(true)

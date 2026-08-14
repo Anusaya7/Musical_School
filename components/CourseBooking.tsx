@@ -149,8 +149,6 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
   const [studentEmail, setStudentEmail] = useState('')
   const [studentPhone, setStudentPhone] = useState('')
   const [isBooking, setIsBooking] = useState(false)
-  const [showMockPaymentModal, setShowMockPaymentModal] = useState(false)
-  const [mockOrderId, setMockOrderId] = useState('')
   const [showProcessingOverlay, setShowProcessingOverlay] = useState(false)
   const [currentProgressStep, setCurrentProgressStep] = useState(0)
 
@@ -254,9 +252,12 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
 
   const activeTimeSlots = getActiveTimeSlots()
 
+  const [formError, setFormError] = useState<string | null>(null)
+
   const handleBookTimeSlot = () => {
+    setFormError(null)
     if (!selectedDate || !selectedBatch || !selectedTimeSlot) {
-      alert('Please select date, batch timing, and time slot')
+      setFormError('Please select date, batch timing, and time slot')
       return
     }
     setShowPayment(true)
@@ -352,7 +353,6 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
     setStudentPhone('')
     setShowPayment(false)
     setShowBookingModal(false)
-    setShowMockPaymentModal(false)
     setShowProcessingOverlay(false)
 
     // Redirect to Success Page with full parameters
@@ -372,88 +372,109 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
     window.location.href = `/payment/success?${queryParams.toString()}`
   }
 
-  const handleVerifyMockPayment = async (status: 'Success' | 'Failed') => {
-    setIsBooking(true)
-    try {
-      if (status === 'Failed') {
-        window.location.href = `/payment/failed?error=Simulated+payment+failure`
-        return
-      }
-
-      const paymentId = `pay_mock_${Date.now()}`
-      await startProcessingAndVerify({
-        razorpay_order_id: mockOrderId,
-        razorpay_payment_id: paymentId,
-        razorpay_signature: 'mock_signature'
-      })
-    } catch (err: any) {
-      console.error('Mock verification error:', err)
-      alert(err.message || 'Mock payment verification failed.')
-    } finally {
-      setIsBooking(false)
-    }
-  }
-
   const handlePayment = async () => {
-    if (!studentName || !studentEmail || !studentPhone) {
-      alert('Please fill in all your details including your phone number')
+    setFormError(null)
+    setIsBooking(true)
+
+    // Form Validation
+    if (!studentName || !studentName.trim()) {
+      setFormError('Please enter your full name')
+      setIsBooking(false)
+      return
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!studentEmail || !emailRegex.test(studentEmail)) {
+      setFormError('Please enter a valid email address')
+      setIsBooking(false)
+      return
+    }
+    const phoneClean = studentPhone.replace(/\D/g, '')
+    if (!studentPhone || phoneClean.length < 10) {
+      setFormError('Please enter a valid phone number (at least 10 digits)')
+      setIsBooking(false)
+      return
+    }
+    if (!course || !course.id) {
+      setFormError('Course information is missing')
+      setIsBooking(false)
+      return
+    }
+    if (!course.price || course.price <= 0) {
+      setFormError('Course tuition fee is invalid')
+      setIsBooking(false)
       return
     }
 
-    setIsBooking(true)
-
     try {
-      const res = await fetch('/api/bookings', {
+      const amountPaise = Math.round(course.price * 100)
+      const res = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          courseId: course.id,
-          courseName: course.title,
-          instructor: course.instructor,
-          date: selectedDate,
-          timeSlot: selectedTimeSlot,
-          batchTiming: selectedBatch,
-          studentName,
-          studentEmail,
-          amount: course.price
+          amount: amountPaise,
+          currency: 'INR',
+          receipt: `rcpt_bk_${Date.now()}`,
+          notes: {
+            purchaseType: 'booking',
+            courseId: course.id,
+            courseName: course.title,
+            instructor: course.instructor,
+            date: selectedDate,
+            timeSlot: selectedTimeSlot,
+            batchTiming: selectedBatch,
+            studentName,
+            studentEmail,
+            studentPhone,
+            amount: course.price
+          }
         })
       })
 
-      const data = await res.json()
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to submit booking request')
+      const orderData = await res.json()
+      if (!res.ok || !orderData.success) {
+        throw new Error(orderData.error || 'Failed to create payment order')
       }
 
-      // Clear local inputs
-      setSelectedDate('')
-      setSelectedBatch('')
-      setSelectedTimeSlot('')
-      setStudentName('')
-      setStudentEmail('')
-      setStudentPhone('')
-      setShowPayment(false)
-      setShowBookingModal(false)
+      // Open official Razorpay Checkout SDK
+      const Razorpay = (window as any).Razorpay
+      if (!Razorpay) {
+        setFormError('Razorpay Checkout SDK is loading. Please try again.')
+        setIsBooking(false)
+        return
+      }
 
-      // Redirect to Success Page with parameters
-      const queryParams = new URLSearchParams({
-        bookingId: data.booking.id,
-        courseName: data.booking.courseName,
-        paymentId: 'DirectBooking',
-        amount: String(data.booking.amount || course.price),
-        paymentDate: new Date().toLocaleString(),
-        studentEmail: data.booking.studentEmail,
-        instructorName: data.booking.instructor,
-        courseDuration: '3 Months',
-        bookedSlot: `${data.booking.date} at ${data.booking.timeSlot} (${data.booking.batchTiming})`,
-        expectedStartDate: data.booking.date
-      })
+      const options = {
+        key: orderData.key,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: '2nd Inversion Musical School',
+        description: `Class Booking: ${course.title}`,
+        order_id: orderData.id,
+        prefill: {
+          name: studentName,
+          email: studentEmail,
+          contact: studentPhone
+        },
+        theme: { color: '#FF6FAF' },
+        handler: async function (response: any) {
+          await startProcessingAndVerify({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature
+          })
+        },
+        modal: {
+          ondismiss: function () {
+            setIsBooking(false)
+          }
+        }
+      }
 
-      window.location.href = `/payment/success?${queryParams.toString()}`
-
+      const rzp = new Razorpay(options)
+      rzp.open()
     } catch (err: any) {
-      console.error('Booking submission error:', err)
-      alert(err.message || 'Could not process booking request.')
-    } finally {
+      console.error('Booking payment error:', err)
+      setFormError(err.message || 'Could not process booking payment request.')
       setIsBooking(false)
     }
   }
@@ -704,6 +725,12 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                 <p className="text-xs text-slate-500 font-semibold">Please verify your selection</p>
               </div>
 
+              {formError && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-semibold text-center">
+                  {formError}
+                </div>
+              )}
+
               <div className="p-5 rounded-[20px] bg-[#FAFBFF] border border-gray-100">
                 <div className="space-y-3.5 text-xs">
                   <div className="flex justify-between items-center">
@@ -755,64 +782,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
         </div>
       )}
 
-      {/* Mock Razorpay Checkout Modal for sandbox testing */}
-      {showMockPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-md rounded-[24px] bg-[#0F1E4A] text-white shadow-2xl p-8 border border-blue-500/20">
-            <div className="text-center space-y-6">
-              <div className="flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full bg-blue-600/20 border border-blue-500 flex items-center justify-center mb-4">
-                  <CreditCard className="w-8 h-8 text-blue-400 animate-pulse" />
-                </div>
-                <h3 className="text-xl font-bold">Razorpay Sandbox</h3>
-                <p className="text-xs text-blue-200 mt-1">Simulated Offline Payment System</p>
-              </div>
 
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-left text-xs space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Order ID:</span>
-                  <span className="font-mono text-slate-200">{mockOrderId}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Student:</span>
-                  <span className="font-semibold text-slate-200">{studentName} ({studentEmail})</span>
-                </div>
-                <div className="flex justify-between border-t border-white/10 pt-3 text-sm">
-                  <span className="text-slate-400">Amount:</span>
-                  <span className="font-black text-blue-400">₹{course.price.toLocaleString('en-IN')}</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <button
-                  onClick={() => handleVerifyMockPayment('Success')}
-                  disabled={isBooking}
-                  className="w-full py-3.5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                >
-                  {isBooking ? 'Processing...' : 'Simulate Payment Success'}
-                </button>
-                <button
-                  onClick={() => handleVerifyMockPayment('Failed')}
-                  disabled={isBooking}
-                  className="w-full py-3 bg-red-600/10 border border-red-500/30 text-red-400 font-bold rounded-2xl hover:bg-red-600/20 active:scale-[0.98] transition-all"
-                >
-                  Simulate Payment Failure
-                </button>
-                <button
-                  onClick={() => {
-                    setShowMockPaymentModal(false)
-                    setIsBooking(false)
-                  }}
-                  disabled={isBooking}
-                  className="w-full py-2.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
-                >
-                  Cancel Payment
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       {/* Premium Full-Screen Processing Overlay */}
       {showProcessingOverlay && (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md text-white animate-fadeIn">

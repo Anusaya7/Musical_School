@@ -51,15 +51,20 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
     }
   }, [formData.classId, coursesList])
 
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMessage(null)
     if (!formData.name || !formData.email || !formData.phone || !formData.classId) {
-      alert('Please fill in all required fields.')
+      setErrorMessage('Please fill in all required fields.')
       return
     }
 
+    setIsSubmitting(true)
     const selectedCourse = selectedCourseInfo || coursesList.find((c: any) => c.id === formData.classId)
-    const amount = selectedCourse ? selectedCourse.price * 100 : 499900
+    const amount = selectedCourse ? selectedCourse.price * 100 : 350000
 
     try {
       const res = await fetch('/api/payment/create-order', {
@@ -90,14 +95,16 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
 
       const orderData = await res.json()
       if (!orderData.success) {
-        const errorMsg = typeof orderData.error === 'object' ? JSON.stringify(orderData.error) : (orderData.error || 'Failed to create payment order.')
-        alert(errorMsg)
+        const errStr = typeof orderData.error === 'object' ? JSON.stringify(orderData.error) : (orderData.error || 'Failed to create payment order.')
+        setErrorMessage(errStr)
+        setIsSubmitting(false)
         return
       }
 
       const Razorpay = (window as any).Razorpay
       if (!Razorpay) {
-        alert('Razorpay Checkout SDK is loading. Please try again in a moment.')
+        setErrorMessage('Razorpay Checkout SDK is loading. Please try again in a moment.')
+        setIsSubmitting(false)
         return
       }
 
@@ -115,21 +122,45 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
         },
         theme: { color: '#5EA8FF' },
         handler: async function (response: any) {
-          const verifyRes = await fetch('/api/payment/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              orderData
+          try {
+            const verifyRes = await fetch('/api/payment/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderData: {
+                  amount: selectedCourse?.price || 3500,
+                  notes: {
+                    purchaseType: 'booking',
+                    studentName: formData.name,
+                    studentEmail: formData.email,
+                    studentPhone: formData.phone,
+                    courseId: selectedCourse?.courseId || selectedCourse?.id || formData.classId,
+                    courseName: selectedCourse?.courseTitle || selectedCourse?.title || 'Music Course Session',
+                    date: new Date().toISOString().split('T')[0],
+                    timeSlot: '10:00 AM - 11:00 AM',
+                    batchTiming: 'Morning'
+                  }
+                }
+              })
             })
-          })
-          const verifyData = await verifyRes.json()
-          if (verifyData.success) {
-            window.location.href = `/payment-success?paymentId=${response.razorpay_payment_id}&orderId=${response.razorpay_order_id}`
-          } else {
-            alert(verifyData.error || 'Payment verification failed.')
+            const verifyData = await verifyRes.json()
+            if (verifyData.success) {
+              window.location.href = `/payment-success?paymentId=${response.razorpay_payment_id}&orderId=${response.razorpay_order_id}`
+            } else {
+              setErrorMessage(verifyData.error || 'Payment verification failed.')
+              setIsSubmitting(false)
+            }
+          } catch (vErr: any) {
+            setErrorMessage(vErr.message || 'Payment verification failed.')
+            setIsSubmitting(false)
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setIsSubmitting(false)
           }
         }
       }
@@ -138,7 +169,8 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
       rzp.open()
     } catch (err: any) {
       console.error('Booking payment error:', err)
-      alert('Payment processing error. Please try again.')
+      setErrorMessage(err.message || 'Payment processing error. Please try again.')
+      setIsSubmitting(false)
     }
   }
 
@@ -304,20 +336,30 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
               />
             </div>
 
+            {errorMessage && (
+              <div className="p-4 rounded-[14px] bg-red-50 border border-red-200 text-red-600 text-sm font-semibold text-center">
+                {errorMessage}
+              </div>
+            )}
+
             <button
               type="submit"
-              className="btn-premium-base btn-premium-submit w-full h-[60px] text-white font-bold text-[18px] tracking-[0.3px] flex items-center justify-center gap-2"
+              disabled={isSubmitting}
+              className="btn-premium-base btn-premium-submit w-full h-[60px] text-white font-bold text-[18px] tracking-[0.3px] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span className="relative z-10">Submit Booking Request</span>
-              <svg
-                className="w-5 h-5 relative z-10 transition-transform duration-300 ease-out group-hover/btn:translate-x-[6px] text-current"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={3}
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
+              {isSubmitting && <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin relative z-10" />}
+              <span className="relative z-10">{isSubmitting ? 'Processing...' : 'Submit Booking Request'}</span>
+              {!isSubmitting && (
+                <svg
+                  className="w-5 h-5 relative z-10 transition-transform duration-300 ease-out group-hover/btn:translate-x-[6px] text-current"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={3}
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              )}
             </button>
 
             {/* Trust Section */}

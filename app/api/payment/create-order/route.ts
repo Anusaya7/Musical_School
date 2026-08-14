@@ -1,23 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Razorpay from 'razorpay'
+import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
-
-function isMockMode() {
-  if (process.env.NODE_ENV === 'production') {
-    return false
-  }
-  const keyId = process.env.RAZORPAY_KEY_ID
-  const keySecret = process.env.RAZORPAY_KEY_SECRET
-  return (
-    !keyId ||
-    !keySecret ||
-    keyId.includes('your_key') ||
-    keyId === 'rzp_test_your_key_here' ||
-    keySecret.includes('your_razorpay') ||
-    keySecret === 'your_razorpay_secret_key'
-  )
-}
 
 export async function POST(request: NextRequest) {
   let bodyData: any = {}
@@ -25,39 +10,88 @@ export async function POST(request: NextRequest) {
     bodyData = await request.json()
     const { amount, currency = 'INR', receipt, notes } = bodyData
 
-    const parsedAmount = Math.round(Number(amount))
+    let parsedAmount = Math.round(Number(amount))
+    const courseId = notes?.courseId || bodyData?.courseId
+    const courseIds = notes?.courseIds || bodyData?.courseIds
+    const purchaseType = notes?.purchaseType || bodyData?.purchaseType
+    const planType = notes?.plan || bodyData?.plan
 
-    if (!parsedAmount || isNaN(parsedAmount) || parsedAmount <= 0) {
+    // Secure price calculation on the server side (never trust client amount)
+    if (purchaseType === 'plan' || planType) {
+      const planStr = String(planType || '').toLowerCase()
+      if (planStr.includes('lifetime')) {
+        parsedAmount = 999900 // ₹9,999 in paise
+      } else if (planStr.includes('yearly') || planStr.includes('1-year') || planStr.includes('pro')) {
+        parsedAmount = 299900 // ₹2,999 in paise
+      }
+    } else if (courseIds && Array.isArray(courseIds)) {
+      const coursesRecord = await prisma.course.findMany({
+        where: { id: { in: courseIds } }
+      })
+      if (coursesRecord.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'None of the requested courses exist' },
+          { status: 404 }
+        )
+      }
+      const dbTotal = coursesRecord.reduce((sum, c) => sum + c.price, 0)
+      parsedAmount = Math.round(dbTotal * 100)
+    } else if (courseId) {
+      const courseRecord = await prisma.course.findUnique({
+        where: { id: courseId }
+      })
+      if (!courseRecord) {
+        return NextResponse.json(
+          { success: false, error: 'The requested course does not exist' },
+          { status: 404 }
+        )
+      }
+      
+      const isTrial = notes?.purchaseType === 'booking' && (parsedAmount === 0 || !amount)
+      if (!isTrial) {
+        parsedAmount = Math.round(courseRecord.price * 100)
+      }
+    }
+
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
       return NextResponse.json(
-        { success: false, error: 'Amount must be a positive integer in paise (e.g. 499900 for ₹4999)' },
+        { success: false, error: 'Amount must be a positive integer in paise (e.g. 350000 for ₹3500)' },
         { status: 400 }
       )
     }
 
     const receiptId = receipt || `rcpt_${Date.now()}`
 
-    console.log('Creating Razorpay Order:', {
+    const keyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
+    const keySecret = process.env.RAZORPAY_KEY_SECRET
+
+    // Check if configuration credentials are empty or placeholders
+    const isKeysPlaceholder =
+      !keyId ||
+      !keySecret ||
+      keyId.includes('your_key') ||
+      keyId === 'rzp_test_your_key_here' ||
+      keySecret.includes('your_razorpay') ||
+      keySecret === 'your_razorpay_secret_key' ||
+      keySecret === 'abc123xyzSecretKeyHere';
+
+    if (isKeysPlaceholder) {
+      console.error('[PAYMENT] Razorpay credentials are not configured or are placeholders!')
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Razorpay Test Mode is not configured. Please configure your actual Razorpay test credentials in environment variables.'
+        },
+        { status: 500 }
+      )
+    }
+
+    console.log('Creating Real Razorpay Order:', {
       amount: parsedAmount,
       currency,
       receipt: receiptId,
       notes
     })
-
-    const keyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
-    const keySecret = process.env.RAZORPAY_KEY_SECRET
-
-    if (isMockMode()) {
-      console.log('[RAZORPAY MOCK MODE] Creating simulated order for receipt:', receiptId)
-      return NextResponse.json({
-        success: true,
-        key: keyId,
-        amount: parsedAmount,
-        currency,
-        id: `order_mock_${Date.now()}`,
-        notes,
-        isMock: true
-      })
-    }
 
     try {
       const razorpay = new Razorpay({
@@ -99,25 +133,6 @@ export async function POST(request: NextRequest) {
         apiError?.description ||
         apiError?.message ||
         (typeof apiError === 'object' ? JSON.stringify(apiError) : String(apiError))
-
-      // Fallback to test mode order if Razorpay returns authentication error for placeholder credentials
-      if (
-        process.env.NODE_ENV !== 'production' &&
-        (detailedMessage.includes('Authentication failed') ||
-         detailedMessage.includes('BAD_REQUEST_ERROR') ||
-         apiError?.statusCode === 401)
-      ) {
-        console.log('[RAZORPAY FALLBACK] Authentication failed with provided keys, returning test order for local testing.')
-        return NextResponse.json({
-          success: true,
-          key: keyId,
-          amount: parsedAmount,
-          currency,
-          id: `order_mock_${Date.now()}`,
-          notes,
-          isMock: true
-        })
-      }
 
       return NextResponse.json(
         {

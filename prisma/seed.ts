@@ -371,14 +371,14 @@ async function main() {
   console.log('Seeding categories and courses catalog...')
 
   const instrumentsData = [
-    { id: 'piano', name: 'Piano', slug: 'piano', icon: 'M9 19V6l12-3v13', description: 'Master classical to modern piano techniques.', status: 'ACTIVE', isFeatured: true, image: '/instruments/piano.jpg', coursesCount: 3, startingPrice: 4999, levels: ['Beginner', 'Intermediate', 'Advanced'] },
-    { id: 'guitar', name: 'Guitar', slug: 'guitar', icon: 'M9 19V6l12-3v13', description: 'Learn acoustic, electric, and bass guitar.', status: 'ACTIVE', isFeatured: true, image: '/instruments/guitar.jpg', coursesCount: 3, startingPrice: 4999, levels: ['Beginner', 'Intermediate', 'Advanced'] },
-    { id: 'drums', name: 'Drums', slug: 'drums', icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z', description: 'Develop rhythm, timing, and drumming patterns.', status: 'ACTIVE', isFeatured: false, image: '/instruments/drums.jpg', coursesCount: 3, startingPrice: 4999, levels: ['Beginner', 'Intermediate', 'Advanced'] },
-    { id: 'vocals', name: 'Vocals', slug: 'vocals', icon: 'M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7', description: 'Train your voice and build confidence.', status: 'ACTIVE', isFeatured: false, image: '/instruments/vocals.jpg', coursesCount: 3, startingPrice: 4999, levels: ['Beginner', 'Intermediate', 'Advanced'] },
-    { id: 'violin', name: 'Violin', slug: 'violin', icon: 'M9 19V6l12-3v13', description: 'Learn bowing, posture, and beautiful classical repertoire.', status: 'ACTIVE', isFeatured: false, image: '/instruments/violin.jpg', coursesCount: 3, startingPrice: 4999, levels: ['Beginner', 'Intermediate', 'Advanced'] },
-    { id: 'music-theory', name: 'Music Theory', slug: 'music-theory', icon: 'M12 6.253v13', description: 'Understand notes, reading, notation, and harmony.', status: 'ACTIVE', isFeatured: false, image: '/instruments/music-theory.jpg', coursesCount: 3, startingPrice: 4999, levels: ['Beginner', 'Intermediate', 'Advanced'] },
-    { id: 'bass-guitar', name: 'Bass Guitar', slug: 'bass-guitar', icon: 'M9 19V6l12-3v13', description: 'Lay the low end foundation with proper techniques.', status: 'ACTIVE', isFeatured: false, image: '/instruments/bass-guitar.jpg', coursesCount: 3, startingPrice: 4999, levels: ['Beginner', 'Intermediate', 'Advanced'] },
-    { id: 'saxophone', name: 'Saxophone', slug: 'saxophone', icon: 'M9 19V6l12-3v13', description: 'Breathe life into jazz, blues, and classical solos.', status: 'COMING_SOON', isFeatured: false, isUpcoming: true, image: '/instruments/saxophone.jpg', coursesCount: 0, startingPrice: 4999, levels: [] }
+    { id: 'piano', name: 'Piano', slug: 'piano', icon: 'M9 19V6l12-3v13', description: 'Master classical to modern piano techniques.', status: 'ACTIVE', isFeatured: true, image: '/instruments/piano.jpg', coursesCount: 3, startingPrice: 3500, levels: ['Beginner', 'Intermediate', 'Advanced'] },
+    { id: 'guitar', name: 'Guitar', slug: 'guitar', icon: 'M9 19V6l12-3v13', description: 'Learn acoustic, electric, and bass guitar.', status: 'ACTIVE', isFeatured: true, image: '/instruments/guitar.jpg', coursesCount: 3, startingPrice: 3500, levels: ['Beginner', 'Intermediate', 'Advanced'] },
+    { id: 'drums', name: 'Drums', slug: 'drums', icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z', description: 'Develop rhythm, timing, and drumming patterns.', status: 'ACTIVE', isFeatured: false, image: '/instruments/drums.jpg', coursesCount: 3, startingPrice: 3500, levels: ['Beginner', 'Intermediate', 'Advanced'] },
+    { id: 'vocals', name: 'Vocals', slug: 'vocals', icon: 'M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7', description: 'Train your voice and build confidence.', status: 'ACTIVE', isFeatured: false, image: '/instruments/vocals.jpg', coursesCount: 3, startingPrice: 3500, levels: ['Beginner', 'Intermediate', 'Advanced'] },
+    { id: 'violin', name: 'Violin', slug: 'violin', icon: 'M9 19V6l12-3v13', description: 'Learn bowing, posture, and beautiful classical repertoire.', status: 'ACTIVE', isFeatured: false, image: '/instruments/violin.jpg', coursesCount: 3, startingPrice: 3500, levels: ['Beginner', 'Intermediate', 'Advanced'] },
+    { id: 'music-theory', name: 'Music Theory', slug: 'music-theory', icon: 'M12 6.253v13', description: 'Understand notes, reading, notation, and harmony.', status: 'ACTIVE', isFeatured: false, image: '/instruments/music-theory.jpg', coursesCount: 3, startingPrice: 3500, levels: ['Beginner', 'Intermediate', 'Advanced'] },
+    { id: 'bass-guitar', name: 'Bass Guitar', slug: 'bass-guitar', icon: 'M9 19V6l12-3v13', description: 'Lay the low end foundation with proper techniques.', status: 'ACTIVE', isFeatured: false, image: '/instruments/bass-guitar.jpg', coursesCount: 3, startingPrice: 3500, levels: ['Beginner', 'Intermediate', 'Advanced'] },
+    { id: 'saxophone', name: 'Saxophone', slug: 'saxophone', icon: 'M9 19V6l12-3v13', description: 'Breathe life into jazz, blues, and classical solos.', status: 'COMING_SOON', isFeatured: false, isUpcoming: true, image: '/instruments/saxophone.jpg', coursesCount: 0, startingPrice: 3500, levels: [] }
   ]
 
   for (const instData of instrumentsData) {
@@ -412,7 +412,7 @@ async function main() {
         title: `${instData.name} Beginner`,
         slug: `${instData.slug}-beginner`,
         duration: '3 Months',
-        price: 4999,
+        price: 3500,
         lessons: 24,
         projects: 3,
         assignments: 5,
@@ -425,7 +425,7 @@ async function main() {
         title: `${instData.name} Intermediate`,
         slug: `${instData.slug}-intermediate`,
         duration: '4 Months',
-        price: 6999,
+        price: (instData.id === 'piano' || instData.id === 'guitar') ? 3999 : 4000,
         lessons: 32,
         projects: 4,
         assignments: 7,
@@ -438,7 +438,7 @@ async function main() {
         title: `${instData.name} Advanced`,
         slug: `${instData.slug}-advanced`,
         duration: '6 Months',
-        price: 9999,
+        price: 4500,
         lessons: 48,
         projects: 6,
         assignments: 10,

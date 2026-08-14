@@ -226,7 +226,7 @@ export default function BookingModal({ isOpen, onClose, classSchedule, onBooking
       selectedPill: 'bg-[#FF6FAF] border-[#FF6FAF] text-white',
       unselectedPill: 'bg-white border-[#FF6FAF] text-[#FF6FAF] hover:bg-[#FFD6E8]/20',
       activeRing: 'focus:ring-[#FF6FAF]/40',
-      priceVal: 4999
+      priceVal: 3500
     }
   }, [classSchedule])
 
@@ -247,9 +247,12 @@ export default function BookingModal({ isOpen, onClose, classSchedule, onBooking
 
   const activeTimeSlots = getActiveTimeSlots()
 
+  const [errorMessage, setErrorMessage] = useState('')
+
   const handleBooking = async () => {
+    setErrorMessage('')
     if (!classSchedule || !selectedDate || !selectedBatch || !selectedTimeSlot || !studentName || !studentEmail) {
-      alert('Please fill all fields')
+      setErrorMessage('Please fill in all required fields.')
       return
     }
 
@@ -289,7 +292,7 @@ export default function BookingModal({ isOpen, onClose, classSchedule, onBooking
       setStudentEmail('')
     } catch (error: any) {
       console.error('Booking failed:', error)
-      alert(error.message || 'Booking failed. Please try again.')
+      setErrorMessage(error.message || 'Booking failed. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -382,6 +385,11 @@ export default function BookingModal({ isOpen, onClose, classSchedule, onBooking
               </div>
             ) : (
               <div className="space-y-6">
+                {errorMessage && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-xs font-semibold rounded-xl animate-fade-in">
+                    {errorMessage}
+                  </div>
+                )}
                 {/* Step 1: Calendar Date Selection */}
                 <div>
                   <label className="block text-sm font-bold text-slate-500 mb-2.5">

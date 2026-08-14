@@ -105,7 +105,7 @@ export default function CartPage() {
                       
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-2xl font-bold text-primary">{item.price}</p>
+                          <p className="text-2xl font-bold text-primary">{formatPrice(item.price)}</p>
                         </div>
                         <button
                           onClick={() => removeItem(item.id)}

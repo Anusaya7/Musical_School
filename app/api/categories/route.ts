@@ -13,7 +13,7 @@ const categorySchema = z.object({
   icon: z.string().optional().nullable(),
   status: z.enum(['Active', 'Upcoming', 'Inactive']),
   isVisible: z.boolean().optional().default(true),
-  startingPrice: z.number().optional().default(4999),
+  startingPrice: z.number().optional().default(3500),
   levels: z.array(z.string()).optional().default(['Beginner', 'Intermediate', 'Advanced'])
 })
 

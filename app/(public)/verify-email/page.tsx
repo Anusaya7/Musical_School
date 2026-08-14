@@ -111,9 +111,8 @@ function VerifyEmailContent() {
 
       if (res.ok && data.success) {
         setStatus('idle')
-        setMessage('')
+        setMessage('A new 6-digit OTP has been sent to your email address!')
         setResendCooldown(60) // 60 seconds cooldown
-        alert('A new 6-digit OTP has been sent to your email address!')
       } else {
         setStatus('error')
         setMessage(data.error || 'Failed to resend verification code. Please try again.')

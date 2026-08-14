@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useCart } from '@/contexts/CartContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useState, useEffect } from 'react'
@@ -9,10 +10,46 @@ import Image from "next/image";
 import logoEmblem from "@/public/images/logo_emblem.png"; // Premium transparent logo emblem
 
 export default function Header() {
+  const pathname = usePathname()
   const { itemCount } = useCart()
   const { theme, toggleTheme } = useTheme()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  const isActive = (path: string) => {
+    if (path === '/') return pathname === '/'
+    return pathname.startsWith(path)
+  }
+
+  const getLinkClass = (path: string) => {
+    const active = isActive(path)
+    if (theme === 'dark') {
+      return `inline-flex items-center px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+        active 
+          ? 'bg-purple-900/40 text-purple-300 border-b-2 border-purple-500 rounded-b-none shadow-sm' 
+          : 'text-gray-300 hover:bg-purple-900/30 hover:text-purple-300'
+      }`
+    } else {
+      return `inline-flex items-center px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+        active 
+          ? 'bg-purple-50 text-purple-600 border-b-2 border-purple-600 rounded-b-none shadow-sm' 
+          : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
+      }`
+    }
+  }
+
+  const getMobileLinkClass = (path: string) => {
+    const active = isActive(path)
+    if (theme === 'dark') {
+      return `block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+        active ? 'bg-purple-900/50 text-purple-350 font-bold border-l-4 border-purple-500' : 'text-gray-300 hover:bg-purple-900/30'
+      }`
+    } else {
+      return `block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${
+        active ? 'bg-purple-100/50 text-purple-600 font-bold border-l-4 border-purple-600' : 'text-gray-700 hover:bg-purple-50'
+      }`
+    }
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -82,28 +119,16 @@ export default function Header() {
           <nav className="hidden xl:flex items-center gap-3 flex-nowrap">
             {/* Main Navigation Links */}
             <div className="flex gap-1">
-              <Link href="/" className={`inline-flex items-center px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
-                  ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
-                  : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
-                }`}>
+              <Link href="/" className={getLinkClass('/')}>
                 Home
               </Link>
-              <Link href="/courses" className={`inline-flex items-center px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
-                  ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
-                  : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
-                }`}>
+              <Link href="/courses" className={getLinkClass('/courses')}>
                 Courses
               </Link>
-              <Link href="/about" className={`inline-flex items-center px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
-                  ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
-                  : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
-                }`}>
+              <Link href="/about" className={getLinkClass('/about')}>
                 About
               </Link>
-              <Link href="/contact" className={`inline-flex items-center px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
-                  ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
-                  : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
-                }`}>
+              <Link href="/contact" className={getLinkClass('/contact')}>
                 Contact
               </Link>
             </div>
@@ -205,7 +230,7 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className={`lg:hidden inline-flex items-center justify-center p-3 rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
+            className={`xl:hidden inline-flex items-center justify-center p-3 rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
                 ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
                 : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
               }`}
@@ -224,30 +249,18 @@ export default function Header() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className={`lg:hidden border-t ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'} mt-4`}>
+          <div className={`xl:hidden border-t ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'} mt-4`}>
             <div className="py-4 space-y-2">
-              <Link href="/" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
-                  ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
-                  : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
-                }`}>
+              <Link href="/" className={getMobileLinkClass('/')}>
                 Home
               </Link>
-              <Link href="/courses" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
-                  ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
-                  : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
-                }`}>
+              <Link href="/courses" className={getMobileLinkClass('/courses')}>
                 Courses
               </Link>
-              <Link href="/about" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
-                  ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
-                  : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
-                }`}>
+              <Link href="/about" className={getMobileLinkClass('/about')}>
                 About
               </Link>
-              <Link href="/contact" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
-                  ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
-                  : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
-                }`}>
+              <Link href="/contact" className={getMobileLinkClass('/contact')}>
                 Contact
               </Link>
 

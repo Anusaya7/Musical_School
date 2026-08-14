@@ -138,12 +138,12 @@ PianoSVG.displayName = 'PianoSVG'
 
 interface CourseCardProps {
   course: any
-  isInCartAlready: boolean
+  isInCart: boolean
   onBookClick: (course: any) => void
   onAddToCart: (course: any) => void
 }
 
-const CourseCard = memo(({ course, isInCartAlready, onBookClick, onAddToCart }: CourseCardProps) => {
+const CourseCard = memo(({ course, isInCart, onBookClick, onAddToCart }: CourseCardProps) => {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [showSpinner, setShowSpinner] = useState(false)
@@ -264,11 +264,11 @@ const CourseCard = memo(({ course, isInCartAlready, onBookClick, onAddToCart }: 
             <button
               onClick={() => onAddToCart(course)}
               className={`btn-premium-base w-12 h-12 ${
-                isInCartAlready 
+                isInCart 
                   ? 'bg-green-500 border-green-500 text-white shadow-sm shadow-green-200' 
                   : 'btn-premium-secondary'
               }`}
-              title={isInCartAlready ? 'Added to Cart' : 'Add to Cart'}
+              title={isInCart ? 'Added to Cart' : 'Add to Cart'}
             >
               <ShoppingCart className="w-5 h-5" />
             </button>
@@ -333,14 +333,21 @@ export default function FeaturedCourses() {
   const { addItem, isInCart } = useCart()
   const [selectedClass, setSelectedClass] = useState<any>(null)
   const [showBookingModal, setShowBookingModal] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [errorOccurred, setErrorOccurred] = useState(false)
   const [courses, setCourses] = useState<any[]>([])
   
   const [showSuccess, setShowSuccess] = useState(false)
   const [booking, setBooking] = useState<any>(null)
 
-  useEffect(() => {
+  const fetchCoursesData = useCallback(() => {
+    setLoading(true)
+    setErrorOccurred(false)
     fetch('/api/courses')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('API failed')
+        return res.json()
+      })
       .then(data => {
         if (Array.isArray(data)) {
           const pianoList = data
@@ -357,10 +364,21 @@ export default function FeaturedCourses() {
               }
             })
           setCourses(pianoList)
+        } else {
+          throw new Error('Not an array')
         }
+        setLoading(false)
       })
-      .catch(err => console.error('Error fetching courses:', err))
+      .catch(err => {
+        console.error('Error fetching courses:', err)
+        setErrorOccurred(true)
+        setLoading(false)
+      })
   }, [])
+
+  useEffect(() => {
+    fetchCoursesData()
+  }, [fetchCoursesData])
 
   const handleBookClick = useCallback((course: any) => {
     setSelectedClass({
@@ -402,26 +420,63 @@ export default function FeaturedCourses() {
         {/* Section Header */}
         <div className="text-center mb-16">
           <h2 className="text-[28px] md:text-3xl font-bold text-[#0F1E4A]">
-            Showing {courses.length} Piano courses
+            {loading ? 'Loading courses...' : `Showing ${courses.length} Piano courses`}
           </h2>
         </div>
 
-        {/* Course Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {courses.map((course) => {
-            const isInCartAlready = isInCart(course.id)
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <div key={idx} className="bg-white border border-[#DCE8F8] rounded-[24px] p-7 flex flex-col justify-between h-[450px]">
+                <div className="space-y-4">
+                  <div className="h-6 w-24 bg-slate-200 animate-pulse rounded-full"></div>
+                  <div className="h-8 w-48 bg-slate-200 animate-pulse rounded-md"></div>
+                  <div className="h-4 w-32 bg-slate-200 animate-pulse rounded-md"></div>
+                  <div className="h-16 w-full bg-slate-200 animate-pulse rounded-md"></div>
+                </div>
+                <div className="border-t border-gray-100 pt-5 space-y-4">
+                  <div className="h-8 w-32 bg-slate-200 animate-pulse rounded-md"></div>
+                  <div className="h-12 w-full bg-slate-200 animate-pulse rounded-full"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : errorOccurred ? (
+          <div className="text-center bg-white border-2 border-red-500/10 rounded-[28px] py-14 px-6 max-w-md mx-auto shadow-md">
+            <div className="w-14 h-14 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">⚠️</div>
+            <h3 className="text-lg font-bold text-[#10234F] mb-2">Unable to load courses</h3>
+            <p className="text-xs text-slate-500 mb-6 font-semibold">We couldn't connect to the database. Please try again.</p>
+            <button onClick={fetchCoursesData} className="btn-premium-base btn-premium-gradient h-10 px-6 text-xs font-bold">
+              Retry Loading
+            </button>
+          </div>
+        ) : courses.length === 0 ? (
+          <div className="text-center bg-white border border-[#DCE8F8] rounded-[28px] py-14 px-6 max-w-md mx-auto shadow-sm">
+            <div className="w-14 h-14 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">🎹</div>
+            <h3 className="text-lg font-bold text-[#10234F] mb-2">No courses available yet</h3>
+            <p className="text-xs text-slate-500 font-semibold mb-6">Check back later or contact admin for updates.</p>
+            <button onClick={fetchCoursesData} className="btn-premium-base btn-premium-secondary h-10 px-6 text-xs font-bold">
+              Refresh
+            </button>
+          </div>
+        ) : (
+          /* Course Cards Grid */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {courses.map((course) => {
+              const isInCartAlready = isInCart(course.id)
 
-            return (
-              <CourseCard
-                key={course.id}
-                course={course}
-                isInCartAlready={isInCartAlready}
-                onBookClick={handleBookClick}
-                onAddToCart={handleAddToCart}
-              />
-            )
-          })}
-        </div>
+              return (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  isInCart={isInCartAlready}
+                  onBookClick={handleBookClick}
+                  onAddToCart={handleAddToCart}
+                />
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Booking Calendar Modal */}

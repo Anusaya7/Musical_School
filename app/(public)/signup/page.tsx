@@ -146,8 +146,11 @@ export default function SignupPage() {
     }
   }
 
+  const [resendNotice, setResendNotice] = useState('')
+
   const handleResendCode = () => {
-    alert('A new 6-digit verification code has been sent to ' + formData.email)
+    setResendNotice('A new 6-digit verification code has been sent to ' + formData.email)
+    setTimeout(() => setResendNotice(''), 4000)
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -349,6 +352,11 @@ export default function SignupPage() {
                 </div>
               ) : (
                 <form onSubmit={handleVerifyCode} className="w-full mt-6 space-y-4">
+                  {resendNotice && (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold">
+                      {resendNotice}
+                    </div>
+                  )}
                   {verificationError && (
                     <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs font-semibold">
                       {verificationError}

@@ -24,7 +24,7 @@ export default auth((req) => {
       return Response.redirect(new URL("/verify-email", nextUrl))
     }
     
-    if (isAdminRoute && role !== "SUPER_ADMIN") {
+    if (isAdminRoute && role !== "SUPER_ADMIN" && role !== "ADMIN") {
       return Response.redirect(new URL("/unauthorized", nextUrl))
     }
     if (isInstructorRoute && role !== "SUPER_ADMIN" && role !== "ADMIN" && role !== "INSTRUCTOR") {

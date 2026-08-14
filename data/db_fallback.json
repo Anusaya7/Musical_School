@@ -5,7 +5,7 @@
       "title": "Piano Beginner",
       "category": "piano",
       "level": "Beginner",
-      "price": 4999,
+      "price": 3500,
       "instructor": "Ajinkya Amrule",
       "duration": "3 Months",
       "rating": 4.8,
@@ -40,14 +40,15 @@
       "lessons": 24,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3199
     },
     {
       "id": "piano-intermediate",
       "title": "Piano Intermediate",
       "category": "piano",
       "level": "Intermediate",
-      "price": 6999,
+      "price": 4000,
       "instructor": "Ajinkya Amrule",
       "duration": "4 Months",
       "rating": 4.8,
@@ -82,14 +83,15 @@
       "lessons": 36,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3600
     },
     {
       "id": "piano-advanced",
       "title": "Piano Advanced",
       "category": "piano",
       "level": "Advanced",
-      "price": 9999,
+      "price": 4500,
       "instructor": "Ajinkya Amrule",
       "duration": "6 Months",
       "rating": 4.8,
@@ -124,14 +126,15 @@
       "lessons": 48,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3999
     },
     {
       "id": "guitar-beginner",
       "title": "Guitar Beginner",
       "category": "guitar",
       "level": "Beginner",
-      "price": 4999,
+      "price": 3500,
       "instructor": "Ajinkya Amrule",
       "duration": "3 Months",
       "rating": 4.8,
@@ -166,14 +169,15 @@
       "lessons": 24,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3199
     },
     {
       "id": "guitar-intermediate",
       "title": "Guitar Intermediate",
       "category": "guitar",
       "level": "Intermediate",
-      "price": 6999,
+      "price": 4000,
       "instructor": "Ajinkya Amrule",
       "duration": "4 Months",
       "rating": 4.8,
@@ -208,14 +212,15 @@
       "lessons": 36,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3600
     },
     {
       "id": "guitar-advanced",
       "title": "Guitar Advanced",
       "category": "guitar",
       "level": "Advanced",
-      "price": 9999,
+      "price": 4500,
       "instructor": "Ajinkya Amrule",
       "duration": "6 Months",
       "rating": 4.8,
@@ -250,14 +255,15 @@
       "lessons": 48,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3999
     },
     {
       "id": "drums-beginner",
       "title": "Drums Beginner",
       "category": "drums",
       "level": "Beginner",
-      "price": 4999,
+      "price": 3500,
       "instructor": "Ajinkya Amrule",
       "duration": "3 Months",
       "rating": 4.8,
@@ -292,14 +298,15 @@
       "lessons": 24,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3199
     },
     {
       "id": "drums-intermediate",
       "title": "Drums Intermediate",
       "category": "drums",
       "level": "Intermediate",
-      "price": 6999,
+      "price": 4000,
       "instructor": "Ajinkya Amrule",
       "duration": "4 Months",
       "rating": 4.8,
@@ -334,14 +341,15 @@
       "lessons": 36,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3600
     },
     {
       "id": "drums-advanced",
       "title": "Drums Advanced",
       "category": "drums",
       "level": "Advanced",
-      "price": 9999,
+      "price": 4500,
       "instructor": "Ajinkya Amrule",
       "duration": "6 Months",
       "rating": 4.8,
@@ -376,14 +384,15 @@
       "lessons": 48,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3999
     },
     {
       "id": "vocals-beginner",
       "title": "Vocals Beginner",
       "category": "vocals",
       "level": "Beginner",
-      "price": 4999,
+      "price": 3500,
       "instructor": "Ajinkya Amrule",
       "duration": "3 Months",
       "rating": 4.8,
@@ -418,14 +427,15 @@
       "lessons": 24,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3199
     },
     {
       "id": "vocals-intermediate",
       "title": "Vocals Intermediate",
       "category": "vocals",
       "level": "Intermediate",
-      "price": 6999,
+      "price": 4000,
       "instructor": "Ajinkya Amrule",
       "duration": "4 Months",
       "rating": 4.8,
@@ -460,14 +470,15 @@
       "lessons": 36,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3600
     },
     {
       "id": "vocals-advanced",
       "title": "Vocals Advanced",
       "category": "vocals",
       "level": "Advanced",
-      "price": 9999,
+      "price": 4500,
       "instructor": "Ajinkya Amrule",
       "duration": "6 Months",
       "rating": 4.8,
@@ -502,14 +513,15 @@
       "lessons": 48,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3999
     },
     {
       "id": "violin-beginner",
       "title": "Violin Beginner",
       "category": "violin",
       "level": "Beginner",
-      "price": 4999,
+      "price": 3500,
       "instructor": "Ajinkya Amrule",
       "duration": "3 Months",
       "rating": 4.8,
@@ -544,14 +556,15 @@
       "lessons": 24,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3199
     },
     {
       "id": "violin-intermediate",
       "title": "Violin Intermediate",
       "category": "violin",
       "level": "Intermediate",
-      "price": 6999,
+      "price": 4000,
       "instructor": "Ajinkya Amrule",
       "duration": "4 Months",
       "rating": 4.8,
@@ -586,14 +599,15 @@
       "lessons": 36,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3600
     },
     {
       "id": "violin-advanced",
       "title": "Violin Advanced",
       "category": "violin",
       "level": "Advanced",
-      "price": 9999,
+      "price": 4500,
       "instructor": "Ajinkya Amrule",
       "duration": "6 Months",
       "rating": 4.8,
@@ -628,14 +642,15 @@
       "lessons": 48,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3999
     },
     {
       "id": "music-theory-beginner",
       "title": "Music Theory Beginner",
       "category": "music-theory",
       "level": "Beginner",
-      "price": 4999,
+      "price": 3500,
       "instructor": "Ajinkya Amrule",
       "duration": "3 Months",
       "rating": 4.8,
@@ -670,14 +685,15 @@
       "lessons": 24,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3199
     },
     {
       "id": "music-theory-intermediate",
       "title": "Music Theory Intermediate",
       "category": "music-theory",
       "level": "Intermediate",
-      "price": 6999,
+      "price": 4000,
       "instructor": "Ajinkya Amrule",
       "duration": "4 Months",
       "rating": 4.8,
@@ -712,14 +728,15 @@
       "lessons": 36,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3600
     },
     {
       "id": "music-theory-advanced",
       "title": "Music Theory Advanced",
       "category": "music-theory",
       "level": "Advanced",
-      "price": 9999,
+      "price": 4500,
       "instructor": "Ajinkya Amrule",
       "duration": "6 Months",
       "rating": 4.8,
@@ -754,14 +771,15 @@
       "lessons": 48,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3999
     },
     {
       "id": "bass-guitar-beginner",
       "title": "Bass Guitar Beginner",
       "category": "bass-guitar",
       "level": "Beginner",
-      "price": 4999,
+      "price": 3500,
       "instructor": "Ajinkya Amrule",
       "duration": "3 Months",
       "rating": 4.8,
@@ -796,14 +814,15 @@
       "lessons": 24,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3199
     },
     {
       "id": "bass-guitar-intermediate",
       "title": "Bass Guitar Intermediate",
       "category": "bass-guitar",
       "level": "Intermediate",
-      "price": 6999,
+      "price": 4000,
       "instructor": "Ajinkya Amrule",
       "duration": "4 Months",
       "rating": 4.8,
@@ -838,14 +857,15 @@
       "lessons": 36,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3600
     },
     {
       "id": "bass-guitar-advanced",
       "title": "Bass Guitar Advanced",
       "category": "bass-guitar",
       "level": "Advanced",
-      "price": 9999,
+      "price": 4500,
       "instructor": "Ajinkya Amrule",
       "duration": "6 Months",
       "rating": 4.8,
@@ -880,7 +900,8 @@
       "lessons": 48,
       "projects": 3,
       "assignments": 5,
-      "hasCertificate": true
+      "hasCertificate": true,
+      "discountPrice": 3999
     }
   ],
   "instructors": [
@@ -1025,49 +1046,57 @@
       "id": "piano",
       "name": "Piano",
       "status": "Active",
-      "icon": "M9 19V6l12-3v13"
+      "icon": "M9 19V6l12-3v13",
+      "startingPrice": 3500
     },
     {
       "id": "guitar",
       "name": "Guitar",
       "status": "Active",
-      "icon": "M9 19V6l12-3v13"
+      "icon": "M9 19V6l12-3v13",
+      "startingPrice": 3500
     },
     {
       "id": "drums",
       "name": "Drums",
       "status": "Active",
-      "icon": "M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+      "icon": "M15 12a3 3 0 11-6 0 3 3 0 016 0z",
+      "startingPrice": 3500
     },
     {
       "id": "vocals",
       "name": "Vocals",
       "status": "Active",
-      "icon": "M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7"
+      "icon": "M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7",
+      "startingPrice": 3500
     },
     {
       "id": "violin",
       "name": "Violin",
       "status": "Active",
-      "icon": "M9 19V6l12-3v13"
+      "icon": "M9 19V6l12-3v13",
+      "startingPrice": 3500
     },
     {
       "id": "music-theory",
       "name": "Music Theory",
       "status": "Active",
-      "icon": "M12 6.253v13"
+      "icon": "M12 6.253v13",
+      "startingPrice": 3500
     },
     {
       "id": "bass-guitar",
       "name": "Bass Guitar",
       "status": "Active",
-      "icon": "M9 19V6l12-3v13"
+      "icon": "M9 19V6l12-3v13",
+      "startingPrice": 3500
     },
     {
       "id": "saxophone",
       "name": "Saxophone",
       "status": "Upcoming",
-      "icon": "M9 19V6l12-3v13"
+      "icon": "M9 19V6l12-3v13",
+      "startingPrice": 3500
     }
   ],
   "notifications": [

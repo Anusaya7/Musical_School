@@ -191,7 +191,14 @@ export default function FooterPremium() {
                 </div>
                 <div className="flex items-start space-x-3 text-gray-400">
                   <MapPin className="w-4 h-4 text-purple-400 shrink-0 mt-1" />
-                  <span className="text-xs leading-relaxed">{contactDetails.address || "Sr. No. 56/2/30, House No. B2/30, Kawade Nagar, Lane No. 2, Behind Ganesh Mangal Kendra, Pimple Gurav (New Sangvi), Pune – 411061, Maharashtra, India"}</span>
+                  <a 
+                    href="https://maps.google.com/?q=Sr.+No.+56/2/30,+House+No.+B2/30,+Kawade+Nagar,+Lane+No.+2,+Behind+Ganesh+Mangal+Kendra,+Pimple+Gurav+(New+Sangvi),+Pune+-+411061,+Maharashtra,+India" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs leading-relaxed hover:text-purple-400 transition-colors"
+                  >
+                    {contactDetails.address || "Sr. No. 56/2/30, House No. B2/30, Kawade Nagar, Lane No. 2, Behind Ganesh Mangal Kendra, Pimple Gurav (New Sangvi), Pune – 411061, Maharashtra, India"}
+                  </a>
                 </div>
                 <div className="flex items-center space-x-3 text-gray-400">
                   <Mail className="w-4 h-4 text-purple-400 shrink-0" />

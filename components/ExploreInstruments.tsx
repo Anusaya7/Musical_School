@@ -12,11 +12,20 @@ export default function ExploreInstruments() {
   const [instrumentsList, setInstrumentsList] = useState<any[]>([])
   const [coursesList, setCoursesList] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [errorOccurred, setErrorOccurred] = useState(false)
 
-  useEffect(() => {
+  const fetchInstrumentsData = () => {
+    setLoading(true)
+    setErrorOccurred(false)
     Promise.all([
-      fetch('/api/categories?paginated=false').then(res => res.json()).catch(() => []),
-      fetch('/api/courses').then(res => res.json()).catch(() => [])
+      fetch('/api/categories?paginated=false').then(res => {
+        if (!res.ok) throw new Error('API failed')
+        return res.json()
+      }),
+      fetch('/api/courses').then(res => {
+        if (!res.ok) throw new Error('API failed')
+        return res.json()
+      })
     ]).then(([insts, crss]) => {
       const finalInsts = Array.isArray(insts) && insts.length > 0 && !insts.some(i => i.error) ? insts : DEFAULT_CATEGORIES
       const finalCrss = Array.isArray(crss) ? crss : []
@@ -25,14 +34,21 @@ export default function ExploreInstruments() {
       setLoading(false)
     }).catch(err => {
       console.error('Failed to load instruments or courses:', err)
-      setInstrumentsList(DEFAULT_CATEGORIES)
+      setErrorOccurred(true)
       setLoading(false)
     })
+  }
+
+  useEffect(() => {
+    fetchInstrumentsData()
   }, [])
+
+  const [notifyMsg, setNotifyMsg] = useState<string | null>(null)
 
   const handleExploreCourses = (instrumentId: string, status: string) => {
     if (status === 'Upcoming') {
-      alert("Thanks for your interest! We'll notify you as soon as our Saxophone classes launch.")
+      setNotifyMsg("Thanks for your interest! We'll notify you as soon as these classes launch.")
+      setTimeout(() => setNotifyMsg(null), 4000)
       return
     }
     router.push(`/courses/${instrumentId}`)
@@ -131,7 +147,7 @@ export default function ExploreInstruments() {
     const matchingCourses = coursesList.filter(
       c => c.category?.toLowerCase() === inst.id?.toLowerCase() && !c.isDisabled
     )
-    const startingPrice = inst.startingPrice || (matchingCourses.length > 0 ? Math.min(...matchingCourses.map(c => c.price)) : 4999)
+    const startingPrice = inst.startingPrice || (matchingCourses.length > 0 ? Math.min(...matchingCourses.map(c => c.price)) : 3500)
     
     const lookupId = inst.id?.toLowerCase() || ''
     const normalizedId = lookupId === 'vocals' ? 'vocals'
@@ -158,8 +174,8 @@ export default function ExploreInstruments() {
     return {
       id: inst.id,
       name: inst.name,
-      status: inst.status === 'ACTIVE' ? 'Active' : (inst.status === 'COMING_SOON' ? 'Upcoming' : 'Inactive'),
-      courses: 3,
+      status: inst.status === 'Active' || inst.status === 'ACTIVE' ? 'Active' : (inst.status === 'Upcoming' || inst.status === 'COMING_SOON' ? 'Upcoming' : 'Inactive'),
+      courses: matchingCourses.length,
       levels: uniqueLevels.length > 0 ? uniqueLevels.join(', ') : 'Beginner, Intermediate, Advanced',
       startingPrice,
       icon: '',
@@ -167,11 +183,46 @@ export default function ExploreInstruments() {
     }
   })
 
+  if (errorOccurred) {
+    return (
+      <section className="py-24 bg-[#FAFBFF] text-center font-sans">
+        <div className="container mx-auto px-6 max-w-md bg-white border-2 border-red-100 rounded-[28px] p-10 shadow-lg">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">⚠️</div>
+          <h3 className="text-xl font-bold text-[#10234F] mb-3">Unable to Load Instruments</h3>
+          <p className="text-sm text-slate-500 mb-8 font-semibold leading-relaxed">
+            There was a connection issue loading our instrument directory. Please check your connection and try again.
+          </p>
+          <button 
+            onClick={fetchInstrumentsData} 
+            className="btn-premium-base btn-premium-gradient h-12 w-full font-bold text-sm"
+          >
+            Retry Loading
+          </button>
+        </div>
+      </section>
+    )
+  }
+
   if (loading) {
     return (
-      <div className="py-24 text-center text-slate-500 font-bold text-sm">
-        Loading instruments registry...
-      </div>
+      <section className="py-24 bg-[#FAFBFF] relative overflow-hidden font-sans">
+        <div className="container mx-auto px-6 max-w-7xl relative z-10">
+          <div className="text-center mb-20">
+            <div className="h-9 w-64 bg-slate-200 animate-pulse rounded-md mx-auto mb-4"></div>
+            <div className="h-4 w-96 bg-slate-200 animate-pulse rounded-md mx-auto"></div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12">
+            {Array.from({ length: 8 }).map((_, idx) => (
+              <div key={idx} className="bg-white border border-[#DCE8F8] rounded-[24px] p-10 flex flex-col items-center justify-between h-[280px]">
+                <div className="w-20 h-20 bg-slate-200 animate-pulse rounded-full mb-6"></div>
+                <div className="h-6 w-32 bg-slate-200 animate-pulse rounded-md mb-2"></div>
+                <div className="h-4 w-24 bg-slate-200 animate-pulse rounded-md mb-4"></div>
+                <div className="h-10 w-full bg-slate-200 animate-pulse rounded-full"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     )
   }
 
@@ -183,6 +234,11 @@ export default function ExploreInstruments() {
       
       <div className="container mx-auto px-6 max-w-7xl relative z-10">
         <div className="text-center mb-20">
+          {notifyMsg && (
+            <div className="mb-6 p-4 max-w-md mx-auto bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-2xl shadow-sm animate-fade-in">
+              {notifyMsg}
+            </div>
+          )}
           <h2 className="text-3xl md:text-4xl font-extrabold text-[#0F1E4A] mb-4 tracking-tight">
             Explore Music Instruments
           </h2>

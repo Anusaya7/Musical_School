@@ -40,9 +40,9 @@ export default function InstructorDashboard() {
 
   // Interactive Dynamic States
   const [courses, setCourses] = useState([
-    { id: 'c1', title: 'Complete Piano Mastery', category: 'Piano', price: 4999, students: 45, rating: 4.9, lessons: 12, status: 'Published', duration: '3 Months' },
+    { id: 'c1', title: 'Complete Piano Mastery', category: 'Piano', price: 3500, students: 45, rating: 4.9, lessons: 12, status: 'Published', duration: '3 Months' },
     { id: 'c2', title: 'Guitar Fundamentals', category: 'Guitar', price: 3999, students: 38, rating: 4.8, lessons: 8, status: 'Published', duration: '3 Months' },
-    { id: 'c3', title: 'Advanced Piano Techniques', category: 'Piano', price: 5999, students: 37, rating: 4.7, lessons: 10, status: 'Published', duration: '3 Months' },
+    { id: 'c3', title: 'Advanced Piano Techniques', category: 'Piano', price: 4500, students: 37, rating: 4.7, lessons: 10, status: 'Published', duration: '3 Months' },
   ])
 
   const [students, setStudents] = useState([
@@ -338,6 +338,8 @@ export default function InstructorDashboard() {
     setActiveTab('assignments')
   }
 
+  const [instructorToast, setInstructorToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
   // Request Leave Action
   const handleRequestLeave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -364,11 +366,13 @@ export default function InstructorDashboard() {
           icon: '📅'
         }
         setRecentActivities(prev => [newAct, ...prev.slice(0, 4)])
-        alert('Leave request submitted to Admin successfully!')
+        setInstructorToast({ type: 'success', text: 'Leave request submitted to Admin successfully!' })
+        setTimeout(() => setInstructorToast(null), 4000)
       }
     } catch (err) {
       console.error(err)
-      alert('Failed to request leave.')
+      setInstructorToast({ type: 'error', text: 'Failed to request leave.' })
+      setTimeout(() => setInstructorToast(null), 4000)
     } finally {
       setIsRequestLeaveOpen(false)
       setLeaveDate('')
@@ -402,11 +406,13 @@ export default function InstructorDashboard() {
           icon: '🚀'
         }
         setRecentActivities(prev => [newAct, ...prev.slice(0, 4)])
-        alert('Workshop published and Admin notified successfully!')
+        setInstructorToast({ type: 'success', text: 'Workshop published and Admin notified successfully!' })
+        setTimeout(() => setInstructorToast(null), 4000)
       }
     } catch (err) {
       console.error(err)
-      alert('Failed to publish workshop.')
+      setInstructorToast({ type: 'error', text: 'Failed to publish workshop.' })
+      setTimeout(() => setInstructorToast(null), 4000)
     } finally {
       setIsPublishWorkshopOpen(false)
       setWorkshopTitle('')
@@ -564,6 +570,13 @@ export default function InstructorDashboard() {
 
       {/* MAIN WORKSPACE */}
       <main className="flex-1 p-6 md:p-10 overflow-y-auto flex flex-col gap-8 bg-[#FAFBFF]">
+        {instructorToast && (
+          <div className={`p-4 rounded-xl text-xs font-bold ${
+            instructorToast.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
+          }`}>
+            {instructorToast.text}
+          </div>
+        )}
         
         {/* Large Welcome Card Header */}
         <div className="bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] rounded-[24px] p-8 text-white shadow-md relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">

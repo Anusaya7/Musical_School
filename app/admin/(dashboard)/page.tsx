@@ -36,7 +36,8 @@ import {
   CheckSquare,
   CornerUpLeft,
   Layers,
-  User
+  User,
+  Loader2
 } from 'lucide-react'
 import CourseCard from '@/components/CourseCard'
 import AdminCourses from '@/components/AdminCourses';
@@ -94,20 +95,30 @@ export default function AdminDashboard() {
     }
   }, [settings])
 
+  const [adminToast, setAdminToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  // Local override of alert to redirect all alerts to custom toast notification
+  const alert = (message: string) => {
+    const isError = message.toLowerCase().includes('fail') || 
+                    message.toLowerCase().includes('error') || 
+                    message.toLowerCase().includes('missing') || 
+                    message.toLowerCase().includes('invalid') ||
+                    message.toLowerCase().includes('required');
+    setAdminToast({
+      type: isError ? 'error' : 'success',
+      text: message
+    });
+    setTimeout(() => setAdminToast(null), 4000);
+  }
+
   const handleUpdateCmsSetting = async (key: string, data: any) => {
     const success = await updateSetting(key, data)
     if (success) {
-      if (typeof window !== 'undefined' && (window as any).showToast) {
-        (window as any).showToast(`${key.replace('_', ' ')} settings updated successfully.`, 'success')
-      } else {
-        alert(`${key.replace('_', ' ')} settings updated successfully.`)
-      }
+      setAdminToast({ type: 'success', text: `${key.replace('_', ' ')} settings updated successfully.` })
+      setTimeout(() => setAdminToast(null), 4000)
     } else {
-      if (typeof window !== 'undefined' && (window as any).showToast) {
-        (window as any).showToast(`Failed to update ${key.replace('_', ' ')} settings.`, 'error')
-      } else {
-        alert(`Failed to update ${key.replace('_', ' ')} settings.`)
-      }
+      setAdminToast({ type: 'error', text: `Failed to update ${key.replace('_', ' ')} settings.` })
+      setTimeout(() => setAdminToast(null), 4000)
     }
   }
 
@@ -154,7 +165,7 @@ export default function AdminDashboard() {
   const [catIcon, setCatIcon] = useState('')
   const [catStatus, setCatStatus] = useState<'Active' | 'Upcoming' | 'Inactive'>('Active')
   const [catIsVisible, setCatIsVisible] = useState(true)
-  const [catStartingPrice, setCatStartingPrice] = useState<number>(4999)
+  const [catStartingPrice, setCatStartingPrice] = useState<number>(3500)
   const [catLevels, setCatLevels] = useState<string[]>(['Beginner', 'Intermediate', 'Advanced'])
   
   // Helper for AuditLog relative time format
@@ -188,7 +199,7 @@ export default function AdminDashboard() {
   const [courseTitle, setCourseTitle] = useState('')
   const [courseCategory, setCourseCategory] = useState('piano')
   const [courseLevel, setCourseLevel] = useState('Beginner')
-  const [coursePrice, setCoursePrice] = useState<number>(4999)
+  const [coursePrice, setCoursePrice] = useState<number>(3500)
   const [courseDuration, setCourseDuration] = useState('3 Months')
   const [courseDescription, setCourseDescription] = useState('')
   const [courseInstructorName, setCourseInstructorName] = useState('Ajinkya Amrule')
@@ -204,6 +215,7 @@ export default function AdminDashboard() {
   const [courseLanguage, setCourseLanguage] = useState('English')
   const [courseStatus, setCourseStatus] = useState('Published')
   const [courseThumbnail, setCourseThumbnail] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
 
   // Course List Search, Filter, Sort and Pagination states
   const [courseSearch, setCourseSearch] = useState('')
@@ -535,21 +547,21 @@ export default function AdminDashboard() {
     if (!editingCourse) {
       if (courseLevel === 'Beginner') {
         setCourseDuration('3 Months')
-        setCoursePrice(4999)
+        setCoursePrice(3500)
         setCourseMaxStudents(30)
         setCourseDifficulty('Easy')
         setCourseStatus('Published')
         setCourseInstructorName('Ajinkya Amrule')
       } else if (courseLevel === 'Intermediate') {
         setCourseDuration('4 Months')
-        setCoursePrice(6999)
+        setCoursePrice(courseCategory === 'piano' || courseCategory === 'guitar' ? 3999 : 4000)
         setCourseMaxStudents(25)
         setCourseDifficulty('Medium')
         setCourseStatus('Published')
         setCourseInstructorName('Ajinkya Amrule')
       } else if (courseLevel === 'Advanced') {
         setCourseDuration('6 Months')
-        setCoursePrice(9999)
+        setCoursePrice(4500)
         setCourseMaxStudents(20)
         setCourseDifficulty('Hard')
         setCourseStatus('Published')
@@ -557,11 +569,11 @@ export default function AdminDashboard() {
       }
     }
   }, [courseLevel, editingCourse])
-
   // 1. Add Course
   const handleAddCourse = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!courseTitle || !coursePrice) return
+    setIsSaving(true)
 
     const payload = {
       title: courseTitle,
@@ -598,7 +610,7 @@ export default function AdminDashboard() {
         }
         setIsAddCourseOpen(false)
         setCourseTitle('')
-        setCoursePrice(4999)
+        setCoursePrice(3500)
         setCourseDescription('')
         setCourseDiscountPrice(0)
         setCourseHasCertificate(true)
@@ -619,6 +631,8 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       console.error(err)
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -626,6 +640,7 @@ export default function AdminDashboard() {
   const handleSaveCourseEdit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editingCourse) return
+    setIsSaving(true)
 
     const payload = {
       id: editingCourse.id,
@@ -685,6 +700,8 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       console.error(err)
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -1187,7 +1204,7 @@ export default function AdminDashboard() {
         setCatIcon('')
         setCatStatus('Active')
         setCatIsVisible(true)
-        setCatStartingPrice(4999)
+        setCatStartingPrice(3500)
         setCatLevels(['Beginner', 'Intermediate', 'Advanced'])
         loadDatabaseData()
       } else {
@@ -1227,7 +1244,7 @@ export default function AdminDashboard() {
         setCatIcon('')
         setCatStatus('Active')
         setCatIsVisible(true)
-        setCatStartingPrice(4999)
+        setCatStartingPrice(3500)
         setCatLevels(['Beginner', 'Intermediate', 'Advanced'])
         loadDatabaseData()
       } else {
@@ -1740,7 +1757,7 @@ export default function AdminDashboard() {
                         setCatIcon('')
                         setCatStatus('Active')
                         setCatIsVisible(true)
-                        setCatStartingPrice(4999)
+                        setCatStartingPrice(3500)
                         setCatLevels(['Beginner', 'Intermediate', 'Advanced'])
                         setIsAddCategoryOpen(true)
                       }}
@@ -1888,7 +1905,7 @@ export default function AdminDashboard() {
                                   </div>
                                 </td>
                                 <td className="p-4 text-[#0F1E4A] font-black">{cat.coursesCount || 0}</td>
-                                <td className="p-4 text-[#5EA8FF] font-black">₹{(cat.startingPrice || 4999).toLocaleString('en-IN')}</td>
+                                <td className="p-4 text-[#5EA8FF] font-black">₹{(cat.startingPrice || 3500).toLocaleString('en-IN')}</td>
                                 <td className="p-4">
                                   <div className="flex flex-wrap gap-1">
                                     {(cat.levels && cat.levels.length > 0 ? cat.levels : ['Beginner', 'Intermediate', 'Advanced']).map((lvl: string, i: number) => (
@@ -1930,7 +1947,7 @@ export default function AdminDashboard() {
                                         setCatIcon(cat.icon || '')
                                         setCatStatus(cat.status)
                                         setCatIsVisible(cat.isVisible ?? true)
-                                        setCatStartingPrice(cat.startingPrice || 4999)
+                                        setCatStartingPrice(cat.startingPrice || 3500)
                                         setCatLevels(cat.levels || ['Beginner', 'Intermediate', 'Advanced'])
                                         setEditingCategory(cat)
                                       }}
@@ -4236,9 +4253,17 @@ export default function AdminDashboard() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white text-xs font-bold rounded-xl hover:shadow-lg transition-all"
+                  disabled={isSaving}
+                  className="flex-1 py-2.5 bg-gradient-to-r from-[#5EA8FF] to-[#FF6FAF] text-white text-xs font-bold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
-                  {editingCourse ? 'Save Changes' : 'Add Course'}
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    editingCourse ? 'Save Changes' : 'Add Course'
+                  )}
                 </button>
               </div>
             </form>
@@ -4866,6 +4891,18 @@ export default function AdminDashboard() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification Banner */}
+      {adminToast && (
+        <div className="fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl bg-white border border-[#E6EEFF] animate-fade-in-up">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-extrabold ${
+            adminToast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+          }`}>
+            {adminToast.type === 'success' ? '✓' : '✕'}
+          </div>
+          <div className="text-xs font-bold text-[#0F1E4A]">{adminToast.text}</div>
         </div>
       )}
     </div>

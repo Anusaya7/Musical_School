@@ -16,32 +16,33 @@ export async function POST(request: NextRequest) {
     } = await request.json()
 
     // 1. Verify signature
-    const isMock = process.env.NODE_ENV !== 'production' && razorpay_order_id?.startsWith('order_mock_')
     let isAuthentic = false
 
-    if (isMock) {
-      console.log('[RAZORPAY MOCK MODE] Bypassing signature verification for mock order:', razorpay_order_id)
-      isAuthentic = true
-    } else {
-      const key_secret = process.env.RAZORPAY_KEY_SECRET
-      if (!key_secret) {
-        console.error('[PAYMENT] RAZORPAY_KEY_SECRET is not configured in production environment variables!')
-        return NextResponse.json(
-          { success: false, error: 'Payment gateway configuration missing' },
-          { status: 500 }
-        )
-      }
-      const body = `${razorpay_order_id}|${razorpay_payment_id}`
-      const expectedSignature = crypto
-        .createHmac('sha256', key_secret)
-        .update(body.toString())
-        .digest('hex')
+    const key_secret = process.env.RAZORPAY_KEY_SECRET
+    if (!key_secret) {
+      console.error('[PAYMENT] RAZORPAY_KEY_SECRET is not configured!')
+      return NextResponse.json(
+        { success: false, error: 'Payment gateway configuration missing' },
+        { status: 500 }
+      )
+    }
 
-      isAuthentic = expectedSignature === razorpay_signature
+    const body = `${razorpay_order_id}|${razorpay_payment_id}`
+    const expectedSignature = crypto
+      .createHmac('sha256', key_secret)
+      .update(body.toString())
+      .digest('hex')
+
+    try {
+      const expectedBuf = Buffer.from(expectedSignature, 'utf-8')
+      const recBuf = Buffer.from(razorpay_signature || '', 'utf-8')
+      isAuthentic = expectedBuf.length === recBuf.length && crypto.timingSafeEqual(expectedBuf, recBuf)
+    } catch (err) {
+      isAuthentic = false
     }
 
     if (!isAuthentic) {
-      console.warn('[PAYMENT] Signature verification failed')
+      console.warn('[PAYMENT] Signature verification failed. Expected:', expectedSignature, 'Received:', razorpay_signature)
       return NextResponse.json(
         { success: false, error: 'Invalid payment signature' },
         { status: 400 }
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
     const studentName = orderData?.notes?.studentName || orderData?.studentName || 'John Doe'
     const courseId = orderData?.notes?.courseId || orderData?.courseId || 'piano-beginner'
     const courseName = orderData?.notes?.courseName || orderData?.courseName || 'Piano Beginner'
-    const amount = Number(orderData?.amount || 4999)
+    const amount = Number(orderData?.amount || 3500)
     const purchaseType = orderData?.notes?.purchaseType || 'course'
 
     const paymentId = razorpay_payment_id
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
         where: {
           date,
           timeSlot,
-          status: 'Booked'
+          status: { in: ['Confirmed', 'Booked'] }
         }
       })
       if (slotBlocked) {
@@ -225,6 +226,30 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        // Upsert student record and create enrollment for Admin tracking
+        const studentObj = await tx.student.upsert({
+          where: { email: studentEmail.toLowerCase() },
+          update: {
+            name: studentName,
+            status: 'Active'
+          },
+          create: {
+            name: studentName,
+            email: studentEmail.toLowerCase(),
+            status: 'Active'
+          }
+        })
+
+        await tx.enrollment.create({
+          data: {
+            studentId: studentObj.id,
+            courseId,
+            courseName,
+            amount,
+            status: 'Active'
+          }
+        })
+
         return bk
       }, {
         maxWait: 8000,
@@ -261,11 +286,7 @@ export async function POST(request: NextRequest) {
           sendSystemEmail(adminEmail, `New Booking Alert - ${studentName}`, emailHtml)
         ])
       } catch (emailErr: any) {
-        console.error('[EMAIL ERROR] Failed to send booking notification emails:', emailErr)
-        return NextResponse.json(
-          { success: false, error: `Email delivery failed: ${emailErr.message || emailErr}` },
-          { status: 500 }
-        )
+        console.error('[EMAIL ERROR] Failed to send booking notification emails (gracefully ignored):', emailErr)
       }
 
       // Get course details for additional success info
@@ -297,52 +318,115 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Handle standard course purchase flow
-    const payment = {
-      id: `PAY-${Date.now()}`,
-      studentEmail,
-      studentName,
-      courseId,
-      courseName,
-      amount,
-      paymentId,
-      orderId,
-      status: 'Success',
-      createdAt: new Date().toISOString(),
-      invoiceNumber
-    }
+    const courseIdsStr = orderData?.notes?.courseIds || orderData?.courseIds
+    const courseIds = courseIdsStr
+      ? String(courseIdsStr).split(',').map((id: string) => id.trim())
+      : [courseId]
 
-    await prisma.$transaction(async (tx) => {
-      await tx.payment.create({ data: payment })
-      await tx.notification.create({
-        data: {
-          title: 'New Course Purchase',
-          message: `${studentName} successfully purchased ${courseName} for ₹${amount.toLocaleString('en-IN')}`
-        }
-      })
-      await tx.auditLog.create({
-        data: {
-          userEmail: studentEmail,
-          action: 'Course Purchase',
-          details: `Purchased course: ${courseName} (Amount: ₹${amount}, Payment ID: ${paymentId})`
-        }
-      })
-    }, {
-      maxWait: 8000,
-      timeout: 15000
+    const courses = await prisma.course.findMany({
+      where: { id: { in: courseIds } }
     })
 
-    // Grant access to course
-    await addEnrolledCourse(studentEmail, courseId)
+    if (courses.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'The requested courses do not exist' },
+        { status: 404 }
+      )
+    }
+
+    const totalPaid = courses.reduce((sum, c) => sum + c.price, 0)
+
+    await prisma.$transaction(async (tx) => {
+      const studentObj = await tx.student.upsert({
+        where: { email: studentEmail.toLowerCase() },
+        update: {
+          name: studentName,
+          status: 'Active'
+        },
+        create: {
+          name: studentName,
+          email: studentEmail.toLowerCase(),
+          status: 'Active'
+        }
+      })
+
+      for (const c of courses) {
+        const individualInvoice = `INV-${Date.now()}-${c.id.substring(0, 3)}`
+        await tx.payment.create({
+          data: {
+            id: `PAY-${Date.now()}-${c.id}`,
+            studentEmail,
+            studentName,
+            courseId: c.id,
+            courseName: c.title,
+            amount: c.price,
+            paymentId,
+            orderId,
+            status: 'Success',
+            invoiceNumber: individualInvoice
+          }
+        })
+
+        await tx.enrollment.create({
+          data: {
+            studentId: studentObj.id,
+            courseId: c.id,
+            courseName: c.title,
+            amount: c.price,
+            status: 'Active'
+          }
+        })
+        
+        await tx.notification.create({
+          data: {
+            title: 'New Course Purchase',
+            message: `${studentName} successfully purchased ${c.title} for ₹${c.price.toLocaleString('en-IN')}`
+          }
+        })
+
+        await tx.auditLog.create({
+          data: {
+            userEmail: studentEmail,
+            action: 'Course Purchase',
+            details: `Purchased course: ${c.title} (Amount: ₹${c.price}, Payment ID: ${paymentId})`
+          }
+        })
+
+        // Grant access
+        const user = await tx.user.findUnique({
+          where: { email: studentEmail.toLowerCase() }
+        })
+        if (user) {
+          const enrolled = [...user.enrolledCourses]
+          if (!enrolled.includes(c.id)) {
+            enrolled.push(c.id)
+            await tx.user.update({
+              where: { email: studentEmail.toLowerCase() },
+              data: { enrolledCourses: enrolled }
+            })
+          }
+        }
+      }
+    }, {
+      maxWait: 10000,
+      timeout: 20000
+    })
+
+    const coursesHtmlList = courses.map(c => `<li><strong>${c.title}</strong> - ₹${c.price.toLocaleString('en-IN')}</li>`).join('')
+    const coursesTextList = courses.map(c => c.title).join(', ')
 
     const studentHtml = `
       <div style="font-family: sans-serif; padding: 20px; color: #1e293b;">
         <h2 style="color: #6d28d9;">Payment Confirmation</h2>
         <p>Hello <strong>${studentName}</strong>,</p>
-        <p>Thank you for enrolling in <strong>${courseName}</strong> at 2nd Inversion Musical School!</p>
+        <p>Thank you for enrolling in the following courses at 2nd Inversion Musical School!</p>
+        <ul>
+          ${coursesHtmlList}
+        </ul>
         <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
           <p style="margin: 5px 0;"><strong>Invoice Number:</strong> ${invoiceNumber}</p>
           <p style="margin: 5px 0;"><strong>Payment ID:</strong> ${paymentId}</p>
-          <p style="margin: 5px 0;"><strong>Amount Paid:</strong> ₹${amount.toLocaleString('en-IN')}</p>
+          <p style="margin: 5px 0;"><strong>Total Amount Paid:</strong> ₹${totalPaid.toLocaleString('en-IN')}</p>
           <p style="margin: 5px 0;"><strong>Enrollment Status:</strong> Active</p>
         </div>
         <p>You can now log in to your student portal and access the recorded video sessions and study materials.</p>
@@ -362,12 +446,12 @@ export async function POST(request: NextRequest) {
             <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${studentEmail}</td>
           </tr>
           <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Course Name</td>
-            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${courseName}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Courses</td>
+            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">${coursesTextList}</td>
           </tr>
           <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Amount Paid</td>
-            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">₹${amount.toLocaleString('en-IN')}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Total Amount Paid</td>
+            <td style="padding: 8px; border-bottom: 1px solid #e2e8f0;">₹${totalPaid.toLocaleString('en-IN')}</td>
           </tr>
           <tr>
             <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Payment ID</td>
@@ -384,15 +468,11 @@ export async function POST(request: NextRequest) {
     try {
       const adminEmail = process.env.ADMIN_EMAIL || 'aamrule90@gmail.com'
       await Promise.all([
-        sendSystemEmail(studentEmail, `Enrollment Confirmation - ${courseName}`, studentHtml),
+        sendSystemEmail(studentEmail, `Enrollment Confirmation`, studentHtml),
         sendSystemEmail(adminEmail, 'New Course Purchase Alert', adminHtml)
       ])
     } catch (emailErr: any) {
-      console.error('[EMAIL ERROR] Failed to send course enrollment notification emails:', emailErr)
-      return NextResponse.json(
-        { success: false, error: `Email delivery failed: ${emailErr.message || emailErr}` },
-        { status: 500 }
-      )
+      console.error('[EMAIL ERROR] Failed to send course enrollment notification emails (gracefully ignored):', emailErr)
     }
 
     return NextResponse.json({

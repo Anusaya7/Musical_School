@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
             isUpcoming: parsed.data.status === 'Upcoming',
             isVisible: true,
             coursesCount: 0,
-            startingPrice: 4999,
+            startingPrice: 3500,
             levels: ['Beginner', 'Intermediate', 'Advanced']
           }
         })

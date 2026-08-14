@@ -83,7 +83,7 @@ async function updateCategoryStats(categoryId: string, tx: any) {
   })
 
   const coursesCount = activeCourses.length
-  const startingPrice = coursesCount > 0 ? Math.min(...activeCourses.map((c: any) => c.price)) : 4999
+  const startingPrice = coursesCount > 0 ? Math.min(...activeCourses.map((c: any) => c.price)) : 3500
 
   await tx.instrument.update({
     where: { id: categoryId },

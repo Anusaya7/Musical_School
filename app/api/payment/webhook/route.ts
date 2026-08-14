@@ -10,7 +10,13 @@ export async function POST(req: Request) {
     const signature = req.headers.get('x-razorpay-signature')
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET
 
-    if (signature) {
+    if (!signature) {
+      if (process.env.NODE_ENV === 'production') {
+        console.warn('[WEBHOOK] Rejecting unsigned webhook request in production.')
+        return NextResponse.json({ success: false, error: 'Signature missing' }, { status: 400 })
+      }
+      console.log('[WEBHOOK] Bypassing signature check for unsigned webhook in development mode.')
+    } else {
       if (!secret) {
         console.error('[WEBHOOK] Razorpay webhook secret is not configured!')
         return NextResponse.json({ success: false, error: 'Webhook secret missing' }, { status: 500 })

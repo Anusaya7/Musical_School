@@ -40,21 +40,21 @@ export default function Hero() {
       id: i,
       left: 10 + i * 13,
       top: 15 + (Math.sin(i) * 25),
-      animationDuration: 3 + i * 0.3,
+      animationDuration: 4 + i * 0.5,
       animationDelay: i * 0.2,
-      fontSize: 24 + (i % 16),
+      fontSize: 20 + (i % 12),
       symbol: ['\u266a', '\u266b', '\u266c', '\u2669', '\u266d', '\u266e', '\u266f'][i]
     }))
     setMusicalNotes(newMusicalNotes)
 
     // Generate floating elements with deterministic values
-    const newFloatingElements: FloatingElement[] = Array.from({ length: 12 }, (_, i) => ({
+    const newFloatingElements: FloatingElement[] = Array.from({ length: 8 }, (_, i) => ({
       id: i,
-      left: 5 + i * 8,
-      top: 10 + (Math.cos(i) * 30),
-      animationDuration: 4 + i * 0.4,
+      left: 5 + i * 12,
+      top: 10 + (Math.cos(i) * 20),
+      animationDuration: 5 + i * 0.6,
       animationDelay: i * 0.3,
-      fontSize: 16 + (i % 12),
+      fontSize: 14 + (i % 8),
       symbol: ['♪', '♫', '♬', '♭', '♮', '♯'][i % 6]
     }))
     setFloatingElements(newFloatingElements)
@@ -77,38 +77,17 @@ export default function Hero() {
 
   return (
     <>
-      <section className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white py-32 overflow-hidden">
-        {/* Yellow Corner Accents */}
-        <div className="absolute top-0 left-0 w-8 h-8 bg-yellow-400 rounded-br-full opacity-80 z-10"></div>
-        <div className="absolute top-0 right-0 w-8 h-8 bg-yellow-400 rounded-bl-full opacity-80 z-10"></div>
-        <div className="absolute bottom-0 left-0 w-8 h-8 bg-yellow-400 rounded-tr-full opacity-80 z-10"></div>
-        <div className="absolute bottom-0 right-0 w-8 h-8 bg-yellow-400 rounded-tl-full opacity-80 z-10"></div>
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0">
-          <div className="absolute top-10 left-10 w-20 h-20 bg-white rounded-full opacity-10 animate-pulse" />
-          <div className="absolute top-20 right-20 w-32 h-32 bg-white rounded-full opacity-5 animate-pulse" />
-          <div className="absolute bottom-20 left-20 w-24 h-24 bg-white rounded-full opacity-10 animate-pulse" />
-          <div className="absolute bottom-10 right-10 w-16 h-16 bg-white rounded-full opacity-15 animate-pulse" />
+      <section className="relative bg-gradient-to-br from-[#0F1E4A] via-[#1E293B] to-[#3B0764] text-white py-28 md:py-36 overflow-hidden">
+        {/* Soft Decorative Glows */}
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-purple-600 rounded-full blur-3xl opacity-20 pointer-events-none" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-600 rounded-full blur-3xl opacity-20 pointer-events-none" />
 
-          {/* Additional Sparkle Elements */}
-          <div className="absolute top-1/4 left-1/4 w-12 h-12 bg-yellow-300 rounded-full opacity-20 animate-ping" />
-          <div className="absolute top-1/3 right-1/3 w-8 h-8 bg-pink-300 rounded-full opacity-30 animate-ping" />
-          <div className="absolute bottom-1/4 left-1/3 w-16 h-16 bg-blue-300 rounded-full opacity-25 animate-ping" />
-          <div className="absolute top-2/3 right-1/4 w-10 h-10 bg-purple-300 rounded-full opacity-35 animate-ping" />
-
-          {/* Floating Music Symbols */}
-          <div className="absolute top-20 left-20 text-6xl text-white/20 animate-spin" style={{ animationDuration: '10s' }}>♪</div>
-          <div className="absolute top-40 right-32 text-5xl text-white/15 animate-bounce" style={{ animationDelay: '1s' }}>♫</div>
-          <div className="absolute bottom-32 left-40 text-4xl text-white/25 animate-pulse" style={{ animationDelay: '2s' }}>♬</div>
-          <div className="absolute top-60 right-20 text-5xl text-white/20 animate-spin" style={{ animationDuration: '8s', animationDelay: '0.5s' }}>♭</div>
-        </div>
-
-        {/* Musical Notes Animation */}
-        <div className="absolute inset-0 pointer-events-none">
+        {/* Animated Particles background */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {mounted && musicalNotes.map((note) => (
             <div
               key={note.id}
-              className="absolute text-white opacity-30 animate-bounce"
+              className="absolute text-purple-300/20 select-none"
               style={{
                 left: `${note.left}%`,
                 top: `${note.top}%`,
@@ -120,11 +99,10 @@ export default function Hero() {
             </div>
           ))}
 
-          {/* Additional Floating Music Elements */}
           {mounted && floatingElements.map((element) => (
             <div
               key={`float-${element.id}`}
-              className="absolute text-yellow-200 opacity-40 animate-pulse"
+              className="absolute text-blue-300/25 select-none"
               style={{
                 left: `${element.left}%`,
                 top: `${element.top}%`,
@@ -137,65 +115,133 @@ export default function Hero() {
           ))}
         </div>
 
-        <div className="container mx-auto px-4 text-center relative z-10">
-          {/* Trust Badge */}
-          <div className="mb-12">
-            <span className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-6 py-2 text-white text-sm font-medium">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-              {heroSettings.banner || "Empowering 10,000+ aspiring musicians across India"}
-            </span>
-          </div>
+        <div className="container mx-auto px-6 max-w-7xl relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+            
+            {/* Left Side: Content & Actions */}
+            <div className="lg:col-span-7 flex flex-col items-start text-left space-y-8">
+              
+              {/* Trust Badge */}
+              <div className="inline-flex items-center gap-2.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-5 py-2 text-white text-xs md:text-sm font-semibold shadow-inner select-none">
+                <span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.5)]"></span>
+                <span>{heroSettings.banner || "Premium Music Education in Pune"}</span>
+              </div>
 
-          {/* Main Heading */}
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white leading-tight">
-            {heroSettings.tagline || "Start Your Musical Journey"}
-            <span className="block text-4xl md:text-5xl bg-gradient-to-r from-yellow-200 to-orange-200 bg-clip-text text-transparent">
-              {heroSettings.subtitle || "with Confidence"}
-            </span>
-          </h1>
+              {/* Main Heading */}
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] text-white">
+                Start Your{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#60A5FA] to-[#C084FC]">
+                  Musical Journey
+                </span>{' '}
+                with{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F472B6] to-[#FB7185]">
+                  Confidence
+                </span>
+              </h1>
 
-          {/* Subheading */}
-          <p className="text-xl md:text-2xl mb-12 text-purple-100 max-w-4xl mx-auto leading-relaxed">
-            {heroSettings.description || "Learn piano, guitar, vocals, drums and more with expert instructors. Whether you're a beginner or advancing your skills, build real confidence with structured lessons and practical guidance."}
-          </p>
+              {/* Subheading */}
+              <p className="text-base md:text-lg text-slate-300 max-w-2xl leading-relaxed font-medium">
+                {heroSettings.description || "Learn piano, guitar, vocals, drums and more with expert instructors. Whether you're a beginner or advancing your skills, build real confidence with structured lessons and practical guidance."}
+              </p>
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearchSubmit} className="max-w-2xl mx-auto mb-12">
-            <div className="relative">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder={heroSettings.searchPlaceholder || "Search courses, instruments, or instructors..."}
-                className="w-full px-6 py-4 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 text-lg"
-              />
-              <button
-                type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white text-indigo-700 px-6 py-2 rounded-full font-semibold hover:bg-yellow-100 transition-colors"
-              >
-                Search
-              </button>
+              {/* Search Bar */}
+              <form onSubmit={handleSearchSubmit} className="w-full max-w-xl">
+                <div className="relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur opacity-30 group-hover:opacity-60 transition duration-300"></div>
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder={heroSettings.searchPlaceholder || "Search courses, instruments, or instructors..."}
+                      className="w-full h-14 pl-6 pr-32 rounded-full bg-slate-900/80 border border-slate-700/80 text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-sm font-semibold transition-all duration-300"
+                    />
+                    <button
+                      type="submit"
+                      className="absolute right-2 top-1.5 h-11 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 rounded-full font-bold text-xs shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.97] hover:brightness-110 flex items-center justify-center"
+                    >
+                      Search
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              {/* Action Button */}
+              <div className="pt-2 flex flex-wrap gap-4">
+                <button
+                  onClick={handleExploreCourses}
+                  className="btn-premium-base btn-premium-gradient px-8 py-4 text-base font-bold shadow-xl hover:shadow-2xl"
+                >
+                  <span className="relative z-10">
+                    {heroSettings.primaryButtonText || "Explore Courses"}
+                  </span>
+                </button>
+                <button
+                  onClick={() => router.push('/contact')}
+                  className="btn-premium-base btn-premium-secondary px-8 py-4 text-base font-bold bg-transparent text-white border-white/30 hover:bg-white/10 hover:border-white/50"
+                >
+                  Book Free Demo
+                </button>
+              </div>
+
             </div>
-          </form>
 
-          {/* Primary CTA */}
-          <div className="flex justify-center">
-            <button
-              onClick={handleExploreCourses}
-              className="relative group bg-white text-indigo-700 px-8 py-4 rounded-lg font-bold text-lg hover:bg-yellow-100 transition-all duration-300 transform hover:scale-105 hover:translate-y-[-2px] shadow-xl hover:shadow-2xl"
-            >
-              <span className="relative z-10 transition-transform duration-300 group-hover:translate-x-1">
-                {heroSettings.primaryButtonText || "Explore Courses"}
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-lg opacity-0 group-hover:opacity-30 transition-opacity duration-300" />
-            </button>
+            {/* Right Side: Elegant Floating Card Graphics */}
+            <div className="lg:col-span-5 relative w-full h-[400px] flex items-center justify-center select-none pointer-events-none mt-8 lg:mt-0">
+              {/* Central Glowing Orb */}
+              <div className="absolute w-60 h-60 bg-gradient-to-br from-blue-500/30 to-purple-500/30 rounded-full blur-2xl animate-pulse" />
+
+              {/* Instrument Card 1: Piano (Top-Left) */}
+              <div 
+                className="absolute top-4 left-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 shadow-2xl flex items-center gap-4 w-[220px]"
+                style={{ animation: 'float 6s ease-in-out infinite' }}
+              >
+                <div className="w-12 h-12 bg-pink-500/20 text-pink-300 rounded-xl flex items-center justify-center text-2xl font-bold">🎹</div>
+                <div>
+                  <h4 className="font-bold text-sm text-white">Piano Classes</h4>
+                  <p className="text-[10px] text-pink-200 font-semibold">Trinity & ABRSM Prep</p>
+                </div>
+              </div>
+
+              {/* Instrument Card 2: Guitar (Bottom-Right) */}
+              <div 
+                className="absolute bottom-8 right-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 shadow-2xl flex items-center gap-4 w-[220px]"
+                style={{ animation: 'float 5s ease-in-out 1s infinite' }}
+              >
+                <div className="w-12 h-12 bg-blue-500/20 text-blue-300 rounded-xl flex items-center justify-center text-2xl font-bold">🎸</div>
+                <div>
+                  <h4 className="font-bold text-sm text-white">Guitar Classes</h4>
+                  <p className="text-[10px] text-blue-200 font-semibold">Acoustic & Electric</p>
+                </div>
+              </div>
+
+              {/* Instrument Card 3: Vocals (Center-Right) */}
+              <div 
+                className="absolute top-1/3 right-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 shadow-2xl flex items-center gap-4 w-[200px]"
+                style={{ animation: 'float 7s ease-in-out 0.5s infinite' }}
+              >
+                <div className="w-12 h-12 bg-purple-500/20 text-purple-300 rounded-xl flex items-center justify-center text-2xl font-bold">🎤</div>
+                <div>
+                  <h4 className="font-bold text-sm text-white">Vocals Training</h4>
+                  <p className="text-[10px] text-purple-200 font-semibold">Classical & Western</p>
+                </div>
+              </div>
+
+              {/* Instrument Card 4: Drums (Bottom-Left) */}
+              <div 
+                className="absolute bottom-16 left-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 shadow-2xl flex items-center gap-4 w-[200px]"
+                style={{ animation: 'float 8s ease-in-out 1.5s infinite' }}
+              >
+                <div className="w-12 h-12 bg-cyan-500/20 text-cyan-300 rounded-xl flex items-center justify-center text-2xl font-bold">🥁</div>
+                <div>
+                  <h4 className="font-bold text-sm text-white">Drums Beats</h4>
+                  <p className="text-[10px] text-cyan-200 font-semibold">Rhythm & Rudiments</p>
+                </div>
+              </div>
+
+            </div>
+
           </div>
-
-          {/* Floating Music Elements */}
-          <div className="absolute top-10 left-10 text-4xl animate-spin" style={{ animationDuration: '8s' }}>?</div>
-          <div className="absolute top-20 right-20 text-3xl animate-bounce" style={{ animationDelay: '1s' }}>?</div>
-          <div className="absolute bottom-20 left-20 text-3xl animate-pulse" style={{ animationDelay: '2s' }}>?</div>
-          <div className="absolute bottom-10 right-10 text-4xl animate-spin" style={{ animationDuration: '10s', animationDelay: '0.5s' }}>?</div>
         </div>
       </section>
 
@@ -205,10 +251,10 @@ export default function Hero() {
             transform: translateY(0px) rotate(0deg);
           }
           25% {
-            transform: translateY(-15px) rotate(5deg);
+            transform: translateY(-12px) rotate(2deg);
           }
           75% {
-            transform: translateY(5px) rotate(-5deg);
+            transform: translateY(8px) rotate(-2deg);
           }
         }
       `}</style>

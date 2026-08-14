@@ -356,7 +356,7 @@ export async function addInstrument(instrument: Instrument): Promise<boolean> {
         isUpcoming: instrument.status === 'Upcoming',
         isVisible: instrument.isVisible ?? true,
         coursesCount: instrument.coursesCount || 0,
-        startingPrice: instrument.startingPrice || 4999,
+        startingPrice: instrument.startingPrice || 3500,
         levels: instrument.levels || ["Beginner", "Intermediate", "Advanced"]
       }
     })
@@ -392,7 +392,7 @@ export async function updateInstrument(instrument: Instrument): Promise<boolean>
         isUpcoming: instrument.status === 'Upcoming',
         isVisible: instrument.isVisible ?? true,
         coursesCount: instrument.coursesCount || 0,
-        startingPrice: instrument.startingPrice || 4999,
+        startingPrice: instrument.startingPrice || 3500,
         levels: instrument.levels || ["Beginner", "Intermediate", "Advanced"]
       }
     })
@@ -542,7 +542,10 @@ export async function getInstructors(): Promise<Instructor[]> {
       isActive: i.isActive,
       photo: i.photo || undefined,
       resume: i.resume || undefined,
-      certificates: i.certificates
+      certificates: i.certificates,
+      role: i.role,
+      experience: i.experience,
+      bio: i.bio
     }))
   } catch (err) {
     console.warn('getInstructors failed, returning fallback.', err)

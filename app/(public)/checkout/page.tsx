@@ -39,16 +39,27 @@ export default function CheckoutPage() {
     })
   }
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMessage(null)
     
     // Validate form
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
-      if (typeof window !== 'undefined' && (window as any).showToast) {
-        (window as any).showToast('Please fill in all required fields.', 'error')
-      } else {
-        alert('Please fill in all required fields')
-      }
+    if (!formData.firstName || !formData.firstName.trim() || !formData.lastName || !formData.lastName.trim()) {
+      setErrorMessage('Please fill in your first and last name.')
+      return
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!formData.email || !emailRegex.test(formData.email)) {
+      setErrorMessage('Please enter a valid email address.')
+      return
+    }
+
+    const phoneClean = formData.phone.replace(/\D/g, '')
+    if (!formData.phone || phoneClean.length < 10) {
+      setErrorMessage('Please enter a valid phone number (at least 10 digits).')
       return
     }
 
@@ -57,66 +68,118 @@ export default function CheckoutPage() {
     try {
       const customerName = `${formData.firstName} ${formData.lastName}`
       const studentEmail = formData.email.toLowerCase()
+      const amountPaise = Math.round(total * 100)
+      const courseIds = items.map(item => item.id)
 
-      // Process each course in the cart
-      for (const item of items) {
-        const orderId = `order_mock_checkout_${Date.now()}`
-        const paymentId = `pay_mock_checkout_${Date.now()}`
-        
-        const verifyResponse = await fetch('/api/payment/verify', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            razorpay_order_id: orderId,
-            razorpay_payment_id: paymentId,
-            razorpay_signature: 'mock_signature',
-            orderData: {
-              amount: item.price,
-              studentEmail,
-              studentName: customerName,
-              courseId: item.id,
-              courseName: item.title,
-              purchaseType: 'course'
-            }
-          })
+      const orderRes = await fetch('/api/payment/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amountPaise,
+          currency: 'INR',
+          receipt: `rcpt_chk_${Date.now()}`,
+          notes: {
+            purchaseType: 'course',
+            studentName: customerName,
+            studentEmail,
+            studentPhone: formData.phone,
+            courseIds: courseIds.join(','),
+            amount: total
+          }
         })
+      })
 
-        const verifyData = await verifyResponse.json()
-        if (!verifyResponse.ok || !verifyData.success) {
-          throw new Error(verifyData.error || `Failed to verify checkout for ${item.title}`)
+      const orderData = await orderRes.json()
+      if (!orderRes.ok || !orderData.success) {
+        throw new Error(orderData.error || 'Failed to create payment order')
+      }
+
+      const Razorpay = (window as any).Razorpay
+      if (!Razorpay) {
+        setErrorMessage('Razorpay Checkout SDK is loading. Please try again.')
+        setIsProcessing(false)
+        return
+      }
+
+      const options = {
+        key: orderData.key,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: '2nd Inversion Musical School',
+        description: `Course Purchase: ${items.map(i => i.title).join(', ')}`,
+        order_id: orderData.id,
+        prefill: {
+          name: customerName,
+          email: studentEmail,
+          contact: formData.phone
+        },
+        theme: { color: '#2563EB' },
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await fetch('/api/payment/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderData: {
+                  amount: total,
+                  notes: {
+                    purchaseType: 'course',
+                    studentName: customerName,
+                    studentEmail,
+                    studentPhone: formData.phone,
+                    courseIds: courseIds.join(','),
+                    amount: total
+                  }
+                }
+              })
+            })
+
+            const verifyData = await verifyRes.json()
+            if (!verifyRes.ok || !verifyData.success) {
+              throw new Error(verifyData.error || 'Payment verification failed')
+            }
+
+            // Store purchase in localStorage
+            const purchases = JSON.parse(localStorage.getItem('purchases') || '[]')
+            const newPurchase = {
+              id: Date.now(),
+              courses: items,
+              total: total,
+              customerInfo: formData,
+              paymentId: response.razorpay_payment_id,
+              orderId: response.razorpay_order_id,
+              date: new Date().toISOString()
+            }
+            purchases.push(newPurchase)
+            localStorage.setItem('purchases', JSON.stringify(purchases))
+            
+            // Clear cart
+            clearCart()
+            
+            // Redirect to success page
+            router.push(`/payment-success?paymentId=${response.razorpay_payment_id}&orderId=${response.razorpay_order_id}`)
+          } catch (verifyErr: any) {
+            console.error('Payment verification error:', verifyErr)
+            setErrorMessage(verifyErr.message || 'Payment verification failed. Please contact support.')
+            setIsProcessing(false)
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false)
+          }
         }
       }
 
-      // Store purchase in localStorage
-      const purchases = JSON.parse(localStorage.getItem('purchases') || '[]')
-      const newPurchase = {
-        id: Date.now(),
-        courses: items,
-        total: total,
-        customerInfo: formData,
-        paymentId: `pay_mock_checkout_${Date.now()}`,
-        orderId: `order_mock_checkout_${Date.now()}`,
-        date: new Date().toISOString()
-      }
-      purchases.push(newPurchase)
-      localStorage.setItem('purchases', JSON.stringify(purchases))
-      
-      // Clear cart
-      clearCart()
-      
-      // Redirect to success page
-      router.push('/payment-success')
+      const rzp = new Razorpay(options)
+      rzp.open()
 
     } catch (error: any) {
       console.error('Checkout error:', error)
-      if (typeof window !== 'undefined' && (window as any).showToast) {
-        (window as any).showToast(error.message || 'Checkout failed. Please try again.', 'error')
-      } else {
-        alert(error.message || 'Checkout failed. Please try again.')
-      }
-    } finally {
+      setErrorMessage(error.message || 'Checkout failed. Please try again.')
       setIsProcessing(false)
     }
   }
@@ -154,8 +217,12 @@ export default function CheckoutPage() {
             {/* Billing Information */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-2xl shadow-xl p-8">
-                <h2 className="text-2xl font-bold text-gray-800 mb-6">Billing Information</h2>
-                
+                {errorMessage && (
+                  <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm font-semibold text-center">
+                    {errorMessage}
+                  </div>
+                )}
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
@@ -335,7 +402,7 @@ export default function CheckoutPage() {
                         <p className="text-sm font-medium text-gray-800 truncate">{item.title}</p>
                         <p className="text-xs text-gray-500">{item.instructor}</p>
                       </div>
-                      <p className="text-sm font-bold text-primary">{item.price}</p>
+                      <p className="text-sm font-bold text-primary">{formatPrice(item.price)}</p>
                     </div>
                   ))}
                 </div>

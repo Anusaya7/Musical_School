@@ -276,7 +276,7 @@ const ALL_COURSES: Course[] = []
 COURSE_CATEGORIES.forEach(category => {
   ['Beginner', 'Intermediate', 'Advanced'].forEach(level => {
     const levelData = LEVEL_DETAILS[level as keyof typeof LEVEL_DETAILS]
-    const basePrice = level === 'Beginner' ? 8000 : level === 'Intermediate' ? 12000 : 15000
+    const basePrice = level === 'Beginner' ? 3500 : level === 'Intermediate' ? (category === 'piano' || category === 'guitar' ? 3999 : 4000) : 4500
     const duration = level === 'Beginner' ? '3 Months' : level === 'Intermediate' ? '4 Months' : '6 Months'
     const lessons = level === 'Beginner' ? 24 : level === 'Intermediate' ? 32 : 48
     const rating = level === 'Beginner' ? 4.8 : level === 'Intermediate' ? 4.85 : 4.9
