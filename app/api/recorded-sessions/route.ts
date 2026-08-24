@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getRecordedSessions, addRecordedSession, deleteRecordedSession, addAuditLog } from '@/lib/db'
+import { auth } from '@/auth'
 
 export async function GET() {
+  const session = await auth()
+  if (!session || !session.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const sessions = await getRecordedSessions()
     return NextResponse.json(sessions)
@@ -11,6 +17,15 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const session = await auth()
+  if (!session || !session.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const role = (session.user as any).role?.toUpperCase()
+  if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   try {
     const body = await request.json()
     const { title, description, url, instrument, courseId } = body
@@ -49,6 +64,15 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const session = await auth()
+  if (!session || !session.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const role = (session.user as any).role?.toUpperCase()
+  if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

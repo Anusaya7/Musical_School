@@ -223,6 +223,27 @@ export default function InstructorProfile() {
   const [isVideoOpen, setIsVideoOpen] = useState(false)
   const [activeVideoUrl, setActiveVideoUrl] = useState('')
 
+  // Database-driven reviews state
+  const [dbReviews, setDbReviews] = useState<any[]>([])
+  const [loadingReviews, setLoadingReviews] = useState(true)
+
+  useEffect(() => {
+    async function fetchReviews() {
+      try {
+        const res = await fetch('/api/reviews?status=APPROVED')
+        const data = await res.json()
+        if (data.success) {
+          setDbReviews(data.reviews)
+        }
+      } catch (err) {
+        console.error('Error fetching reviews:', err)
+      } finally {
+        setLoadingReviews(false)
+      }
+    }
+    fetchReviews()
+  }, [])
+
   const certifications = [
     {
       grade: 'Grade 8 Piano',
@@ -352,44 +373,14 @@ export default function InstructorProfile() {
     }
   ]
 
-  // Testimonials
-  const reviews = [
-    {
-      name: 'Rohan Sen',
-      role: 'Advanced Piano Student',
-      rating: 5,
-      text: 'Ajinkya is a remarkable mentor. His focus on correct finger posture and hand relaxation helped me overcome years of bad habits. The Trinity certification preparation was seamless and motivating!',
-      avatar: 'RS'
-    },
-    {
-      name: 'Priya Sharma',
-      role: 'Parent of 10yo Student',
-      rating: 5,
-      text: 'My daughter looked forward to every piano lesson with Ajinkya. His teaching workflow—starting with simple chord structures and moving to complex pieces—makes learning absolute fun.',
-      avatar: 'PS'
-    },
-    {
-      name: 'Vikram Malhotra',
-      role: 'Adult Guitar Student',
-      rating: 5,
-      text: 'As an adult learner, I appreciated his flexibility. He customized my lessons so I could learn both classical music theory and contemporary blues patterns. Highly recommended!',
-      avatar: 'VM'
-    },
-    {
-      name: 'Ananya Deshmukh',
-      role: 'Music Production Student',
-      rating: 5,
-      text: 'Ajinkya is an expert sound engineer as well. His music production and keyboard arrangement guidance helped me record and master my very first instrumental track. Incredible depth of knowledge.',
-      avatar: 'AD'
-    }
-  ]
+  // Testimonials are now loaded dynamically from the database.
 
   // Gallery items
   const galleryItems = [
-    { id: 1, category: 'performances', title: 'Grand Piano Solo Performance', img: '/images/performance_gallery.png' },
-    { id: 2, category: 'workshops', title: 'Acoustic Guitar Group Masterclass', img: '/images/workshop_gallery.png' },
-    { id: 3, category: 'recitals', title: 'Annual Student Showcase Recital', img: '/images/recital_gallery.png' },
-    { id: 4, category: 'classroom', title: 'Music Theory & Rhythm Lesson', img: '/images/classroom_gallery.png' }
+    { id: 1, category: 'performances', title: 'Lead Instructor Live Performance', img: '/images/instructor-ajinkya-music-school.jpg' },
+    { id: 2, category: 'workshops', title: 'Guitar & Piano Masterclass', img: '/images/instructor-ajinkya-music-school.jpg' },
+    { id: 3, category: 'recitals', title: 'Annual Student Showcase Host', img: '/images/instructor-ajinkya-music-school.jpg' },
+    { id: 4, category: 'classroom', title: 'Keyboard & Rhythm Lesson', img: '/images/instructor-ajinkya-music-school.jpg' }
   ]
 
   const filteredGallery = activeGalleryTab === 'all' 
@@ -774,31 +765,51 @@ export default function InstructorProfile() {
             <div className="w-16 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {reviews.map((rev, index) => (
-              <div key={index} className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-5 items-start">
-                <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-black shadow-sm shrink-0">
-                  {rev.avatar}
-                </div>
-                <div className="flex-1 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900">{rev.name}</h4>
-                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{rev.role}</p>
+          {loadingReviews ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-950"></div>
+            </div>
+          ) : dbReviews.length === 0 ? (
+            <div className="text-center py-12 bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-sm max-w-lg mx-auto">
+              <p className="text-slate-400 font-semibold text-sm">No student reviews yet. Be the first to share your learning experience.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {dbReviews.map((rev, index) => {
+                const studentName = rev.student?.name || 'Verified Student';
+                const courseTitle = rev.Course?.title || 'Enrolled Course';
+                const avatarInitials = studentName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || 'VS';
+                return (
+                  <div key={rev.id || index} className="bg-white border border-[#E5E7EB] rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-5 items-start">
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-black shadow-sm shrink-0">
+                      {avatarInitials}
                     </div>
-                    <div className="flex text-amber-400 select-none">
-                      {[...Array(rev.rating)].map((_, i) => (
-                        <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
-                      ))}
+                    <div className="flex-1 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-slate-900">{studentName}</h4>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-green-50 text-green-600 border border-green-150">
+                              ✓ Verified Student
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{courseTitle}</p>
+                        </div>
+                        <div className="flex text-amber-400 select-none">
+                          {[...Array(rev.rating)].map((_, i) => (
+                            <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed font-semibold italic">
+                        "{rev.comment}"
+                      </p>
                     </div>
                   </div>
-                  <p className="text-[11px] text-slate-500 leading-relaxed font-semibold italic">
-                    "{rev.text}"
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 

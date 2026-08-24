@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import logoEmblem from '@/public/images/logo_emblem.png'
 import { useSiteSettings } from '@/contexts/SiteSettingsContext'
 import {
@@ -24,6 +25,7 @@ import {
 export default function FooterPremium() {
   const [email, setEmail] = useState('')
   const { settings } = useSiteSettings()
+  const router = useRouter()
 
   const contactDetails = settings.contact_details || {}
   const footerSettings = settings.footer || {}
@@ -44,15 +46,15 @@ export default function FooterPremium() {
   const quickLinks = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Courses', href: '/courses', icon: BookOpen },
-    { name: 'Instructors', href: '/instructors', icon: Users },
+    { name: 'Instructors', href: '/instructor-profile', icon: Users },
     { name: 'About', href: '/about', icon: Info },
     { name: 'Contact', href: '/contact', icon: Phone }
   ]
 
   const topCourses = [
-    { name: 'Piano Fundamentals', icon: Piano },
-    { name: 'Guitar Mastery', icon: Guitar },
-    { name: 'Vocal Training', icon: Mic }
+    { name: 'Piano Fundamentals', href: '/courses?search=piano', icon: Piano },
+    { name: 'Guitar Mastery', href: '/courses?search=guitar', icon: Guitar },
+    { name: 'Vocal Training', href: '/courses?search=vocals', icon: Mic }
   ]
 
 
@@ -73,7 +75,10 @@ export default function FooterPremium() {
               <h3 className="text-2xl font-bold mb-1">Start Your Musical Journey Today</h3>
               <p className="text-white/80">Join 10,000+ students mastering music with us</p>
             </div>
-            <button className="px-8 py-3 bg-white text-purple-600 font-bold rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+            <button 
+              onClick={() => router.push('/contact')}
+              className="px-8 py-3 bg-white text-purple-600 font-bold rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            >
               Book Free Demo
             </button>
           </div>
@@ -142,8 +147,9 @@ export default function FooterPremium() {
               <ul className="space-y-3">
                 {quickLinks.map((link) => (
                   <li key={link.name}>
-                    <a
+                    <Link
                       href={link.href}
+                      prefetch={false}
                       className="flex items-center space-x-2 text-gray-400 hover:text-purple-400 transition-all duration-300 group"
                     >
                       <link.icon className="w-4 h-4 group-hover:text-purple-400" />
@@ -151,7 +157,7 @@ export default function FooterPremium() {
                         {link.name}
                         <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-300" />
                       </span>
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -163,8 +169,9 @@ export default function FooterPremium() {
               <ul className="space-y-3">
                 {topCourses.map((course) => (
                   <li key={course.name}>
-                    <a
-                      href="#"
+                    <Link
+                      href={course.href}
+                      prefetch={false}
                       className="flex items-center space-x-2 text-gray-400 hover:text-purple-400 transition-all duration-300 group"
                     >
                       <course.icon className="w-4 h-4 group-hover:text-purple-400" />
@@ -172,7 +179,7 @@ export default function FooterPremium() {
                         {course.name}
                         <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-400 group-hover:w-full transition-all duration-300" />
                       </span>
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>

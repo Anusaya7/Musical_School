@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import MusicBackground from '@/components/MusicBackground'
 import MusicSparkle from '@/components/MusicSparkle'
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react'
 
 export default function About() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [mounted, setMounted] = useState(false)
   const { settings } = useSiteSettings()
@@ -30,7 +32,7 @@ export default function About() {
   }, [])
 
   const handleEnroll = () => {
-    console.log('Enrollment clicked')
+    router.push('/courses')
   }
 
 

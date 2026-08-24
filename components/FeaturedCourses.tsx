@@ -233,33 +233,21 @@ const CourseCard = memo(({ course, isInCart, onBookClick, onAddToCart }: CourseC
         <div className="space-y-3">
           {/* Secondary & Cart buttons row */}
           <div className="flex gap-3">
-            {(() => {
-              const parts = course.id.toLowerCase().split('-')
-              const level = parts[parts.length - 1]
-              const instrument = parts.slice(0, -1).join('-')
-              return (
-                <Link
-                  href={`/courses/${instrument}/${level}`}
-                  onClick={(e) => {
-                    if (isPending) {
-                      e.preventDefault()
-                      return
-                    }
-                    e.preventDefault()
-                    startTransition(() => {
-                      router.push(`/courses/${instrument}/${level}`)
-                    })
-                  }}
-                  className={`btn-premium-base btn-premium-secondary flex-1 h-12 text-xs gap-1.5 ${isPending ? 'opacity-80 pointer-events-none' : ''}`}
-                >
-                  {showSpinner && (
-                    <span className="w-3.5 h-3.5 border-2 border-[#0F1E4A] border-t-transparent rounded-full animate-spin shrink-0 mr-0.5" />
-                  )}
-                  <span>View Details</span>
-                  <span className="text-sm">→</span>
-                </Link>
-              )
-            })()}
+              {(() => {
+                const parts = course.id.toLowerCase().split('-')
+                const level = parts[parts.length - 1]
+                const instrument = parts.slice(0, -1).join('-')
+                return (
+                  <Link
+                    href={`/courses/${instrument}/${level}`}
+                    prefetch={false}
+                    className="btn-premium-base btn-premium-secondary flex-1 h-12 text-xs gap-1.5"
+                  >
+                    <span>View Details</span>
+                    <span className="text-sm">→</span>
+                  </Link>
+                )
+              })()}
 
             <button
               onClick={() => onAddToCart(course)}

@@ -61,6 +61,16 @@ export default function StudentDashboard() {
   const [studentInitials, setStudentInitials] = useState('KP')
   const [payments, setPayments] = useState<any[]>([])
 
+  // Reviews state variables
+  const [myReviews, setMyReviews] = useState<any[]>([])
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [selectedReviewCourse, setSelectedReviewCourse] = useState<any>(null)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null)
+  const [submittingReview, setSubmittingReview] = useState(false)
+  const [reviewError, setReviewError] = useState('')
+
   const handleNotification = (message: string) => {
     setNotificationMessage(message)
     setShowNotification(true)
@@ -111,6 +121,14 @@ export default function StudentDashboard() {
       // 2. Set enrolled courses
       const currentStudent = Array.isArray(studentsRes) ? studentsRes.find((s: any) => s.email === userEmail) : null
       const enrolledCourseIds = currentStudent?.enrolledCourses || []
+
+      // Fetch reviews for student
+      if (currentStudent?.id) {
+        const reviewsRes = await fetch(`/api/reviews?studentId=${currentStudent.id}`).then(r => r.json()).catch(() => ({ success: false }))
+        if (reviewsRes.success) {
+          setMyReviews(reviewsRes.reviews)
+        }
+      }
 
       let enrolledList = []
       if (Array.isArray(coursesRes) && coursesRes.length > 0) {
@@ -198,6 +216,109 @@ export default function StudentDashboard() {
       return 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?q=80&w=400&auto=format&fit=crop'
     }
     return 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=400&auto=format&fit=crop'
+  }
+
+  const handleOpenReviewModal = (course: any) => {
+    const existing = myReviews.find(r => r.courseId === course.id)
+    setReviewError('')
+    if (existing) {
+      setReviewRating(existing.rating)
+      setReviewComment(existing.comment)
+      setEditingReviewId(existing.id)
+    } else {
+      setReviewRating(5)
+      setReviewComment('')
+      setEditingReviewId(null)
+    }
+    setSelectedReviewCourse(course)
+    setShowReviewModal(true)
+  }
+
+  const handleSubmitReview = async () => {
+    if (!reviewComment.trim()) {
+      setReviewError('Review comment cannot be empty.')
+      return
+    }
+    if (reviewComment.trim().length < 10) {
+      setReviewError('Review comment must be at least 10 characters long.')
+      return
+    }
+
+    setSubmittingReview(true)
+    setReviewError('')
+    try {
+      const url = editingReviewId ? `/api/reviews/${editingReviewId}` : '/api/reviews'
+      const method = editingReviewId ? 'PATCH' : 'POST'
+      const body = editingReviewId
+        ? { rating: reviewRating, comment: reviewComment }
+        : { courseId: selectedReviewCourse.id, rating: reviewRating, comment: reviewComment }
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        handleNotification(
+          editingReviewId
+            ? 'Review updated successfully! It is pending approval.'
+            : 'Review submitted successfully! It is pending approval.'
+        )
+        setShowReviewModal(false)
+        // Refresh reviews list
+        const userString = localStorage.getItem('user')
+        const loggedUser = userString ? JSON.parse(userString) : null
+        const userEmail = loggedUser?.email || 'student@2ndinversion.com'
+        const studentsRes = await fetch('/api/students').then(r => r.json()).catch(() => [])
+        const currentStudent = Array.isArray(studentsRes) ? studentsRes.find((s: any) => s.email === userEmail) : null
+        if (currentStudent?.id) {
+          const reviewsRes = await fetch(`/api/reviews?studentId=${currentStudent.id}`).then(r => r.json()).catch(() => ({ success: false }))
+          if (reviewsRes.success) {
+            setMyReviews(reviewsRes.reviews)
+          }
+        }
+      } else {
+        setReviewError(data.error || 'Failed to submit review.')
+      }
+    } catch (err: any) {
+      setReviewError(err.message || 'An error occurred.')
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
+
+  const renderReviewAction = (course: any) => {
+    const existing = myReviews.find(r => r.courseId === course.id)
+    if (!existing) {
+      return (
+        <button
+          onClick={() => handleOpenReviewModal(course)}
+          className="px-4 h-12 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] rounded-xl transition-all shrink-0 active:scale-[0.98]"
+        >
+          Write Review
+        </button>
+      )
+    }
+
+    let statusPill = 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm'
+    if (existing.status === 'APPROVED') statusPill = 'bg-green-50 text-green-700 border-green-200 shadow-sm'
+    if (existing.status === 'REJECTED') statusPill = 'bg-red-50 text-red-700 border-red-200 shadow-sm'
+
+    return (
+      <div className="flex flex-col items-stretch gap-1 shrink-0">
+        <button
+          onClick={() => handleOpenReviewModal(course)}
+          className="px-4 h-8 bg-slate-100 hover:bg-slate-200 text-slate-750 font-bold text-[9px] rounded-xl transition-all"
+        >
+          Edit Review
+        </button>
+        <span className={`text-[8px] font-black uppercase border rounded px-2 py-0.5 text-center leading-none mt-0.5 ${statusPill}`}>
+          {existing.status}
+        </span>
+      </div>
+    )
   }
 
   return (
@@ -623,6 +744,7 @@ export default function StudentDashboard() {
                           onContinueLearning={() => {
                             setActiveTab('recorded')
                           }}
+                          onReviewAction={(course) => renderReviewAction(course)}
                         />
                       ))
                     )}
@@ -942,6 +1064,100 @@ export default function StudentDashboard() {
         </main>
       </div>
 
+      {/* Interactive Write/Edit Review Modal */}
+      {showReviewModal && selectedReviewCourse && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-[28px] border border-[#E6EEFF] w-full max-w-lg overflow-hidden shadow-2xl p-7 relative space-y-6">
+            <button
+              onClick={() => setShowReviewModal(false)}
+              className="absolute top-5 right-5 p-2 bg-[#FAFBFF] border border-[#E6EEFF] rounded-xl text-slate-400 hover:text-slate-600 hover:shadow-sm transition-all"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="space-y-1">
+              <span className="text-[10px] font-black text-[#5EA8FF] uppercase tracking-wider block">Course Review System</span>
+              <h3 className="text-lg font-black text-[#0F1E4A]">
+                {editingReviewId ? 'Edit Your Review' : 'Share Your Experience'}
+              </h3>
+              <p className="text-xs text-slate-450 font-bold">
+                For course: <span className="text-[#0F1E4A] font-extrabold">{selectedReviewCourse.title}</span>
+              </p>
+            </div>
+
+            {/* Stars Rating Selector */}
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Your Rating</label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    className="p-1 text-2xl hover:scale-110 active:scale-95 transition-transform"
+                    title={`${star} Star${star > 1 ? 's' : ''}`}
+                  >
+                    <span className={star <= reviewRating ? 'text-amber-400 select-none' : 'text-slate-200 select-none'}>
+                      ★
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Comment Area */}
+            <div className="space-y-2">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Review Comment</label>
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                placeholder="What did you like about this course? How was the instructor's feedback? (Minimum 10 characters)"
+                className="w-full px-4.5 py-3 text-xs bg-[#FAFBFF] border-2 border-[#E6EEFF] rounded-2xl font-bold focus:outline-none focus:border-[#5EA8FF] resize-none h-32"
+                maxLength={500}
+              />
+              <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+                <span>{reviewComment.length} / 500 characters</span>
+                {editingReviewId && (
+                  <span className="text-amber-500">⚠️ Editing will reset approval status to pending</span>
+                )}
+              </div>
+            </div>
+
+            {/* Error message */}
+            {reviewError && (
+              <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl">
+                {reviewError}
+              </div>
+            )}
+
+            {/* Submit / Cancel Actions */}
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowReviewModal(false)}
+                className="flex-1 py-3 border border-[#E6EEFF] text-slate-500 font-extrabold rounded-2xl hover:bg-slate-50 text-xs transition active:scale-[0.98]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitReview}
+                disabled={submittingReview}
+                className="flex-1 py-3 bg-slate-900 text-white font-extrabold rounded-2xl hover:bg-slate-800 text-xs transition active:scale-[0.98] flex items-center justify-center gap-1.5 shadow-md disabled:bg-slate-400 disabled:cursor-not-allowed"
+              >
+                {submittingReview ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <span>Submit Review</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

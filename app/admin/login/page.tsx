@@ -67,8 +67,11 @@ export default function AdminLoginPage() {
       const checkData = await checkRes.json()
 
       if (!checkRes.ok || !checkData.success) {
-        console.log(`[ADMIN-AUTH] Login failed: ${checkData.error || 'Invalid credentials'}. Redirecting to unauthorized...`)
-        window.location.replace(`/unauthorized?error=${encodeURIComponent('Invalid admin email or password.')}`)
+        console.log(`[ADMIN-AUTH] Login failed: ${checkData.error || 'Invalid credentials'}.`)
+        const errorMsg = checkRes.status === 500
+          ? 'Unable to sign in right now. Please try again.'
+          : (checkData.error || 'Invalid email or password.')
+        setErrors({ email: errorMsg })
         setIsLoading(false)
         return
       }
@@ -85,10 +88,10 @@ export default function AdminLoginPage() {
 
       if (res?.error) {
         console.error(`[ADMIN-AUTH] NextAuth credentials session creation failed: ${res.error}`)
-        window.location.replace(`/unauthorized?error=${encodeURIComponent('Invalid admin email or password.')}`)
+        setErrors({ email: 'Invalid email or password.' })
       } else {
         setLoginSuccess(true)
-        const name = role === 'SUPER_ADMIN' ? 'Ajinkya Amrule' : role === 'INSTRUCTOR' ? 'Ajinkya Amrule' : 'John Doe'
+        const name = checkData.name || (role === 'SUPER_ADMIN' ? 'Ajinkya Amrule' : role === 'INSTRUCTOR' ? 'Ajinkya Amrule' : 'Verified User')
         
         localStorage.setItem('user', JSON.stringify({
           email: formData.email,
@@ -109,7 +112,7 @@ export default function AdminLoginPage() {
       }
     } catch (error) {
       console.error('[ADMIN-AUTH] Login submission error:', error)
-      window.location.replace(`/unauthorized?error=${encodeURIComponent('Invalid admin email or password.')}`)
+      setErrors({ email: 'Invalid email or password.' })
     } finally {
       setIsLoading(false)
     }

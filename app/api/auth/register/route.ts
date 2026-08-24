@@ -86,19 +86,27 @@ export async function POST(request: Request) {
       })
 
       // 5. Send Verification Email to Student with OTP
-      const studentHtml = getSignupVerificationEmail(name, otp)
-      await sendSystemEmail(lowerEmail, 'Verify Your Email Address', studentHtml)
+      try {
+        const studentHtml = getSignupVerificationEmail(name, otp)
+        await sendSystemEmail(lowerEmail, 'Verify Your Email Address', studentHtml)
 
-      // 6. Send Email Notification to Admin
-      const adminHtml = getAdminNewStudentEmail(name, lowerEmail)
-      const adminEmail = process.env.ADMIN_EMAIL || 'aamrule90@gmail.com'
-      await sendSystemEmail(adminEmail, `New Student Registered - ${name}`, adminHtml)
+        // 6. Send Email Notification to Admin
+        const adminHtml = getAdminNewStudentEmail(name, lowerEmail)
+        const adminEmail = process.env.ADMIN_EMAIL || 'aamrule90@gmail.com'
+        await sendSystemEmail(adminEmail, `New Student Registered - ${name}`, adminHtml)
+      } catch (mailErr) {
+        console.error('[AUTH-REGISTER] Failed to send verification emails:', mailErr)
+      }
 
       // 7. Send WhatsApp Notification to Admin
-      await WhatsAppService.sendMessage('917768838832', `Hello Admin, a new student has registered on the 2nd Inversion LMS:
+      try {
+        await WhatsAppService.sendMessage('917768838832', `Hello Admin, a new student has registered on the 2nd Inversion LMS:
 Name: ${name}
 Email: ${lowerEmail}
 Status: Awaiting OTP Verification`)
+      } catch (waErr) {
+        console.error('[AUTH-REGISTER] Failed to send WhatsApp notification:', waErr)
+      }
 
       return NextResponse.json({ success: true, message: 'Registration successful! Verification email sent.', user: { name, email: lowerEmail, role: 'STUDENT' } })
     }

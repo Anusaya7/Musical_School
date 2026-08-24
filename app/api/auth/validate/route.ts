@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     }
 
     console.log(`[AUTH-VALIDATION] Successful match for: ${lowerEmail}, role: ${user.role}`)
-    return NextResponse.json({ success: true, role: user.role })
+    return NextResponse.json({ success: true, role: user.role, name: user.name })
   } catch (error: any) {
     console.error('[AUTH-VALIDATION] Error during validation:', error)
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })

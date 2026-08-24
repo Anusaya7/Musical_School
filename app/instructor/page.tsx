@@ -340,6 +340,20 @@ export default function InstructorDashboard() {
 
   const [instructorToast, setInstructorToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
+  // Local override of alert to redirect all alerts to custom toast notification
+  const alert = (message: string) => {
+    const isError = message.toLowerCase().includes('fail') || 
+                    message.toLowerCase().includes('error') || 
+                    message.toLowerCase().includes('missing') || 
+                    message.toLowerCase().includes('invalid') ||
+                    message.toLowerCase().includes('required');
+    setInstructorToast({
+      type: isError ? 'error' : 'success',
+      text: message
+    });
+    setTimeout(() => setInstructorToast(null), 4000);
+  }
+
   // Request Leave Action
   const handleRequestLeave = async (e: React.FormEvent) => {
     e.preventDefault()

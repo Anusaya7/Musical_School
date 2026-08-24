@@ -72,7 +72,10 @@ export default function LoginPage() {
 
       if (!checkRes.ok || !checkData.success) {
         console.log(`[AUTH] Login failed: ${checkData.error || 'Invalid credentials'}.`)
-        setErrors({ email: checkData.error || 'Invalid email or password.' })
+        const errorMsg = checkRes.status === 500
+          ? 'Unable to sign in right now. Please try again.'
+          : (checkData.error || 'Invalid email or password.')
+        setErrors({ email: errorMsg })
         setIsLoading(false)
         return
       }
@@ -92,7 +95,7 @@ export default function LoginPage() {
         setErrors({ email: 'Invalid email or password.' })
       } else {
         setLoginSuccess(true)
-        const name = role === 'SUPER_ADMIN' ? 'Ajinkya Amrule' : role === 'INSTRUCTOR' ? 'Ajinkya Amrule' : 'John Doe'
+        const name = checkData.name || (role === 'SUPER_ADMIN' ? 'Ajinkya Amrule' : role === 'INSTRUCTOR' ? 'Ajinkya Amrule' : 'Verified User')
         
         localStorage.setItem('user', JSON.stringify({
           email: formData.email,
@@ -118,21 +121,12 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true)
+    setErrors({})
     try {
       await signIn('google', { callbackUrl: '/student/dashboard' })
     } catch (error) {
-      console.warn('Google Auth.js sign-in failed. Falling back to local developer simulation.', error)
-      const mockGoogleUser = {
-        email: 'student@2ndinversion.com',
-        name: 'John Doe',
-        role: 'STUDENT',
-        isVerified: true
-      }
-      localStorage.setItem('user', JSON.stringify(mockGoogleUser))
-      setLoginSuccess(true)
-      setTimeout(() => {
-        window.location.replace('/student/dashboard')
-      }, 1200)
+      console.error('Google Sign-In error:', error)
+      setErrors({ email: 'Google Sign-In failed. Please try again later.' })
     } finally {
       setIsLoading(false)
     }

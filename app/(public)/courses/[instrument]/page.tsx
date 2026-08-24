@@ -1,13 +1,13 @@
 import { redirect } from 'next/navigation'
 
 interface PageProps {
-  params: Promise<{
+  params: {
     instrument: string
-  }>
+  }
 }
 
-export default async function FallbackCoursePage({ params }: PageProps) {
-  const { instrument } = await params
+export default function FallbackCoursePage({ params }: PageProps) {
+  const { instrument } = params
 
   if (!instrument) {
     redirect('/courses')

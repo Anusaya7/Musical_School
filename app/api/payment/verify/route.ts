@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     const studentEmail = orderData?.notes?.studentEmail || orderData?.studentEmail || 'student@2ndinversion.com'
-    const studentName = orderData?.notes?.studentName || orderData?.studentName || 'John Doe'
+    const studentName = orderData?.notes?.studentName || orderData?.studentName || 'Anil Misal'
     const courseId = orderData?.notes?.courseId || orderData?.courseId || 'piano-beginner'
     const courseName = orderData?.notes?.courseName || orderData?.courseName || 'Piano Beginner'
     const amount = Number(orderData?.amount || 3500)

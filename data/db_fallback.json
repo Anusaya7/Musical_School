@@ -1033,7 +1033,7 @@
     },
     {
       "id": "stud-1",
-      "name": "John Doe",
+      "name": "Anil Misal",
       "email": "student@2ndinversion.com",
       "passwordHash": "$2b$10$.ebMdO0g9rhQ36EeziodEO5Z0M3Tb2T3fD/NyN6w.ckCQE39jNuSG",
       "role": "STUDENT",

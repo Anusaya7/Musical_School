@@ -119,16 +119,16 @@ export default function Header() {
           <nav className="hidden xl:flex items-center gap-3 flex-nowrap">
             {/* Main Navigation Links */}
             <div className="flex gap-1">
-              <Link href="/" className={getLinkClass('/')}>
+              <Link href="/" prefetch={false} className={getLinkClass('/')}>
                 Home
               </Link>
-              <Link href="/courses" className={getLinkClass('/courses')}>
+              <Link href="/courses" prefetch={false} className={getLinkClass('/courses')}>
                 Courses
               </Link>
-              <Link href="/about" className={getLinkClass('/about')}>
+              <Link href="/about" prefetch={false} className={getLinkClass('/about')}>
                 About
               </Link>
-              <Link href="/contact" className={getLinkClass('/contact')}>
+              <Link href="/contact" prefetch={false} className={getLinkClass('/contact')}>
                 Contact
               </Link>
             </div>
@@ -154,7 +154,7 @@ export default function Header() {
             {/* Role Icons */}
             <div className={`flex items-center space-x-4 border-l pl-6 ${theme === 'dark' ? 'border-gray-600' : 'border-gray-300'
               }`}>
-              <Link href="/admin/login" className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
+              <Link href="/admin/login" prefetch={false} className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
                   ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
                   : 'text-gray-600 hover:bg-purple-50 hover:text-purple-600'
                 }`}>
@@ -164,7 +164,7 @@ export default function Header() {
                 <span>Admin</span>
               </Link>
 
-              <Link href="/instructor" className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
+              <Link href="/instructor" prefetch={false} className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
                   ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
                   : 'text-gray-600 hover:bg-purple-50 hover:text-purple-600'
                 }`}>
@@ -174,7 +174,7 @@ export default function Header() {
                 <span>Instructor</span>
               </Link>
 
-              <Link href="/student" className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
+              <Link href="/student" prefetch={false} className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
                   ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
                   : 'text-gray-600 hover:bg-purple-50 hover:text-purple-600'
                 }`}>
@@ -188,7 +188,7 @@ export default function Header() {
             {/* Cart */}
             <div className={`flex items-center space-x-3 border-l pl-6 ${theme === 'dark' ? 'border-gray-600' : 'border-gray-300'
               }`}>
-              <Link href="/cart" className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
+              <Link href="/cart" prefetch={false} className={`flex items-center space-x-2 px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
                   ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
                   : 'text-gray-600 hover:bg-purple-50 hover:text-purple-600'
                 }`}>
@@ -210,6 +210,7 @@ export default function Header() {
             <div className="flex items-center gap-3 whitespace-nowrap">
               <Link
                 href="/login"
+                prefetch={false}
                 className={`inline-flex items-center px-5 py-2 font-medium rounded-xl whitespace-nowrap transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px] ${theme === 'dark'
                     ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
                     : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
@@ -220,6 +221,7 @@ export default function Header() {
 
               <Link
                 href="/signup"
+                prefetch={false}
                 className="inline-flex items-center px-5 py-2 font-medium rounded-xl whitespace-nowrap transition-all duration-200 ease-in-out bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px]"
               >
                 Sign Up
@@ -251,39 +253,39 @@ export default function Header() {
         {isMobileMenuOpen && (
           <div className={`xl:hidden border-t ${theme === 'dark' ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'} mt-4`}>
             <div className="py-4 space-y-2">
-              <Link href="/" className={getMobileLinkClass('/')}>
+              <Link href="/" prefetch={false} onClick={() => setIsMobileMenuOpen(false)} className={getMobileLinkClass('/')}>
                 Home
               </Link>
-              <Link href="/courses" className={getMobileLinkClass('/courses')}>
+              <Link href="/courses" prefetch={false} onClick={() => setIsMobileMenuOpen(false)} className={getMobileLinkClass('/courses')}>
                 Courses
               </Link>
-              <Link href="/about" className={getMobileLinkClass('/about')}>
+              <Link href="/about" prefetch={false} onClick={() => setIsMobileMenuOpen(false)} className={getMobileLinkClass('/about')}>
                 About
               </Link>
-              <Link href="/contact" className={getMobileLinkClass('/contact')}>
+              <Link href="/contact" prefetch={false} onClick={() => setIsMobileMenuOpen(false)} className={getMobileLinkClass('/contact')}>
                 Contact
               </Link>
 
               <div className={`border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} my-2 pt-2`}>
-                <Link href="/admin/login" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
+                <Link href="/admin/login" prefetch={false} onClick={() => setIsMobileMenuOpen(false)} className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
                     ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
                     : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
                   }`}>
                   Admin
                 </Link>
-                <Link href="/instructor" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
+                <Link href="/instructor" prefetch={false} onClick={() => setIsMobileMenuOpen(false)} className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
                     ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
                     : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
                   }`}>
                   Instructor
                 </Link>
-                <Link href="/student" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
+                <Link href="/student" prefetch={false} onClick={() => setIsMobileMenuOpen(false)} className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
                     ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
                     : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
                   }`}>
                   Student
                 </Link>
-                <Link href="/cart" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
+                <Link href="/cart" prefetch={false} onClick={() => setIsMobileMenuOpen(false)} className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
                     ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
                     : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
                   }`}>
@@ -292,13 +294,13 @@ export default function Header() {
               </div>
 
               <div className={`border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} my-2 pt-2`}>
-                <Link href="/login" className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
+                <Link href="/login" prefetch={false} onClick={() => setIsMobileMenuOpen(false)} className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
                     ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
                     : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
                   }`}>
                   Log In
                 </Link>
-                <Link href="/signup" className="block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px]">
+                <Link href="/signup" prefetch={false} onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px]">
                   Sign Up
                 </Link>
               </div>

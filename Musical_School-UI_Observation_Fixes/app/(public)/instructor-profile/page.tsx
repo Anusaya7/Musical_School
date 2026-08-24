@@ -386,10 +386,10 @@ export default function InstructorProfile() {
 
   // Gallery items
   const galleryItems = [
-    { id: 1, category: 'performances', title: 'Grand Piano Solo Performance', img: '/images/performance_gallery.png' },
-    { id: 2, category: 'workshops', title: 'Acoustic Guitar Group Masterclass', img: '/images/workshop_gallery.png' },
-    { id: 3, category: 'recitals', title: 'Annual Student Showcase Recital', img: '/images/recital_gallery.png' },
-    { id: 4, category: 'classroom', title: 'Music Theory & Rhythm Lesson', img: '/images/classroom_gallery.png' }
+    { id: 1, category: 'performances', title: 'Lead Instructor Live Performance', img: '/images/instructor-ajinkya-music-school.jpg' },
+    { id: 2, category: 'workshops', title: 'Guitar & Piano Masterclass', img: '/images/instructor-ajinkya-music-school.jpg' },
+    { id: 3, category: 'recitals', title: 'Annual Student Showcase Host', img: '/images/instructor-ajinkya-music-school.jpg' },
+    { id: 4, category: 'classroom', title: 'Keyboard & Rhythm Lesson', img: '/images/instructor-ajinkya-music-school.jpg' }
   ]
 
   const filteredGallery = activeGalleryTab === 'all' 

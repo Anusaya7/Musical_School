@@ -13,12 +13,16 @@ const connectionString = process.env.DATABASE_URL
 if (!globalForPrisma.pool) {
   globalForPrisma.pool = new Pool({
     connectionString: connectionString || undefined,
-    connectionTimeoutMillis: 10000, // 10 seconds to allow serverless DB wakeup
-    idleTimeoutMillis: 30000,
-    max: process.env.NODE_ENV === 'production' ? 2 : 5, // limit connection pool size to prevent exhaustion
-    ssl: connectionString?.includes('sslmode=') || process.env.NODE_ENV === 'production'
+    connectionTimeoutMillis: 30000, // 30 seconds to allow serverless DB wakeup on cold starts
+    idleTimeoutMillis: 15000, // keep connections warm for 15 seconds to avoid handshake latency on consecutive queries
+    max: 10, // allow up to 10 concurrent connections to handle parallel Next.js page queries without starvation
+    ssl: connectionString?.includes('sslmode=') || (!connectionString?.includes('localhost') && !connectionString?.includes('127.0.0.1'))
       ? { rejectUnauthorized: false }
       : undefined
+  })
+
+  globalForPrisma.pool.on('error', (err) => {
+    console.error('[DATABASE POOL ERROR] Stale connection or socket issue:', err)
   })
 }
 
@@ -33,8 +37,7 @@ export const prisma =
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   })
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma
-}
+// Always preserve prisma and pool globally to prevent connection leaks in both dev and production
+globalForPrisma.prisma = prisma
 
 

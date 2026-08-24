@@ -4,14 +4,14 @@ import { notFound } from 'next/navigation'
 import React from 'react'
 
 interface PageProps {
-  params: Promise<{
+  params: {
     instrument: string
     level: string
-  }>
+  }
 }
 
 export default async function CourseLevelPage({ params }: PageProps) {
-  const { instrument, level } = await params
+  const { instrument, level } = params
 
   // Fetch course details from database
   const courseDetails = await getCourseByInstrumentAndLevel(instrument, level)

@@ -6,7 +6,13 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 
 const connectionString = process.env.DATABASE_URL
-const pool = new Pool({ connectionString })
+const pool = new Pool({
+  connectionString: connectionString || undefined,
+  connectionTimeoutMillis: 15000,
+  ssl: connectionString?.includes('sslmode=')
+    ? { rejectUnauthorized: false }
+    : undefined
+})
 const adapter = new PrismaPg(pool)
 const prisma = new PrismaClient({ adapter })
 
@@ -234,16 +240,16 @@ async function seedCourseDetails(courseId: string, instName: string, levelUpper:
 
   // Seed reviews
   const reviewsData = [
-    { name: 'Sarah M.', rating: 5, comment: `This ${instName.toLowerCase()} course is wonderful! The structured lessons made it so easy to follow.` },
-    { name: 'David K.', rating: 5, comment: `Excellent materials and guidance. Ajinkya is a phenomenal teacher.` }
+    { studentId: 'student-1', rating: 5, comment: `This ${instName.toLowerCase()} course is wonderful! The structured lessons made it so easy to follow.`, status: 'APPROVED' }
   ]
   for (const rev of reviewsData) {
     await prisma.review.create({
       data: {
         courseId,
-        name: rev.name,
+        studentId: rev.studentId,
         rating: rev.rating,
-        comment: rev.comment
+        comment: rev.comment,
+        status: 'APPROVED'
       }
     })
   }
@@ -258,45 +264,39 @@ async function main() {
   
   // 1. Seed Instructor
   const instructorEmail = 'instructor@2ndinversion.com'
-  let instructor = await prisma.instructor.findUnique({
-    where: { email: instructorEmail }
+  console.log('Seeding default instructor Ajinkya Amrule...')
+  let instructor = await prisma.instructor.upsert({
+    where: { id: 'instructor-1' },
+    update: {
+      name: 'Ajinkya Amrule',
+      email: instructorEmail,
+      expertise: 'Piano, Guitar, Vocals, Music Theory, Bass Guitar',
+      rating: 4.9,
+      students: 500,
+      avatar: 'AA',
+      isActive: true,
+      certificates: ['Trinity College London Certified', 'Associated Board of the Royal Schools of Music (ABRSM)'],
+      role: 'Senior Music Instructor',
+      experience: '10+ Years',
+      bio: 'Professional music educator dedicated to Trinity, Guildhall and modern performance training.',
+      photo: '/images/instructor_portrait.jpg'
+    },
+    create: {
+      id: 'instructor-1',
+      name: 'Ajinkya Amrule',
+      email: instructorEmail,
+      expertise: 'Piano, Guitar, Vocals, Music Theory, Bass Guitar',
+      rating: 4.9,
+      students: 500,
+      avatar: 'AA',
+      isActive: true,
+      certificates: ['Trinity College London Certified', 'Associated Board of the Royal Schools of Music (ABRSM)'],
+      role: 'Senior Music Instructor',
+      experience: '10+ Years',
+      bio: 'Professional music educator dedicated to Trinity, Guildhall and modern performance training.',
+      photo: '/images/instructor_portrait.jpg'
+    }
   })
-  
-  if (!instructor) {
-    console.log('Seeding default instructor Ajinkya Amrule...')
-    instructor = await prisma.instructor.create({
-      data: {
-        id: 'instructor-1',
-        name: 'Ajinkya Amrule',
-        email: instructorEmail,
-        expertise: 'Piano, Guitar, Vocals, Music Theory, Bass Guitar',
-        rating: 4.9,
-        students: 500,
-        avatar: 'AA',
-        isActive: true,
-        certificates: ['Trinity College London Certified', 'Associated Board of the Royal Schools of Music (ABRSM)'],
-        role: 'Senior Music Instructor',
-        experience: '10+ Years',
-        bio: 'Professional music educator dedicated to Trinity, Guildhall and modern performance training.',
-        photo: '/images/instructor_portrait.jpg'
-      }
-    })
-  } else {
-    // Make sure details are updated to match requirements
-    instructor = await prisma.instructor.update({
-      where: { email: instructorEmail },
-      data: {
-        expertise: 'Piano, Guitar, Vocals, Music Theory, Bass Guitar',
-        rating: 4.9,
-        students: 500,
-        certificates: ['Trinity College London Certified', 'Associated Board of the Royal Schools of Music (ABRSM)'],
-        role: 'Senior Music Instructor',
-        experience: '10+ Years',
-        bio: 'Professional music educator dedicated to Trinity, Guildhall and modern performance training.',
-        photo: '/images/instructor_portrait.jpg'
-      }
-    })
-  }
 
   // 2. Seed Users
   const adminEmail = 'aamrule90@gmail.com'
@@ -338,23 +338,30 @@ async function main() {
     })
   }
 
-  const studentUser = await prisma.user.findUnique({ where: { email: studentEmail } })
-  if (!studentUser) {
-    console.log('Seeding student user...')
-    const studHash = await bcrypt.hash('Student@123', 10)
-    await prisma.user.create({
-      data: {
-        id: 'student-1',
-        name: 'John Doe',
-        email: studentEmail,
-        passwordHash: studHash,
-        role: 'STUDENT',
-        isVerified: true,
-        status: 'Active',
-        enrolledCourses: ['piano-beginner']
-      }
-    })
-  }
+  console.log('Seeding student user...')
+  const studHash = await bcrypt.hash('Student@123', 10)
+  await prisma.user.upsert({
+    where: { id: 'student-1' },
+    update: {
+      name: 'Anil Misal',
+      email: studentEmail,
+      passwordHash: studHash,
+      role: 'STUDENT',
+      isVerified: true,
+      status: 'Active',
+      enrolledCourses: ['piano-beginner']
+    },
+    create: {
+      id: 'student-1',
+      name: 'Anil Misal',
+      email: studentEmail,
+      passwordHash: studHash,
+      role: 'STUDENT',
+      isVerified: true,
+      status: 'Active',
+      enrolledCourses: ['piano-beginner']
+    }
+  })
 
   // 3. Clear existing Category/Course and details to prevent primary key conflicts or duplicate records.
   console.log('Cleaning existing courses and instruments database tables...')

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getInquiries, addInquiry, updateInquiryStatus, deleteInquiry, addNotification } from '@/lib/db'
 import { sendSystemEmail, getContactFormConfirmationEmail, getAdminNewContactInquiryEmail } from '@/lib/email'
 import { WhatsAppService } from '@/lib/services/whatsapp'
+import { auth } from '@/auth'
 
 // Basic input sanitization to prevent XSS
 function sanitize(input: string): string {
@@ -30,6 +31,15 @@ const validatePhone = (phone: string) => {
 
 // GET Handler - Admin dashboard query
 export async function GET(request: Request) {
+  const session = await auth()
+  if (!session || !session.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const role = (session.user as any).role?.toUpperCase()
+  if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')?.toLowerCase() || ''
@@ -233,6 +243,15 @@ Message: ${sMessage}`)
 
 // PUT Handler - Mark inquiries as Read
 export async function PUT(request: Request) {
+  const session = await auth()
+  if (!session || !session.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const role = (session.user as any).role?.toUpperCase()
+  if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   try {
     const body = await request.json()
     const { id, status } = body
@@ -259,6 +278,15 @@ export async function PUT(request: Request) {
 
 // DELETE Handler - Delete inquiry
 export async function DELETE(request: Request) {
+  const session = await auth()
+  if (!session || !session.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const role = (session.user as any).role?.toUpperCase()
+  if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

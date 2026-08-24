@@ -140,6 +140,7 @@ export default function CourseDetailsClient({
         <div className="container relative mx-auto px-6 max-w-7xl z-10">
           <Link
             href="/courses"
+            prefetch={false}
             className="mb-8 inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-[#0F1E4A] transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -254,6 +255,7 @@ export default function CourseDetailsClient({
                     <Link
                       key={lvl}
                       href={`/courses/${instrumentSlug}/${lvl.toLowerCase()}`}
+                      prefetch={false}
                       className={`flex-1 rounded-xl py-3 text-center text-xs font-bold transition-all duration-300 ${
                         isActive
                           ? style.activeTab
