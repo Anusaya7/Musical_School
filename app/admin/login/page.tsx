@@ -79,6 +79,13 @@ export default function AdminLoginPage() {
       const role = checkData.role
       console.log(`[ADMIN-AUTH] Validation succeeded. Role detected: ${role}`)
 
+      if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
+        console.log(`[ADMIN-AUTH] Login rejected: role ${role} not authorized for admin portal.`)
+        setErrors({ email: 'Unauthorized account. Admin credentials required.' })
+        setIsLoading(false)
+        return
+      }
+
       // 2. Perform actual NextAuth login
       const res = await signIn('credentials', {
         redirect: false,
@@ -91,7 +98,7 @@ export default function AdminLoginPage() {
         setErrors({ email: 'Invalid email or password.' })
       } else {
         setLoginSuccess(true)
-        const name = checkData.name || (role === 'SUPER_ADMIN' ? 'Ajinkya Amrule' : role === 'INSTRUCTOR' ? 'Ajinkya Amrule' : 'Verified User')
+        const name = checkData.name || 'Ajinkya Amrule'
         
         localStorage.setItem('user', JSON.stringify({
           email: formData.email,
@@ -103,16 +110,15 @@ export default function AdminLoginPage() {
         // Dispatch storage update event to refresh navbar
         window.dispatchEvent(new Event('user-login-changed'))
 
-        const targetRoute = (role === 'SUPER_ADMIN' || role === 'ADMIN') ? '/admin' : role === 'INSTRUCTOR' ? '/instructor' : '/student'
-        console.log(`[ADMIN-AUTH] Redirecting to route: ${targetRoute}`)
+        console.log(`[ADMIN-AUTH] Redirecting to route: /admin`)
 
         setTimeout(() => {
-          window.location.replace(targetRoute)
-        }, 1200)
+          window.location.replace('/admin')
+        }, 1000)
       }
     } catch (error) {
       console.error('[ADMIN-AUTH] Login submission error:', error)
-      setErrors({ email: 'Invalid email or password.' })
+      setErrors({ email: 'Unable to sign in right now. Please try again.' })
     } finally {
       setIsLoading(false)
     }

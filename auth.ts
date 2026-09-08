@@ -27,7 +27,7 @@ const serverProviders: any[] = [
         if (!credentials?.email || !credentials?.password) {
           return null
         }
-        const email = (credentials.email as string).toLowerCase()
+        const email = (credentials.email as string).trim().toLowerCase()
         console.log(`[AUTH] Login attempt for email: ${email}`)
 
         const user = await getUserByEmail(email)

@@ -36,9 +36,13 @@ if (isGoogleConfigured) {
   console.warn("[AUTH] Google authentication credentials missing. Google provider disabled in config.")
 }
 
+const useSecureCookies = process.env.NODE_ENV === "production" && 
+  Boolean(process.env.NEXTAUTH_URL?.startsWith("https://") && !process.env.NEXTAUTH_URL?.includes("localhost"))
+
 export default {
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "UY2xST5ck1IteInTQe/30uqeeGPrNIPx/dNYR0ZM2Ds=",
   trustHost: true,
+  useSecureCookies,
   providers,
   session: {
     strategy: "jwt",

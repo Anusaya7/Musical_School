@@ -1014,6 +1014,16 @@
   ],
   "users": [
     {
+      "id": "admin-aamrule",
+      "name": "Ajinkya Amrule",
+      "email": "aamrule90@gmail.com",
+      "passwordHash": "$2b$10$bp/giMeH6kGp1wSd2M/Aj.rDHoBhg2f6cGY9dj8nacTIRCKVgrpgy",
+      "role": "ADMIN",
+      "createdAt": "2026-06-19T06:31:02.076Z",
+      "isVerified": true,
+      "status": "Active"
+    },
+    {
       "id": "admin-1",
       "name": "Ajinkya Amrule",
       "email": "admin@2ndinversion.com",

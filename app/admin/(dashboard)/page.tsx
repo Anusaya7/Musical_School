@@ -1394,7 +1394,7 @@ export default function AdminDashboard() {
   // 8. Logout Security
   const handleLogout = async () => {
     localStorage.removeItem('user')
-    await signOut({ redirect: true, callbackUrl: '/login' })
+    await signOut({ redirect: true, callbackUrl: '/admin/login' })
   }
 
   // Derive list of students from the live database students state + unique student booking requests
