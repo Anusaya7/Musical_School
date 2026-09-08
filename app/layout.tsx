@@ -25,8 +25,8 @@ export default function RootLayout({
               '@context': 'https://schema.org',
               '@type': 'MusicSchool',
               'name': '2nd Inversion Musical School',
-              'url': 'https://musical-school-nine.vercel.app',
-              'logo': 'https://musical-school-nine.vercel.app/images/logo_emblem.png',
+              'url': process.env.NEXT_PUBLIC_APP_URL || 'https://2ndinversion.com',
+              'logo': `${process.env.NEXT_PUBLIC_APP_URL || 'https://2ndinversion.com'}/images/logo_emblem.png`,
               'founder': {
                 '@type': 'Person',
                 'name': 'Ajinkya Uddhav Amrule'

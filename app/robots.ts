@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/admin/(dashboard)', '/api/private/'],
     },
-    sitemap: `${process.env.NEXT_PUBLIC_APP_URL || 'https://musical-school-nine.vercel.app'}/sitemap.xml`,
+    sitemap: `${process.env.NEXT_PUBLIC_APP_URL || 'https://2ndinversion.com'}/sitemap.xml`,
   }
 }

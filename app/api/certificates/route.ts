@@ -45,8 +45,9 @@ export async function POST(req: Request) {
     }
 
     const certNumber = `CERT-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://2ndinversion.com'
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
-      `https://musical-school-nine.vercel.app/verify-certificate?certNumber=${certNumber}`
+      `${appUrl}/verify-certificate?certNumber=${certNumber}`
     )}`
 
     const newCert = await prisma.certificate.create({
