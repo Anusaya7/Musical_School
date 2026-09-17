@@ -1,0 +1,15 @@
+<svg width="260" height="54" viewBox="0 0 260 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- KD Monogram Icon Badge -->
+  <rect x="0" y="3" width="48" height="48" rx="6" fill="#FFFFFF"/>
+  <g transform="translate(7, 8) scale(0.34)">
+    <rect x="0" y="0" width="7" height="100" fill="#171717"/>
+    <path d="M 18 50 C 25 35 48 18 78 5 L 42 50 Z" fill="#171717"/>
+    <path d="M 18 50 C 25 65 48 82 78 95 L 42 50 Z" fill="#171717"/>
+    <rect x="98" y="0" width="2" height="100" fill="#171717"/>
+    <path d="M 102 0 C 175 0 175 100 102 100 C 152 90 152 10 102 0 Z" fill="#171717"/>
+  </g>
+  
+  <!-- Text Lockup -->
+  <text x="60" y="27" font-family="'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="18" letter-spacing="1.5" fill="#FFFFFF">KORALS DESIGN</text>
+  <text x="60" y="42" font-family="monospace" font-weight="600" font-size="9.5" letter-spacing="2" fill="#A3A3A3">PVT LTD • ARCHITECTS &amp; ENGINEERS</text>
+</svg>

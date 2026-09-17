@@ -1,0 +1,25 @@
+<svg width="300" height="180" viewBox="0 0 300 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Solid Black Container Box matching official brand mark -->
+  <rect width="300" height="180" fill="#000000"/>
+  
+  <!-- Monogram KD Group -->
+  <g transform="translate(50, 18)">
+    <!-- K vertical stem -->
+    <rect x="0" y="0" width="7" height="100" fill="#FFFFFF"/>
+    
+    <!-- K top diagonal leaf/wedge -->
+    <path d="M 18 50 C 25 35 48 18 78 5 L 42 50 Z" fill="#FFFFFF"/>
+    
+    <!-- K bottom diagonal leaf/wedge -->
+    <path d="M 18 50 C 25 65 48 82 78 95 L 42 50 Z" fill="#FFFFFF"/>
+    
+    <!-- Middle thin separator line -->
+    <rect x="98" y="0" width="2" height="100" fill="#FFFFFF"/>
+    
+    <!-- D outer crescent curve -->
+    <path d="M 102 0 C 175 0 175 100 102 100 C 152 90 152 10 102 0 Z" fill="#FFFFFF"/>
+  </g>
+  
+  <!-- Brand Text Underneath -->
+  <text x="150" y="152" text-anchor="middle" font-family="'Helvetica Neue', Arial, sans-serif" font-weight="500" font-size="25" letter-spacing="4" fill="#E0E0E0">KORALS DESIGN</text>
+</svg>
