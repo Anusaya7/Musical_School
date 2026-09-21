@@ -467,9 +467,6 @@ export async function getCourses(): Promise<Course[]> {
     const list = await prisma.course.findMany()
     const instructors = await prisma.instructor.findMany()
     const instructorMap = new Map(instructors.map(i => [i.id, i.name]))
-    if (list.length === 0) {
-      return DEFAULT_COURSES as any
-    }
     return list.map(c => mapCourseToFrontend(c, instructorMap)) as Course[]
   } catch (err) {
     console.warn('getCourses failed, returning fallback.', err)
@@ -511,8 +508,11 @@ export async function getCourseByInstrumentAndLevel(instrumentSlug: string, leve
     dbError = true
   }
 
-  // Fallback if DB error, or not found in DB
-  if (dbError || !instrument || !course) {
+  // If healthy connection and not found in DB, return null (do not resurrect deleted courses from static fallback)
+  if (!dbError) {
+    if (!instrument || !course) return null
+  } else {
+    // Fallback only if remote database threw a connection error
     const fallbackCategory = DEFAULT_CATEGORIES.find(i => i.slug === instrumentSlug)
     if (!fallbackCategory) return null
 
@@ -883,14 +883,14 @@ export async function getUserByEmail(email: string): Promise<DbUser | null> {
     // If found in Prisma, verify password and role
     if (u) {
       const pwMatches = u.passwordHash ? await bcrypt.compare(expectedPassword, u.passwordHash) : false
-      if (!pwMatches || u.role !== 'ADMIN') {
+      if (!pwMatches || u.role !== 'SUPER_ADMIN') {
         console.log('[AUTH] Admin user credentials/role out of sync in database. Updating...')
         try {
           u = await prisma.user.update({
             where: { email: normalizedEmail },
             data: {
               passwordHash: adminHash,
-              role: 'ADMIN',
+              role: 'SUPER_ADMIN',
               isVerified: true,
               status: 'Active'
             }
@@ -908,7 +908,7 @@ export async function getUserByEmail(email: string): Promise<DbUser | null> {
             name: 'Ajinkya Amrule',
             email: normalizedEmail,
             passwordHash: adminHash,
-            role: 'ADMIN',
+            role: 'SUPER_ADMIN',
             isVerified: true,
             status: 'Active'
           }
@@ -927,9 +927,9 @@ export async function getUserByEmail(email: string): Promise<DbUser | null> {
       if (fbIndex !== -1) {
         const existingFbUser = fbData.users[fbIndex]
         const fbPwMatches = existingFbUser.passwordHash ? await bcrypt.compare(expectedPassword, existingFbUser.passwordHash) : false
-        if (!fbPwMatches || existingFbUser.role !== 'ADMIN') {
+        if (!fbPwMatches || existingFbUser.role !== 'SUPER_ADMIN') {
           fbData.users[fbIndex].passwordHash = adminHash
-          fbData.users[fbIndex].role = 'ADMIN'
+          fbData.users[fbIndex].role = 'SUPER_ADMIN'
           fbData.users[fbIndex].isVerified = true
           fbData.users[fbIndex].status = 'Active'
           writeFallbackDB(fbData)
@@ -940,7 +940,7 @@ export async function getUserByEmail(email: string): Promise<DbUser | null> {
           name: 'Ajinkya Amrule',
           email: normalizedEmail,
           passwordHash: adminHash,
-          role: 'ADMIN',
+          role: 'SUPER_ADMIN',
           createdAt: new Date().toISOString(),
           isVerified: true,
           status: 'Active'

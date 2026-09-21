@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { mapCourseToFrontend, mapCourseToDb } from '@/lib/db'
 import { z } from 'zod'
@@ -116,7 +117,10 @@ export async function GET(request: Request) {
       if (!dbError) {
         try {
           course = await prisma.course.findUnique({
-            where: { id }
+            where: { id },
+            include: {
+              Instrument: true
+            }
           })
         } catch (err) {
           console.warn('Prisma course findUnique failed. Using fallback search.', err)
@@ -124,14 +128,19 @@ export async function GET(request: Request) {
         }
       }
       
-      if (dbError || !course) {
-        const fallbackCourse = DEFAULT_COURSES.find(c => c.id === id)
-        if (!fallbackCourse) {
+      if (!dbError) {
+        if (!course) {
           return NextResponse.json({ error: 'Course not found' }, { status: 404 })
         }
-        return NextResponse.json(fallbackCourse)
+        return NextResponse.json(mapCourseToFrontend(course, instructorMap))
       }
-      return NextResponse.json(mapCourseToFrontend(course, instructorMap))
+
+      // Fallback search only when DB connection failed
+      const fallbackCourse = DEFAULT_COURSES.find(c => c.id === id)
+      if (!fallbackCourse) {
+        return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+      }
+      return NextResponse.json(fallbackCourse)
     }
 
     const search = searchParams.get('search') || ''
@@ -203,7 +212,16 @@ export async function GET(request: Request) {
 
     let courses: any[] = []
 
-    if (dbError || list.length === 0) {
+    if (!dbError) {
+      courses = list.map(c => {
+        const mapped = mapCourseToFrontend(c, instructorMap)
+        return {
+          ...mapped,
+          instrumentName: c.Instrument?.name === 'Vocals' ? 'Vocal Training' : (c.Instrument?.name || c.instrumentId)
+        }
+      })
+    } else {
+      // Only fallback to static data if database connection threw an error
       courses = DEFAULT_COURSES.filter(c => {
         if (!includeDrafts) {
           if (c.isDisabled || (c.status && c.status.toLowerCase() !== 'published')) {
@@ -253,14 +271,6 @@ export async function GET(request: Request) {
       if (paginated) {
         courses = courses.slice(skip, skip + limit)
       }
-    } else {
-      courses = list.map(c => {
-        const mapped = mapCourseToFrontend(c, instructorMap)
-        return {
-          ...mapped,
-          instrumentName: c.Instrument?.name === 'Vocals' ? 'Vocal Training' : (c.Instrument?.name || c.instrumentId)
-        }
-      })
     }
 
     if (paginated) {
@@ -289,8 +299,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
     }
     const role = (session.user as any).role?.toUpperCase()
-    if (role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized: Super Admin role required' }, { status: 403 })
+    if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized: Admin role required' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -326,6 +336,9 @@ export async function POST(request: Request) {
       
       const instructors = await prisma.instructor.findMany()
       const instructorMap = new Map(instructors.map(i => [i.id, i.name]))
+      revalidatePath('/')
+      revalidatePath('/courses')
+      revalidatePath('/admin/courses')
       return NextResponse.json({ success: true, course: mapCourseToFrontend(updated, instructorMap) })
     }
 
@@ -459,6 +472,9 @@ export async function POST(request: Request) {
 
     const instructors = await prisma.instructor.findMany()
     const instructorMap = new Map(instructors.map(i => [i.id, i.name]))
+    revalidatePath('/')
+    revalidatePath('/courses')
+    revalidatePath('/admin/courses')
     return NextResponse.json({ 
       success: true, 
       course: mapCourseToFrontend(newCourse, instructorMap),
@@ -481,8 +497,8 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
     }
     const role = (session.user as any).role?.toUpperCase()
-    if (role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized: Super Admin role required' }, { status: 403 })
+    if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized: Admin role required' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -526,6 +542,9 @@ export async function PUT(request: Request) {
 
       const instructors = await prisma.instructor.findMany()
       const instructorMap = new Map(instructors.map(i => [i.id, i.name]))
+      revalidatePath('/')
+      revalidatePath('/courses')
+      revalidatePath('/admin/courses')
       return NextResponse.json({ success: true, course: mapCourseToFrontend(updated, instructorMap) })
     }
 
@@ -670,6 +689,9 @@ export async function PUT(request: Request) {
 
     const instructors = await prisma.instructor.findMany()
     const instructorMap = new Map(instructors.map(i => [i.id, i.name]))
+    revalidatePath('/')
+    revalidatePath('/courses')
+    revalidatePath('/admin/courses')
     return NextResponse.json({ 
       success: true, 
       course: mapCourseToFrontend(updated, instructorMap),
@@ -692,8 +714,8 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
     }
     const role = (session.user as any).role?.toUpperCase()
-    if (role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized: Super Admin role required' }, { status: 403 })
+    if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized: Admin role required' }, { status: 403 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -703,7 +725,25 @@ export async function DELETE(request: Request) {
     }
 
     await prisma.$transaction(async (tx) => {
-      const original = await tx.course.findUnique({ where: { id } })
+      const original = await tx.course.findUnique({ 
+        where: { id },
+        include: { Curriculum: true }
+      })
+      if (!original) {
+        throw new Error('NOT_FOUND')
+      }
+
+      // Explicitly delete all dependent child records to ensure integrity
+      if (original.Curriculum) {
+        await tx.curriculumModule.deleteMany({ where: { curriculumId: original.Curriculum.id } })
+        await tx.curriculum.delete({ where: { id: original.Curriculum.id } })
+      }
+      await tx.courseContent.deleteMany({ where: { courseId: id } })
+      await tx.learningOutcome.deleteMany({ where: { courseId: id } })
+      await tx.prerequisite.deleteMany({ where: { courseId: id } })
+      await tx.topicsCovered.deleteMany({ where: { courseId: id } })
+      await tx.review.deleteMany({ where: { courseId: id } })
+
       await tx.course.delete({
         where: { id }
       })
@@ -711,23 +751,27 @@ export async function DELETE(request: Request) {
         data: {
           userEmail: session.user?.email || 'admin@2ndinversion.com',
           action: 'Course Deleted',
-          details: `Deleted course ID: ${id}`
+          details: `Deleted course: ${original.title} (ID: ${id})`
         }
       })
       await tx.notification.create({
         data: {
           title: '🗑️ Course Deleted',
-          message: `Course "${original?.title || id}" was deleted by Admin.`
+          message: `Course "${original.title}" was deleted by Admin.`
         }
       })
-      if (original) {
-        await updateCategoryStats(original.instrumentId, tx)
-      }
+      await updateCategoryStats(original.instrumentId, tx)
     })
 
+    revalidatePath('/')
+    revalidatePath('/courses')
+    revalidatePath('/admin/courses')
     return NextResponse.json({ success: true, message: 'Course deleted successfully' })
-  } catch (error) {
-    console.error(error)
+  } catch (error: any) {
+    if (error.message === 'NOT_FOUND') {
+      return NextResponse.json({ error: 'Course not found' }, { status: 404 })
+    }
+    console.error('[DELETE /api/courses] SERVER ERROR:', error)
     return NextResponse.json({ error: 'Failed to delete course' }, { status: 500 })
   }
 }

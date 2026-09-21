@@ -13,7 +13,7 @@ const connectionString = process.env.DATABASE_URL
 if (!globalForPrisma.pool) {
   globalForPrisma.pool = new Pool({
     connectionString: connectionString || undefined,
-    connectionTimeoutMillis: 2500, // 2.5 seconds timeout to allow fast failover if remote DB is unreachable
+    connectionTimeoutMillis: 10000, // 10 seconds timeout for Neon serverless cold starts
     idleTimeoutMillis: 15000, // keep connections warm for 15 seconds to avoid handshake latency on consecutive queries
     max: 10, // allow up to 10 concurrent connections to handle parallel Next.js page queries without starvation
     ssl: connectionString?.includes('sslmode=') || (!connectionString?.includes('localhost') && !connectionString?.includes('127.0.0.1'))

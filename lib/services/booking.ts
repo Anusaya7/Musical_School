@@ -146,8 +146,7 @@ export class BookingService {
         ])
         console.log(`[BookingService] All booking emails sent successfully.`)
       } catch (err: any) {
-        console.error('[BookingService] SMTP email delivery failed:', err)
-        throw new Error(`Email delivery failed: ${err.message || err}`)
+        console.warn('[BookingService] SMTP email delivery failed (proceeding with booking):', err.message || err)
       }
 
       // 5. Send WhatsApp Alerts
@@ -243,8 +242,7 @@ Your request is currently Pending Approval. We will notify you once it's confirm
         )
         console.log(`[BookingService] Student status update email sent successfully.`)
       } catch (err: any) {
-        console.error('[BookingService] Student status update email delivery failed:', err)
-        throw new Error(`Email delivery failed: ${err.message || err}`)
+        console.warn('[BookingService] Student status update email delivery failed (status committed):', err.message || err)
       }
 
       // Notify Student via WhatsApp (if phone exists)

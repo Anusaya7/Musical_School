@@ -16,6 +16,16 @@ export async function POST(request: NextRequest) {
     const purchaseType = notes?.purchaseType || bodyData?.purchaseType
     const planType = notes?.plan || bodyData?.plan
 
+    // Normalize course IDs list (array or comma-separated string)
+    let courseIdList: string[] = []
+    if (Array.isArray(courseIds)) {
+      courseIdList = courseIds.map(String).filter(Boolean)
+    } else if (typeof courseIds === 'string' && courseIds.trim()) {
+      courseIdList = courseIds.split(',').map(s => s.trim()).filter(Boolean)
+    } else if (courseId && typeof courseId === 'string' && courseId.trim()) {
+      courseIdList = [courseId.trim()]
+    }
+
     // Secure price calculation on the server side (never trust client amount)
     if (purchaseType === 'plan' || planType) {
       const planStr = String(planType || '').toLowerCase()
@@ -24,9 +34,9 @@ export async function POST(request: NextRequest) {
       } else if (planStr.includes('yearly') || planStr.includes('1-year') || planStr.includes('pro')) {
         parsedAmount = 299900 // ₹2,999 in paise
       }
-    } else if (courseIds && Array.isArray(courseIds)) {
+    } else if (courseIdList.length > 0) {
       const coursesRecord = await prisma.course.findMany({
-        where: { id: { in: courseIds } }
+        where: { id: { in: courseIdList } }
       })
       if (coursesRecord.length === 0) {
         return NextResponse.json(
@@ -34,22 +44,11 @@ export async function POST(request: NextRequest) {
           { status: 404 }
         )
       }
-      const dbTotal = coursesRecord.reduce((sum, c) => sum + c.price, 0)
-      parsedAmount = Math.round(dbTotal * 100)
-    } else if (courseId) {
-      const courseRecord = await prisma.course.findUnique({
-        where: { id: courseId }
-      })
-      if (!courseRecord) {
-        return NextResponse.json(
-          { success: false, error: 'The requested course does not exist' },
-          { status: 404 }
-        )
-      }
       
       const isTrial = notes?.purchaseType === 'booking' && (parsedAmount === 0 || !amount)
       if (!isTrial) {
-        parsedAmount = Math.round(courseRecord.price * 100)
+        const dbTotal = coursesRecord.reduce((sum, c) => sum + (c.price || 0), 0)
+        parsedAmount = Math.round(dbTotal * 100)
       }
     }
 

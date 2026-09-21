@@ -11,14 +11,19 @@ export default function InstructorInfo() {
       fetch('/api/instructors').then(r => r.json()).catch(() => []),
       fetch('/api/courses').then(r => r.json()).catch(() => [])
     ]).then(([instructors, courses]) => {
-      // Find the first active instructor (e.g. Ajinkya Amrule) or default to the first one
-      const activeInst = instructors.find((i: any) => i.name === 'Ajinkya Amrule' || i.isActive !== false) || instructors[0]
+      const instList = Array.isArray(instructors) ? instructors : []
+      const courseList = Array.isArray(courses) ? courses : []
+
+      const activeInst = instList.find((i: any) => i.name === 'Ajinkya Amrule' || i.isActive !== false) || instList[0]
       if (activeInst) {
         setInstructor(activeInst)
         
-        // Count active courses assigned to this instructor
-        const assignedCourses = courses.filter((c: any) => c.instructorId === activeInst.id || c.instructor === activeInst.name)
-        setCourseCount(assignedCourses.length)
+        // Count active courses assigned to this instructor or total active school courses
+        const activeCourses = courseList.filter((c: any) => !c.isDisabled)
+        const assignedCourses = activeCourses.filter((c: any) => c.instructorId === activeInst.id || c.instructor === activeInst.name)
+        setCourseCount(assignedCourses.length > 0 ? assignedCourses.length : activeCourses.length)
+      } else {
+        setCourseCount(courseList.filter((c: any) => !c.isDisabled).length)
       }
     }).catch(err => console.error('Failed to load instructor info:', err))
   }, [])

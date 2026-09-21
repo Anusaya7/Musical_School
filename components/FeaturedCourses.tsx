@@ -234,12 +234,12 @@ const CourseCard = memo(({ course, isInCart, onBookClick, onAddToCart }: CourseC
           {/* Secondary & Cart buttons row */}
           <div className="flex gap-3">
               {(() => {
-                const parts = course.id.toLowerCase().split('-')
-                const level = parts[parts.length - 1]
-                const instrument = parts.slice(0, -1).join('-')
+                const instrument = (course.category || (course as any).instrumentId || '').toLowerCase()
+                const level = (course.level || '').toLowerCase()
+                const detailHref = instrument && level ? `/courses/${instrument}/${level}` : `/courses`
                 return (
                   <Link
-                    href={`/courses/${instrument}/${level}`}
+                    href={detailHref}
                     prefetch={false}
                     className="btn-premium-base btn-premium-secondary flex-1 h-12 text-xs gap-1.5"
                   >

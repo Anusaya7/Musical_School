@@ -10,6 +10,9 @@ interface PageProps {
   }
 }
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function CourseLevelPage({ params }: PageProps) {
   const { instrument, level } = params
 
