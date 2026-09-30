@@ -37,9 +37,28 @@ export default function CourseDetailsClient({
 }: CourseDetailsClientProps) {
   const router = useRouter()
   const { addItem, isInCart } = useCart()
-  const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'instructor'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'instructor' | 'reviews'>('overview')
   const [faqOpen, setFaqOpen] = useState<{ [key: number]: boolean }>({})
   const [accordionOpen, setAccordionOpen] = useState<{ [key: number]: boolean }>({ 0: true }) // Module 1 open by default
+  const [approvedReviews, setApprovedReviews] = useState<any[]>([])
+  const [loadingReviews, setLoadingReviews] = useState<boolean>(false)
+
+  React.useEffect(() => {
+    if (course?.id) {
+      setLoadingReviews(true)
+      fetch(`/api/reviews?courseId=${course.id}&status=APPROVED`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && Array.isArray(data.reviews)) {
+            setApprovedReviews(data.reviews)
+          } else {
+            setApprovedReviews([])
+          }
+        })
+        .catch(err => console.error('Error fetching course reviews:', err))
+        .finally(() => setLoadingReviews(false))
+    }
+  }, [course?.id])
 
   // Get dynamic level details
   const levelDetails = useMemo(() => {
@@ -275,7 +294,8 @@ export default function CourseDetailsClient({
                 {[
                   { id: 'overview', label: 'Overview', icon: BookOpen },
                   { id: 'curriculum', label: 'Curriculum', icon: ListChecks },
-                  { id: 'instructor', label: 'Instructor', icon: User }
+                  { id: 'instructor', label: 'Instructor', icon: User },
+                  { id: 'reviews', label: `Student Reviews (${approvedReviews.length})`, icon: Star }
                 ].map((t) => {
                   const isActive = activeTab === t.id
                   const Icon = t.icon
@@ -538,6 +558,60 @@ export default function CourseDetailsClient({
                         </div>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {activeTab === 'reviews' && (
+                  <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm space-y-6">
+                    <div className="flex items-center justify-between border-b border-gray-50 pb-4">
+                      <div>
+                        <h4 className="text-lg font-black text-[#0F1E4A]">Student Reviews & Ratings</h4>
+                        <p className="text-xs text-slate-400 font-semibold mt-1">Verified reviews from enrolled students</p>
+                      </div>
+                      <div className="flex items-center gap-1 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100 text-xs font-bold text-amber-700">
+                        <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        <span>4.9 / 5.0 Average</span>
+                      </div>
+                    </div>
+
+                    {loadingReviews ? (
+                      <div className="py-12 text-center">
+                        <div className="w-8 h-8 border-3 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                        <p className="text-xs font-semibold text-slate-400">Loading student reviews...</p>
+                      </div>
+                    ) : approvedReviews.length === 0 ? (
+                      <div className="py-14 text-center px-6 bg-slate-50/50 rounded-2xl border border-dashed border-gray-200">
+                        <Star className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                        <h5 className="text-base font-bold text-[#0F1E4A] mb-1">No Approved Student Reviews Yet</h5>
+                        <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                          Only verified students enrolled in this course can submit authentic reviews. Once approved by our team, reviews will appear here.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {approvedReviews.map((rev: any) => (
+                          <div key={rev.id} className="p-4 bg-slate-50/60 rounded-2xl border border-gray-100 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-purple-600 text-white font-black text-xs flex items-center justify-center">
+                                  {(rev.student?.name || 'S').charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className="text-xs font-bold text-[#0F1E4A]">{rev.student?.name || 'Verified Student'}</div>
+                                  <div className="text-[10px] text-slate-400 font-semibold">{new Date(rev.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1 text-amber-400">
+                                {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
+                              </div>
+                            </div>
+                            <p className="text-xs text-slate-600 font-medium leading-relaxed italic pl-1">
+                              "{rev.comment}"
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

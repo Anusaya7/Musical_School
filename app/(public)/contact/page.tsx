@@ -606,7 +606,7 @@ Submitted from the website.`
                           onChange={handleChange}
                           required
                           className={`w-full px-4 py-3.5 rounded-xl border ${errors.phone ? 'border-red-500 focus:border-red-500' : 'border-[#E5E7EB] focus:border-[#2563EB]'} focus:ring-2 ${errors.phone ? 'focus:ring-red-500/15' : 'focus:ring-[#2563EB]/15'} transition-all outline-none bg-slate-50/30 focus:bg-white text-slate-800 text-sm font-medium shadow-sm`}
-                          placeholder="+91 98765 43210"
+                          placeholder="+91 XXXXX XXXXX"
                         />
                         {errors.phone && (
                           <p className="mt-1.5 text-xs text-red-500 font-bold">{errors.phone}</p>

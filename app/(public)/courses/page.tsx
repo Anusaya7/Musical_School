@@ -28,25 +28,47 @@ function CoursesPageContent() {
   const [allDbCourses, setAllDbCourses] = useState<Course[]>([])
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([])
   const [searchInput, setSearchInput] = useState(searchQuery)
+  const [isLoading, setIsLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   useEffect(() => {
     setSearchInput(searchQuery)
   }, [searchQuery])
 
   useEffect(() => {
+    let isMounted = true
+    setIsLoading(true)
+    setFetchError(null)
+
     const params = new URLSearchParams()
     if (searchQuery) params.set('search', searchQuery)
     if (category) params.set('category', category)
 
     const url = `/api/courses${params.toString() ? `?${params.toString()}` : ''}`
     fetch(url)
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load courses')
+        return res.json()
+      })
       .then(data => {
-        if (Array.isArray(data)) {
-          setAllDbCourses(data.filter((c: any) => !c.isDisabled))
+        if (isMounted) {
+          if (Array.isArray(data)) {
+            setAllDbCourses(data.filter((c: any) => !c.isDisabled))
+          } else {
+            setAllDbCourses([])
+          }
+          setIsLoading(false)
         }
       })
-      .catch(err => console.error('Failed to load courses:', err))
+      .catch(err => {
+        console.error('Failed to load courses:', err)
+        if (isMounted) {
+          setFetchError('Unable to load courses. Please try again.')
+          setIsLoading(false)
+        }
+      })
+
+    return () => { isMounted = false }
   }, [searchQuery, category])
 
   const baseCourses = useMemo(() => {
@@ -182,7 +204,22 @@ function CoursesPageContent() {
           </p>
         )}
 
-        {filteredCourses.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[24px] border border-gray-100 shadow-sm">
+            <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4" />
+            <p className="text-sm font-semibold text-slate-500">Loading music courses...</p>
+          </div>
+        ) : fetchError ? (
+          <div className="rounded-[24px] border border-red-100 bg-red-50/50 py-16 px-6 text-center shadow-sm">
+            <p className="text-sm text-red-600 font-semibold mb-4">{fetchError}</p>
+            <button
+              onClick={() => router.refresh()}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white text-xs font-bold rounded-full shadow-sm hover:bg-purple-700 active:scale-95 transition-all"
+            >
+              Retry
+            </button>
+          </div>
+        ) : filteredCourses.length === 0 ? (
           <div className="rounded-[24px] border border-gray-100 bg-white py-20 px-6 text-center shadow-sm">
             <p className="text-base text-slate-600 font-semibold mb-4">
               {searchQuery ? `No courses found for '${searchQuery}'.` : 'No courses match your filters.'}

@@ -5,7 +5,7 @@ export async function sendWhatsAppNotification(
   const formattedPhone = recipientPhone.replace(/\D/g, '')
 
   console.log(`[WHATSAPP NOTIFICATION SERVICE]
-Recipient: +${formattedPhone || '919876543210'}
+Recipient: +${formattedPhone || '917768838832'}
 Message Payload:
 "${message}"
 Timestamp: ${new Date().toISOString()}

@@ -187,7 +187,7 @@ export default function AdminLoginPage() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="admin@example.com"
+                  placeholder="Enter your admin email"
                   className={`w-full pl-11 pr-4 py-3 bg-white/80 border-2 rounded-2xl outline-none transition-all text-sm font-medium ${
                     errors.email 
                       ? 'border-red-300 focus:border-red-500 text-red-900 placeholder-red-300' 

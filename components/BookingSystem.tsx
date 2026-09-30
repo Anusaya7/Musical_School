@@ -237,7 +237,7 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
                   type="text"
                   id="name"
                   name="name"
-                  placeholder="John Doe"
+                  placeholder="Enter your full name"
                   value={formData.name}
                   onChange={handleChange}
                   required
@@ -253,7 +253,7 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
                   type="email"
                   id="email"
                   name="email"
-                  placeholder="john@example.com"
+                  placeholder="you@example.com"
                   value={formData.email}
                   onChange={handleChange}
                   required
@@ -271,7 +271,7 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
                   type="tel"
                   id="phone"
                   name="phone"
-                  placeholder="+91 98765 43210"
+                  placeholder="+91 XXXXX XXXXX"
                   value={formData.phone}
                   onChange={handleChange}
                   required

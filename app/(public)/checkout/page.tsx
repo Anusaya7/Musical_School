@@ -237,7 +237,7 @@ export default function CheckoutPage() {
                         onChange={handleChange}
                         required
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="John"
+                        placeholder="First Name"
                       />
                     </div>
                     
@@ -253,7 +253,7 @@ export default function CheckoutPage() {
                         onChange={handleChange}
                         required
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="Doe"
+                        placeholder="Last Name"
                       />
                     </div>
                   </div>
@@ -271,7 +271,7 @@ export default function CheckoutPage() {
                         onChange={handleChange}
                         required
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="john@example.com"
+                        placeholder="you@example.com"
                       />
                     </div>
                     
@@ -287,7 +287,7 @@ export default function CheckoutPage() {
                         onChange={handleChange}
                         required
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="+91 98765 43210"
+                        placeholder="+91 XXXXX XXXXX"
                       />
                     </div>
                   </div>

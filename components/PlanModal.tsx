@@ -57,7 +57,7 @@ export default function PlanModal({ isOpen, onClose, plan, onProceed }: PlanModa
 
   const handleWhatsApp = () => {
     const message = `Hi! I'm interested in the ${currentPlan.name}. Can you provide more details?`
-    window.open(`https://wa.me/919876543210?text=${encodeURIComponent(message)}`, '_blank')
+    window.open(`https://wa.me/917768838832?text=${encodeURIComponent(message)}`, '_blank')
   }
 
   const handleUpgrade = () => {

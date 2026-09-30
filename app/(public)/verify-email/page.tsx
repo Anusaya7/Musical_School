@@ -173,7 +173,7 @@ function VerifyEmailContent() {
                 <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Email Address</label>
                 <input
                   type="email"
-                  placeholder="name@example.com"
+                  placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={!!emailFromUrl || status === 'loading'}
