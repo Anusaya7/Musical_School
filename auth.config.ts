@@ -1,6 +1,7 @@
 import type { NextAuthConfig } from "next-auth"
 import Google from "next-auth/providers/google"
 import Credentials from "next-auth/providers/credentials"
+import { safeRelativeCallback } from "@/lib/safe-callback"
 
 const googleId = process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID
 const googleSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET
@@ -44,10 +45,16 @@ export default {
   trustHost: true,
   useSecureCookies,
   providers,
+  pages: {
+    signIn: "/login",
+  },
   session: {
     strategy: "jwt",
   },
   callbacks: {
+    async redirect({ url }) {
+      return safeRelativeCallback(url) ?? "/"
+    },
     async jwt({ token, user }) {
       if (user) {
         token.role = (user as any).role || "STUDENT"

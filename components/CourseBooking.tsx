@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { openRazorpayCheckout, reportCheckoutClosed, verifyCheckoutPayment } from '@/lib/razorpay-checkout'
+import { bookingReturnPath, readBookingSelection } from '@/lib/booking-selection'
 import { Calendar, Clock, User, Mail, X, CreditCard, Smartphone, Building, Star, CheckCircle2, Loader2 } from 'lucide-react'
 import CalendarDatePicker from '@/components/CalendarDatePicker'
 
@@ -165,6 +166,25 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
     if (session.user.email) setStudentEmail(session.user.email)
     if (session.user.name) setStudentName(session.user.name)
   }, [session])
+
+  useEffect(() => {
+    const restored = readBookingSelection(window.location.search, course.id)
+    if (!restored) return
+    setSelectedDate(restored.date)
+    setSelectedBatch(restored.batch)
+    setSelectedTimeSlot(restored.slot)
+    setShowPayment(true)
+  }, [course.id])
+
+  const goToLoginToPay = () => {
+    const next = bookingReturnPath(window.location.pathname, {
+      courseId: course.id,
+      date: selectedDate,
+      batch: selectedBatch,
+      slot: selectedTimeSlot,
+    })
+    window.location.href = `/login?callbackUrl=${encodeURIComponent(next)}`
+  }
 
   // Fetch schedules & holidays
   useEffect(() => {
@@ -343,8 +363,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
   const handlePayment = async () => {
     setFormError(null)
     if (authStatus !== 'authenticated') {
-      const next = `${window.location.pathname}${window.location.search}`
-      window.location.href = `/login?callbackUrl=${encodeURIComponent(next)}`
+      goToLoginToPay()
       return
     }
     setIsBooking(true)
@@ -398,8 +417,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
 
       const orderData = await res.json()
       if (res.status === 401) {
-        const next = `${window.location.pathname}${window.location.search}`
-        window.location.href = `/login?callbackUrl=${encodeURIComponent(next)}`
+        goToLoginToPay()
         return
       }
       if (!res.ok || !orderData.success) {
@@ -715,6 +733,17 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                     <span className={`font-black text-lg ${style.price}`}>₹{course.price.toLocaleString('en-IN')}</span>
                   </div>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-500">Phone Number</label>
+                <input
+                  type="tel"
+                  value={studentPhone}
+                  onChange={(e) => setStudentPhone(e.target.value)}
+                  placeholder="Phone Number"
+                  className="w-full px-4 py-3 rounded-[20px] border-[1.5px] border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6FAF]"
+                />
               </div>
 
               <div className="space-y-2">

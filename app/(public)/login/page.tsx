@@ -6,6 +6,7 @@ import logoEmblem from '@/public/images/logo_emblem.png'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { safeRelativeCallback } from '@/lib/safe-callback'
 import { 
   Eye, 
   EyeOff, 
@@ -84,10 +85,12 @@ export default function LoginPage() {
       console.log(`[AUTH] Validation succeeded. Role detected: ${role}`)
 
       // 2. Perform actual NextAuth login
+      const requestedCallback = safeRelativeCallback(new URLSearchParams(window.location.search).get('callbackUrl'))
       const res = await signIn('credentials', {
         redirect: false,
         email: formData.email,
         password: formData.password,
+        callbackUrl: requestedCallback || undefined,
       })
 
       if (res?.error) {
@@ -105,9 +108,7 @@ export default function LoginPage() {
         }))
 
         const requested = new URLSearchParams(window.location.search).get('callbackUrl')
-        const safeCallback = requested && requested.startsWith('/') && !requested.startsWith('//') && !requested.includes('://') && !requested.includes('\\')
-          ? requested
-          : null
+        const safeCallback = safeRelativeCallback(requested)
         const targetRoute = safeCallback || ((role === 'SUPER_ADMIN' || role === 'ADMIN') ? '/admin' : role === 'INSTRUCTOR' ? '/instructor' : '/student')
         console.log(`[AUTH] Redirecting to route: ${targetRoute}`)
 
@@ -128,9 +129,7 @@ export default function LoginPage() {
     setErrors({})
     try {
       const requested = new URLSearchParams(window.location.search).get('callbackUrl')
-      const safeCallback = requested && requested.startsWith('/') && !requested.startsWith('//') && !requested.includes('://') && !requested.includes('\\')
-        ? requested
-        : '/student/dashboard'
+      const safeCallback = safeRelativeCallback(requested) || '/student/dashboard'
       await signIn('google', { callbackUrl: safeCallback })
     } catch (error) {
       console.error('Google Sign-In error:', error)
