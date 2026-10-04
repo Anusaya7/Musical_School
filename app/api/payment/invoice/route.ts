@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayments } from '@/lib/db'
+import { auth } from '@/auth'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth()
+    const email = session?.user?.email?.toLowerCase()
+    if (!email) {
+      return new NextResponse('Unauthorized', { status: 401 })
+    }
+    const role = String((session?.user as { role?: string })?.role || '').toUpperCase()
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
@@ -17,6 +25,11 @@ export async function GET(request: NextRequest) {
 
     if (!payment) {
       return new NextResponse('Invoice not found', { status: 404 })
+    }
+
+    const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN'
+    if (!isAdmin && payment.studentEmail?.toLowerCase() !== email) {
+      return new NextResponse('Forbidden', { status: 403 })
     }
 
     const amount = payment.amount

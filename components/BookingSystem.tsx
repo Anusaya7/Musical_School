@@ -1,12 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { openRazorpayCheckout, reportCheckoutClosed, verifyCheckoutPayment } from '@/lib/razorpay-checkout'
 
 interface BookingSystemProps {
   selectedClass: string | null
 }
 
 export default function BookingSystem({ selectedClass }: BookingSystemProps) {
+  const { data: session, status: authStatus } = useSession()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -57,6 +60,10 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage(null)
+    if (authStatus !== 'authenticated') {
+      window.location.href = `/login?callbackUrl=${encodeURIComponent('/#booking')}`
+      return
+    }
     if (!formData.name || !formData.email || !formData.phone || !formData.classId) {
       setErrorMessage('Please fill in all required fields.')
       return
@@ -64,109 +71,66 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
 
     setIsSubmitting(true)
     const selectedCourse = selectedCourseInfo || coursesList.find((c: any) => c.id === formData.classId)
-    const amount = selectedCourse ? selectedCourse.price * 100 : 350000
+    const courseId = selectedCourse?.courseId || selectedCourse?.id || formData.classId
 
     try {
       const res = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount,
           currency: 'INR',
-          receipt: `rcpt_bk_${Date.now()}`,
-          notes: {
-            purchaseType: 'booking',
-            studentName: formData.name,
-            studentEmail: formData.email,
-            studentPhone: formData.phone,
-            courseId: selectedCourse?.courseId || formData.classId,
-            courseName: selectedCourse?.courseTitle || selectedCourse?.title || 'Music Course Session',
-            courseTitle: selectedCourse?.courseTitle || selectedCourse?.title || 'Music Course Session',
-            instrumentId: selectedCourse?.instrumentId || selectedCourse?.category || '',
-            instrumentName: selectedCourse?.instrumentName || '',
-            level: selectedCourse?.level || '',
-            price: selectedCourse?.price || 0,
+          purchaseType: 'booking',
+          courseId,
+          booking: {
             date: new Date().toISOString().split('T')[0],
-            timeSlot: '10:00 AM - 11:00 AM',
-            batchTiming: 'Morning'
+            timeSlot: '10:00 AM',
+            batchTiming: 'Morning',
+            instructor: selectedCourse?.instructor || '',
+            phone: formData.phone
           }
         })
       })
 
       const orderData = await res.json()
       if (!orderData.success) {
-        const errStr = typeof orderData.error === 'object' ? JSON.stringify(orderData.error) : (orderData.error || 'Failed to create payment order.')
+        const errStr = typeof orderData.error === 'object' ? 'Failed to create payment order.' : (orderData.error || 'Failed to create payment order.')
         setErrorMessage(errStr)
         setIsSubmitting(false)
         return
       }
 
-      const Razorpay = (window as any).Razorpay
-      if (!Razorpay) {
-        setErrorMessage('Razorpay Checkout SDK is loading. Please try again in a moment.')
-        setIsSubmitting(false)
-        return
-      }
-
-      const options = {
+      openRazorpayCheckout({
         key: orderData.key,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: '2nd Inversion Musical School',
-        description: `Class Booking: ${selectedCourse?.title || 'Music Session'}`,
-        order_id: orderData.id,
+        description: `Class booking: ${selectedCourse?.title || 'Music session'}`,
+        orderId: orderData.id,
         prefill: {
-          name: formData.name,
-          email: formData.email,
+          name: session?.user?.name || formData.name,
+          email: session?.user?.email || formData.email,
           contact: formData.phone
         },
-        theme: { color: '#5EA8FF' },
-        handler: async function (response: any) {
+        color: '#5EA8FF',
+        onSuccess: async (response) => {
           try {
-            const verifyRes = await fetch('/api/payment/verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                orderData: {
-                  amount: selectedCourse?.price || 3500,
-                  notes: {
-                    purchaseType: 'booking',
-                    studentName: formData.name,
-                    studentEmail: formData.email,
-                    studentPhone: formData.phone,
-                    courseId: selectedCourse?.courseId || selectedCourse?.id || formData.classId,
-                    courseName: selectedCourse?.courseTitle || selectedCourse?.title || 'Music Course Session',
-                    date: new Date().toISOString().split('T')[0],
-                    timeSlot: '10:00 AM - 11:00 AM',
-                    batchTiming: 'Morning'
-                  }
-                }
-              })
-            })
-            const verifyData = await verifyRes.json()
-            if (verifyData.success) {
-              window.location.href = `/payment-success?paymentId=${response.razorpay_payment_id}&orderId=${response.razorpay_order_id}`
-            } else {
-              setErrorMessage(verifyData.error || 'Payment verification failed.')
-              setIsSubmitting(false)
-            }
+            await verifyCheckoutPayment(response)
+            window.location.href = `/payment/success?orderId=${encodeURIComponent(response.razorpay_order_id)}`
           } catch (vErr: any) {
-            setErrorMessage(vErr.message || 'Payment verification failed.')
+            setErrorMessage(vErr.message || 'Payment verification failed. No course access was granted.')
             setIsSubmitting(false)
           }
         },
-        modal: {
-          ondismiss: function () {
-            setIsSubmitting(false)
-          }
+        onDismiss: () => {
+          reportCheckoutClosed(orderData.id, 'CANCELLED')
+          setIsSubmitting(false)
+          window.location.href = '/payment/failed?reason=cancelled'
+        },
+        onFailed: () => {
+          reportCheckoutClosed(orderData.id, 'FAILED')
+          setErrorMessage('Your payment could not be completed. No course access was granted.')
+          setIsSubmitting(false)
         }
-      }
-
-      const rzp = new Razorpay(options)
-      rzp.open()
+      })
     } catch (err: any) {
       console.error('Booking payment error:', err)
       setErrorMessage(err.message || 'Payment processing error. Please try again.')
@@ -348,7 +312,7 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
               className="btn-premium-base btn-premium-submit w-full h-[60px] text-white font-bold text-[18px] tracking-[0.3px] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting && <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin relative z-10" />}
-              <span className="relative z-10">{isSubmitting ? 'Processing...' : 'Submit Booking Request'}</span>
+              <span className="relative z-10">{isSubmitting ? 'Processing...' : authStatus !== 'authenticated' ? 'Log in to Pay' : Number(selectedCourseInfo?.price) > 0 ? `Pay ₹${Number(selectedCourseInfo.price).toLocaleString('en-IN')} Securely` : 'Pay Securely'}</span>
               {!isSubmitting && (
                 <svg
                   className="w-5 h-5 relative z-10 transition-transform duration-300 ease-out group-hover/btn:translate-x-[6px] text-current"

@@ -202,18 +202,34 @@ model RecordedSession {
 }
 
 model Payment {
-  id            String   @id @default(uuid())
-  studentEmail  String
-  studentName   String
-  courseId      String
-  courseName    String
-  amount        Float
-  paymentId     String
-  orderId       String
-  status        String
-  invoiceNumber String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String    @id @default(uuid())
+  userId            String?
+  studentEmail      String
+  studentName       String
+  courseId          String
+  courseName        String
+  amount            Float
+  currency          String    @default("INR")
+  paymentId         String
+  orderId           String
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  status            String
+  paymentMethod     String?
+  failureReason     String?
+  purchaseType      String?
+  metadata          String?
+  emailSentAt       DateTime?
+  invoiceNumber     String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([orderId])
+  @@index([studentEmail])
+  @@index([userId])
+  @@index([razorpayOrderId])
+  @@index([razorpayPaymentId])
+  @@index([status])
 }
 
 model AuditLog {

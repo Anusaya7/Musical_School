@@ -1,13 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { useCart } from '@/contexts/CartContext'
 import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
+import { openRazorpayCheckout, reportCheckoutClosed, verifyCheckoutPayment } from '@/lib/razorpay-checkout'
 
 export default function CheckoutPage() {
   const { items, total, itemCount, clearCart } = useCart()
   const router = useRouter()
+  const { data: session, status } = useSession()
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -41,9 +44,25 @@ export default function CheckoutPage() {
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
+  useEffect(() => {
+    if (!session?.user) return
+    const [firstName, ...rest] = (session.user.name || '').split(' ')
+    setFormData(prev => ({
+      ...prev,
+      firstName: prev.firstName || firstName || '',
+      lastName: prev.lastName || rest.join(' '),
+      email: session.user?.email || prev.email
+    }))
+  }, [session])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage(null)
+
+    if (status !== 'authenticated') {
+      router.push(`/login?callbackUrl=${encodeURIComponent('/checkout')}`)
+      return
+    }
     
     // Validate form
     if (!formData.firstName || !formData.firstName.trim() || !formData.lastName || !formData.lastName.trim()) {
@@ -67,115 +86,68 @@ export default function CheckoutPage() {
 
     try {
       const customerName = `${formData.firstName} ${formData.lastName}`
-      const studentEmail = formData.email.toLowerCase()
-      const amountPaise = Math.round(total * 100)
       const courseIds = items.map(item => item.id)
 
       const orderRes = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: amountPaise,
           currency: 'INR',
-          receipt: `rcpt_chk_${Date.now()}`,
-          notes: {
-            purchaseType: 'course',
-            studentName: customerName,
-            studentEmail,
-            studentPhone: formData.phone,
-            courseIds: courseIds.join(','),
-            amount: total
-          }
+          purchaseType: 'course',
+          courseIds,
+          booking: { phone: formData.phone }
         })
       })
 
       const orderData = await orderRes.json()
+      if (orderRes.status === 401) {
+        router.push(`/login?callbackUrl=${encodeURIComponent('/checkout')}`)
+        setIsProcessing(false)
+        return
+      }
       if (!orderRes.ok || !orderData.success) {
         throw new Error(orderData.error || 'Failed to create payment order')
       }
 
-      const Razorpay = (window as any).Razorpay
-      if (!Razorpay) {
-        setErrorMessage('Razorpay Checkout SDK is loading. Please try again.')
-        setIsProcessing(false)
-        return
+      if (Number(orderData.displayAmount) !== Math.round(total)) {
+        setErrorMessage(`The payable amount is ${formatPrice(Number(orderData.displayAmount))} based on the current course price.`)
       }
 
-      const options = {
+      openRazorpayCheckout({
         key: orderData.key,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: '2nd Inversion Musical School',
-        description: `Course Purchase: ${items.map(i => i.title).join(', ')}`,
-        order_id: orderData.id,
+        description: `Course purchase: ${items.map(item => item.title).join(', ')}`,
+        orderId: orderData.id,
         prefill: {
           name: customerName,
-          email: studentEmail,
+          email: session?.user?.email || formData.email,
           contact: formData.phone
         },
-        theme: { color: '#2563EB' },
-        handler: async function (response: any) {
+        color: '#2563EB',
+        onSuccess: async (response) => {
           try {
-            const verifyRes = await fetch('/api/payment/verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                orderData: {
-                  amount: total,
-                  notes: {
-                    purchaseType: 'course',
-                    studentName: customerName,
-                    studentEmail,
-                    studentPhone: formData.phone,
-                    courseIds: courseIds.join(','),
-                    amount: total
-                  }
-                }
-              })
-            })
-
-            const verifyData = await verifyRes.json()
-            if (!verifyRes.ok || !verifyData.success) {
-              throw new Error(verifyData.error || 'Payment verification failed')
-            }
-
-            // Store purchase in localStorage
-            const purchases = JSON.parse(localStorage.getItem('purchases') || '[]')
-            const newPurchase = {
-              id: Date.now(),
-              courses: items,
-              total: total,
-              customerInfo: formData,
-              paymentId: response.razorpay_payment_id,
-              orderId: response.razorpay_order_id,
-              date: new Date().toISOString()
-            }
-            purchases.push(newPurchase)
-            localStorage.setItem('purchases', JSON.stringify(purchases))
-            
-            // Clear cart
+            await verifyCheckoutPayment(response)
             clearCart()
-            
-            // Redirect to success page
-            router.push(`/payment-success?paymentId=${response.razorpay_payment_id}&orderId=${response.razorpay_order_id}`)
+            router.push(`/payment/success?orderId=${encodeURIComponent(response.razorpay_order_id)}`)
           } catch (verifyErr: any) {
-            console.error('Payment verification error:', verifyErr)
-            setErrorMessage(verifyErr.message || 'Payment verification failed. Please contact support.')
+            setErrorMessage(verifyErr.message || 'Payment verification failed. No course access was granted.')
             setIsProcessing(false)
+            router.push('/payment/failed?reason=failed')
           }
         },
-        modal: {
-          ondismiss: function () {
-            setIsProcessing(false)
-          }
+        onDismiss: () => {
+          reportCheckoutClosed(orderData.id, 'CANCELLED')
+          setIsProcessing(false)
+          router.push('/payment/failed?reason=cancelled')
+        },
+        onFailed: (message) => {
+          reportCheckoutClosed(orderData.id, 'FAILED', message)
+          setErrorMessage('Your payment could not be completed. No course access was granted.')
+          setIsProcessing(false)
+          router.push('/payment/failed?reason=failed')
         }
-      }
-
-      const rzp = new Razorpay(options)
-      rzp.open()
+      })
 
     } catch (error: any) {
       console.error('Checkout error:', error)
@@ -269,6 +241,7 @@ export default function CheckoutPage() {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
+                        readOnly={!!session?.user?.email}
                         required
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         placeholder="you@example.com"
@@ -378,7 +351,7 @@ export default function CheckoutPage() {
                     disabled={isProcessing}
                     className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isProcessing ? 'Processing...' : `Pay ${formatPrice(total)}`}
+                    {isProcessing ? 'Processing...' : status === 'authenticated' ? `Pay ${formatPrice(total)} Securely` : 'Log in to Pay'}
                   </button>
                 </form>
               </div>

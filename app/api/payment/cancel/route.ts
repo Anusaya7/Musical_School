@@ -3,7 +3,7 @@ import { markOrderOutcome, PaymentError, requirePayer } from '@/lib/payment-serv
 
 export const dynamic = 'force-dynamic'
 
-async function closePending(request: NextRequest, status: 'FAILED' | 'CANCELLED') {
+export async function POST(request: NextRequest) {
   try {
     const user = await requirePayer()
     const body = await request.json().catch(() => ({}))
@@ -14,18 +14,14 @@ async function closePending(request: NextRequest, status: 'FAILED' | 'CANCELLED'
     await markOrderOutcome({
       orderId,
       userEmail: user.email,
-      status,
-      reason: typeof body?.reason === 'string' ? body.reason : undefined
+      status: 'CANCELLED',
+      reason: 'Payment was cancelled'
     })
-    return NextResponse.json({ success: true, status })
+    return NextResponse.json({ success: true, status: 'CANCELLED' })
   } catch (error) {
     if (error instanceof PaymentError) {
       return NextResponse.json({ success: false, error: error.message }, { status: error.status })
     }
     return NextResponse.json({ success: false, error: 'Unable to update the payment.' }, { status: 500 })
   }
-}
-
-export async function POST(request: NextRequest) {
-  return closePending(request, 'FAILED')
 }

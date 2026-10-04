@@ -11,45 +11,92 @@ function PaymentSuccessContent() {
   const router = useRouter()
   const [verifying, setVerifying] = useState(true)
   const [verifiedBooking, setVerifiedBooking] = useState<any>(null)
+  const [serverPayment, setServerPayment] = useState<any>(null)
+  const [pending, setPending] = useState(false)
 
-  const bookingId = searchParams.get('bookingId') || 'BK-UNKNOWN'
-  const courseName = decodeURIComponent(searchParams.get('courseName') || 'Music Course')
-  const paymentId = searchParams.get('paymentId') || 'TXN-UNKNOWN'
-  const amount = Number(searchParams.get('amount') || 0)
-  const paymentDate = decodeURIComponent(searchParams.get('paymentDate') || new Date().toLocaleString())
-  const studentEmail = decodeURIComponent(searchParams.get('studentEmail') || '')
-  const instructorName = decodeURIComponent(searchParams.get('instructorName') || 'Ajinkya Amrule')
-  const courseDuration = decodeURIComponent(searchParams.get('courseDuration') || '3 Months')
-  const bookedSlot = decodeURIComponent(searchParams.get('bookedSlot') || '')
-  const expectedStartDate = decodeURIComponent(searchParams.get('expectedStartDate') || '')
+  const orderIdParam = searchParams.get('orderId') || ''
+  const bookingId = serverPayment?.bookingId || searchParams.get('bookingId') || ''
+  const courseName = serverPayment?.courses?.map((course: { name: string }) => course.name).join(', ')
+    || (verifiedBooking?.courseName)
+    || 'Music Course'
+  const paymentId = serverPayment?.paymentId || verifiedBooking?.paymentId || ''
+  const orderId = serverPayment?.orderId || orderIdParam
+  const amount = Number(serverPayment?.amount ?? verifiedBooking?.amount ?? 0)
+  const paymentDate = serverPayment?.createdAt
+    ? new Date(serverPayment.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+    : new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+  const studentEmail = verifiedBooking?.studentEmail || ''
+  const instructorName = verifiedBooking?.instructor || ''
+  const courseDuration = ''
+  const bookedSlot = verifiedBooking ? `${verifiedBooking.date || ''} ${verifiedBooking.timeSlot || ''}`.trim() : ''
+  const expectedStartDate = verifiedBooking?.date || ''
+  const paymentStatus = serverPayment?.status || (verifiedBooking ? 'PAID' : '')
 
   useEffect(() => {
-    if (bookingId === 'BK-UNKNOWN') {
-      router.replace(`/payment/failed?error=${encodeURIComponent('No booking ID found in URL parameters.')}`)
+    const orderIdFromUrl = searchParams.get('orderId')
+    if (orderIdFromUrl) {
+      const loadStatus = async () => {
+        try {
+          const res = await fetch(`/api/payment/status?orderId=${encodeURIComponent(orderIdFromUrl)}`)
+          if (res.status === 401) {
+            router.replace(`/login?callbackUrl=${encodeURIComponent(`/payment/success?orderId=${orderIdFromUrl}`)}`)
+            return
+          }
+          const data = await res.json()
+          if (!res.ok || !data.success) {
+            router.replace('/payment/failed?reason=failed')
+            return
+          }
+          if (data.status === 'FAILED') {
+            router.replace('/payment/failed?reason=failed')
+            return
+          }
+          if (data.status === 'CANCELLED') {
+            router.replace('/payment/failed?reason=cancelled')
+            return
+          }
+          if (data.status !== 'PAID') {
+            setServerPayment(data)
+            setPending(true)
+            setVerifying(false)
+            return
+          }
+          setServerPayment(data)
+          setVerifying(false)
+        } catch {
+          router.replace('/payment/failed?reason=failed')
+        }
+      }
+      loadStatus()
       return
     }
 
-    async function verifyWithDb() {
+    const bookingFromUrl = searchParams.get('bookingId')
+    if (!bookingFromUrl) {
+      router.replace('/payment/failed?reason=failed')
+      return
+    }
+
+    const verifyWithDb = async () => {
       try {
-        const res = await fetch(`/api/bookings?id=${bookingId}`)
+        const res = await fetch(`/api/bookings?id=${bookingFromUrl}`)
         if (!res.ok) {
           throw new Error('Booking verification fetch failed')
         }
         const data = await res.json()
-        if (data.status === 'Confirmed' || data.status === 'Pending' || data.status === 'Approved') {
+        if (data.paymentStatus === 'PAID' || data.paymentStatus === 'Success' || data.status === 'Confirmed') {
           setVerifiedBooking(data)
           setVerifying(false)
         } else {
-          router.replace(`/payment/failed?error=${encodeURIComponent('Booking was not found or is cancelled.')}`)
+          router.replace('/payment/failed?reason=failed')
         }
-      } catch (err) {
-        console.error('Database verification failed:', err)
-        router.replace(`/payment/failed?error=${encodeURIComponent('We could not verify your booking with our servers. Please contact support.')}`)
+      } catch {
+        router.replace('/payment/failed?reason=failed')
       }
     }
 
     verifyWithDb()
-  }, [bookingId, router])
+  }, [router, searchParams])
 
   const handleDownloadReceipt = () => {
     const printWindow = window.open('', '_blank')
@@ -101,7 +148,9 @@ function PaymentSuccessContent() {
 
               <div class="section-title">Payment Verification</div>
               <div class="grid">
-                <div class="item"><span class="label">Razorpay Payment ID:</span> <span class="val">${paymentId}</span></div>
+                <div class="item"><span class="label">Payment status:</span> <span class="val">${paymentStatus || 'PAID'}</span></div>
+                <div class="item"><span class="label">Order ID:</span> <span class="val">${orderId || '—'}</span></div>
+                <div class="item"><span class="label">Razorpay Payment ID:</span> <span class="val">${paymentId || '—'}</span></div>
                 <div class="item"><span class="label">Status:</span> <span class="val" style="color: #16a34a;">VERIFIED (SUCCESS)</span></div>
               </div>
 
@@ -121,6 +170,21 @@ function PaymentSuccessContent() {
       `)
       printWindow.document.close()
     }
+  }
+
+  if (pending) {
+    return (
+      <div className="min-h-screen bg-[#FAFBFF] font-sans">
+        <Header />
+        <main className="container mx-auto px-4 py-16 flex items-center justify-center">
+          <div className="max-w-xl w-full bg-white border border-[#E6EEFF] rounded-[32px] p-8 text-center space-y-4">
+            <h1 className="text-2xl font-black text-[#0F1E4A]">Payment pending</h1>
+            <p className="text-sm text-slate-500">Your payment is not verified yet. No course access has been granted.</p>
+            <Link href="/courses" className="inline-flex h-12 items-center justify-center rounded-2xl bg-[#0F1E4A] px-6 text-xs font-bold text-white">Back to courses</Link>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   if (verifying) {
@@ -264,7 +328,7 @@ function PaymentSuccessContent() {
               href="/student/dashboard"
               className="w-full h-12 bg-[#0F1E4A] hover:bg-[#1a2d61] text-white rounded-2xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 active:scale-[0.98]"
             >
-              <LayoutDashboard className="w-4 h-4" /> Go to Student Dashboard
+              <LayoutDashboard className="w-4 h-4" /> Go to My Courses
             </Link>
 
             <Link

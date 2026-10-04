@@ -18,8 +18,9 @@ Create a `.env.local` file in the root directory:
 ```bash
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/musical_school
 JWT_SECRET=your_jwt_secret_key_here_min_32_characters
-NEXT_PUBLIC_RAZORPAY_KEY=rzp_test_your_key_here
-RAZORPAY_SECRET=your_razorpay_secret_key
+RAZORPAY_KEY_ID=rzp_test_your_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+RAZORPAY_WEBHOOK_SECRET=your_razorpay_webhook_secret
 NEXT_PUBLIC_API_URL=http://localhost:3000
 NODE_ENV=development
 ```
@@ -36,8 +37,9 @@ Add the following secrets:
 |-------------|-------------|
 | `MONGODB_URI` | MongoDB connection string |
 | `JWT_SECRET` | JWT authentication secret (min 32 characters) |
-| `NEXT_PUBLIC_RAZORPAY_KEY` | Razorpay public API key |
-| `RAZORPAY_SECRET` | Razorpay secret API key |
+| `RAZORPAY_KEY_ID` | Razorpay Key ID (`rzp_test_...` or `rzp_live_...`) |
+| `RAZORPAY_KEY_SECRET` | Razorpay key secret. Server only. Never use a `NEXT_PUBLIC_` name. |
+| `RAZORPAY_WEBHOOK_SECRET` | Razorpay webhook secret. Server only. |
 | `VERCEL_TOKEN` | Vercel deployment token |
 | `VERCEL_ORG_ID` | Vercel organization ID |
 | `VERCEL_PROJECT_ID` | Vercel project ID |

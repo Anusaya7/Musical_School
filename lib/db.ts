@@ -193,9 +193,14 @@ export interface Payment {
   amount: number
   paymentId: string
   orderId: string
-  status: 'Success' | 'Failed'
+  status: string
   createdAt: string
   invoiceNumber?: string
+  currency?: string
+  paymentMethod?: string
+  failureReason?: string
+  userId?: string
+  purchaseType?: string
 }
 
 export interface AuditLog {
@@ -1411,9 +1416,14 @@ export async function getPayments(): Promise<Payment[]> {
     amount: p.amount,
     paymentId: p.paymentId,
     orderId: p.orderId,
-    status: p.status as any,
+    status: p.status,
     createdAt: p.createdAt.toISOString(),
-    invoiceNumber: p.invoiceNumber || undefined
+    invoiceNumber: p.invoiceNumber || undefined,
+    currency: p.currency || 'INR',
+    paymentMethod: p.paymentMethod || undefined,
+    failureReason: p.failureReason || undefined,
+    userId: p.userId || undefined,
+    purchaseType: p.purchaseType || undefined
   }))
 }
 

@@ -1,7 +1,9 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
+import { useSession } from 'next-auth/react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { openRazorpayCheckout, reportCheckoutClosed, verifyCheckoutPayment } from '@/lib/razorpay-checkout'
 import { Calendar, Clock, User, Mail, X, CreditCard, Smartphone, Building, Star, CheckCircle2, Loader2 } from 'lucide-react'
 import CalendarDatePicker from '@/components/CalendarDatePicker'
 
@@ -138,6 +140,7 @@ PianoSVG.displayName = 'PianoSVG'
 
 export default function CourseBooking({ course, onBookingComplete }: CourseBookingProps) {
   const { theme } = useTheme()
+  const { data: session, status: authStatus } = useSession()
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [showPayment, setShowPayment] = useState(false)
   const [showPaymentOptions, setShowPaymentOptions] = useState(false)
@@ -156,6 +159,12 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
   const [holidays, setHolidays] = useState<Holiday[]>([])
   const [schedules, setSchedules] = useState<BatchSchedule[]>([])
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!session?.user) return
+    if (session.user.email) setStudentEmail(session.user.email)
+    if (session.user.name) setStudentName(session.user.name)
+  }, [session])
 
   // Fetch schedules & holidays
   useEffect(() => {
@@ -277,43 +286,15 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
     let apiError: string | null = null
 
     // 1. Trigger backend verification API
-    const apiPromise = fetch('/api/payment/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        razorpay_order_id: verifyParams.razorpay_order_id,
-        razorpay_payment_id: verifyParams.razorpay_payment_id,
-        razorpay_signature: verifyParams.razorpay_signature,
-        orderData: {
-          amount: course.price,
-          notes: {
-            purchaseType: 'booking',
-            courseId: course.id,
-            courseName: course.title,
-            instructor: course.instructor,
-            date: selectedDate,
-            timeSlot: selectedTimeSlot,
-            batchTiming: selectedBatch,
-            studentName,
-            studentEmail,
-            studentPhone,
-            amount: course.price
-          }
-        }
-      })
-    })
-    .then(async (res) => {
-      const data = await res.json()
+    const apiPromise = verifyCheckoutPayment(verifyParams)
+    .then((data) => {
       apiDone = true
-      if (res.ok && data.success) {
-        apiSuccess = true
-        verifyResult = data
-      } else {
-        apiError = data.error || 'Payment verification failed'
-      }
+      apiSuccess = true
+      verifyResult = data
     })
     .catch((err) => {
       apiDone = true
+      apiSuccess = false
       apiError = err.message || 'Payment verification failed'
     })
 
@@ -336,7 +317,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
     // 4. Redirect on failure
     if (!apiSuccess || apiError) {
       setShowProcessingOverlay(false)
-      window.location.href = `/payment/failed?error=${encodeURIComponent(apiError || 'Verification failed')}&courseUrl=${encodeURIComponent(window.location.pathname)}`
+      window.location.href = `/payment/failed?reason=failed&courseUrl=${encodeURIComponent(window.location.pathname)}`
       return
     }
 
@@ -356,24 +337,16 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
     setShowProcessingOverlay(false)
 
     // Redirect to Success Page with full parameters
-    const queryParams = new URLSearchParams({
-      bookingId: verifyResult.bookingId,
-      courseName: verifyResult.courseName,
-      paymentId: verifyResult.paymentId,
-      amount: String(verifyResult.amount),
-      paymentDate: verifyResult.paymentDate,
-      studentEmail: verifyResult.studentEmail,
-      instructorName: verifyResult.instructorName,
-      courseDuration: verifyResult.courseDuration,
-      bookedSlot: verifyResult.bookedSlot,
-      expectedStartDate: verifyResult.expectedStartDate
-    })
-
-    window.location.href = `/payment/success?${queryParams.toString()}`
+    window.location.href = `/payment/success?orderId=${encodeURIComponent(verifyParams.razorpay_order_id)}`
   }
 
   const handlePayment = async () => {
     setFormError(null)
+    if (authStatus !== 'authenticated') {
+      const next = `${window.location.pathname}${window.location.search}`
+      window.location.href = `/login?callbackUrl=${encodeURIComponent(next)}`
+      return
+    }
     setIsBooking(true)
 
     // Form Validation
@@ -406,72 +379,59 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
     }
 
     try {
-      const amountPaise = Math.round(course.price * 100)
       const res = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: amountPaise,
           currency: 'INR',
-          receipt: `rcpt_bk_${Date.now()}`,
-          notes: {
-            purchaseType: 'booking',
-            courseId: course.id,
-            courseName: course.title,
-            instructor: course.instructor,
+          purchaseType: 'booking',
+          courseId: course.id,
+          booking: {
             date: selectedDate,
             timeSlot: selectedTimeSlot,
             batchTiming: selectedBatch,
-            studentName,
-            studentEmail,
-            studentPhone,
-            amount: course.price
+            instructor: course.instructor,
+            phone: studentPhone
           }
         })
       })
 
       const orderData = await res.json()
+      if (res.status === 401) {
+        const next = `${window.location.pathname}${window.location.search}`
+        window.location.href = `/login?callbackUrl=${encodeURIComponent(next)}`
+        return
+      }
       if (!res.ok || !orderData.success) {
         throw new Error(orderData.error || 'Failed to create payment order')
       }
 
-      // Open official Razorpay Checkout SDK
-      const Razorpay = (window as any).Razorpay
-      if (!Razorpay) {
-        setFormError('Razorpay Checkout SDK is loading. Please try again.')
-        setIsBooking(false)
-        return
-      }
-
-      const options = {
+      openRazorpayCheckout({
         key: orderData.key,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: '2nd Inversion Musical School',
-        description: `Class Booking: ${course.title}`,
-        order_id: orderData.id,
+        description: `Class booking: ${course.title}`,
+        orderId: orderData.id,
         prefill: {
-          name: studentName,
-          email: studentEmail,
+          name: session?.user?.name || studentName,
+          email: session?.user?.email || studentEmail,
           contact: studentPhone
         },
-        theme: { color: '#FF6FAF' },
-        handler: async function (response: any) {
-          await startProcessingAndVerify({
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature
-          })
+        color: '#FF6FAF',
+        onSuccess: async (response) => {
+          await startProcessingAndVerify(response)
         },
-        modal: {
-          ondismiss: function () {
-            setIsBooking(false)
-          }
+        onDismiss: () => {
+          reportCheckoutClosed(orderData.id, 'CANCELLED')
+          setIsBooking(false)
+          window.location.href = '/payment/failed?reason=cancelled'
+        },
+        onFailed: (message) => {
+          reportCheckoutClosed(orderData.id, 'FAILED', message)
+          setIsBooking(false)
+          window.location.href = '/payment/failed?reason=failed'
         }
-      }
-
-      const rzp = new Razorpay(options)
-      rzp.open()
+      })
     } catch (err: any) {
       console.error('Booking payment error:', err)
       setFormError(err.message || 'Could not process booking payment request.')
@@ -670,6 +630,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                             type="email"
                             value={studentEmail}
                             onChange={(e) => setStudentEmail(e.target.value)}
+                            readOnly={!!session?.user?.email}
                             placeholder="Email Address"
                             className={`w-full px-4 py-3 rounded-[20px] border-[1.5px] border-gray-200 text-sm focus:outline-none focus:ring-2 ${style.activeRing}`}
                           />
@@ -767,7 +728,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                   }
                 >
                   {isBooking && <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />}
-                  {isBooking ? 'Processing...' : 'Proceed to Payment'}
+                  {isBooking ? 'Processing...' : authStatus === 'authenticated' ? `Pay ₹${course.price.toLocaleString('en-IN')} Securely` : 'Log in to Pay'}
                 </button>
                 <button
                   type="button"

@@ -1702,7 +1702,7 @@ export default function AdminDashboard() {
                       <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">💰 Revenue</span>
                     </div>
                     <h3 className="text-2xl font-black text-[#0F1E4A] tracking-tight">
-                      ₹{payments.filter(p => ['Success', 'SUCCESS', 'Completed', 'COMPLETED', 'Paid', 'PAID'].includes(p.status)).reduce((acc, p) => acc + (p.amount || 0), 0).toLocaleString('en-IN')}
+                      ₹{payments.filter(p => ['Success', 'SUCCESS', 'Completed', 'COMPLETED', 'Paid', 'PAID', 'CAPTURED'].includes(p.status)).reduce((acc, p) => acc + (p.amount || 0), 0).toLocaleString('en-IN')}
                     </h3>
                   </div>
 
@@ -2632,7 +2632,7 @@ export default function AdminDashboard() {
                             + filteredPayments.map(p => {
                               const booking = bookings.find(b => b.orderId === p.orderId || b.paymentId === p.paymentId)
                               const bookingStatus = booking ? booking.status : 'N/A'
-                              return `"${p.invoiceNumber || p.id}","${p.studentName}","${p.courseName}",${p.amount},"${p.paymentId}","${p.orderId}","${bookingStatus}","${p.createdAt}",Success`
+                              return `"${p.invoiceNumber || p.id}","${p.studentName}","${p.courseName}",${p.amount},"${p.paymentId}","${p.orderId}","${bookingStatus}","${p.createdAt}","${p.status || ''}"`
                             }).join("\n");
                           const encodedUri = encodeURI(csvContent);
                           const link = document.createElement("a");
@@ -2704,9 +2704,11 @@ export default function AdminDashboard() {
                         className="px-3 py-2 border border-[#E6EEFF] rounded-xl text-xs font-extrabold text-[#0F1E4A] focus:outline-none bg-white cursor-pointer"
                       >
                         <option value="All">All Statuses</option>
+                        <option value="PAID">Paid</option>
                         <option value="Success">Success</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Failed">Failed</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="FAILED">Failed</option>
+                        <option value="CANCELLED">Cancelled</option>
                       </select>
                     </div>
                   </div>
@@ -2721,6 +2723,8 @@ export default function AdminDashboard() {
                           <th className="p-4">Amount</th>
                           <th className="p-4">Payment ID</th>
                           <th className="p-4">Order ID</th>
+                          <th className="p-4">Method</th>
+                          <th className="p-4">Failure</th>
                           <th className="p-4">Refund Status</th>
                           <th className="p-4">Booking Status</th>
                           <th className="p-4">Date</th>
@@ -2731,7 +2735,7 @@ export default function AdminDashboard() {
                       <tbody>
                         {filteredPayments.length === 0 ? (
                           <tr>
-                            <td colSpan={11} className="p-8 text-center text-slate-400 text-xs font-bold">
+                            <td colSpan={13} className="p-8 text-center text-slate-400 text-xs font-bold">
                               No payment transactions found.
                             </td>
                           </tr>
@@ -2754,6 +2758,8 @@ export default function AdminDashboard() {
                                 <td className="p-4 text-[#5EA8FF] font-black">₹{p.amount.toLocaleString('en-IN')}</td>
                                 <td className="p-4 text-slate-400 font-mono select-all text-[11px]">{p.paymentId}</td>
                                 <td className="p-4 text-slate-400 font-mono select-all text-[11px]">{p.orderId}</td>
+                                <td className="p-4 uppercase">{p.paymentMethod || '—'}</td>
+                                <td className="p-4 max-w-[180px] truncate" title={p.failureReason || ''}>{p.failureReason || '—'}</td>
                                 <td className="p-4">
                                   <span className={`px-2 py-0.5 rounded text-[10px] ${refundStatus === 'Refunded' ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-500'}`}>
                                     {refundStatus}
@@ -2766,7 +2772,13 @@ export default function AdminDashboard() {
                                 </td>
                                 <td className="p-4 text-slate-400">{p.createdAt ? p.createdAt.substring(0, 10) : '2026-06-18'}</td>
                                 <td className="p-4">
-                                  <span className="bg-green-50 text-green-700 px-2.5 py-0.5 rounded-lg text-[9px] uppercase font-black">
+                                  <span className={`px-2.5 py-0.5 rounded-lg text-[9px] uppercase font-black ${
+                                    ['FAILED', 'Failed', 'CANCELLED', 'Cancelled'].includes(p.status)
+                                      ? 'bg-red-50 text-red-700'
+                                      : ['PENDING', 'Pending'].includes(p.status)
+                                        ? 'bg-amber-50 text-amber-700'
+                                        : 'bg-green-50 text-green-700'
+                                  }`}>
                                     {p.status || 'Success'}
                                   </span>
                                 </td>

@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { openRazorpayCheckout, reportCheckoutClosed, verifyCheckoutPayment } from '@/lib/razorpay-checkout'
 
 interface PlanModalProps {
   isOpen: boolean
@@ -227,6 +229,7 @@ export default function PlanModal({ isOpen, onClose, plan, onProceed }: PlanModa
 
 function PaymentForm({ plan, onBack, onSuccess }: { plan: any; onBack: () => void; onSuccess: () => void }) {
   const { theme } = useTheme()
+  const { data: session, status: authStatus } = useSession()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -239,26 +242,20 @@ function PaymentForm({ plan, onBack, onSuccess }: { plan: any; onBack: () => voi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg(null)
+    if (authStatus !== 'authenticated') {
+      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`
+      return
+    }
     setIsProcessing(true)
 
     try {
-      const numericPrice = Number(String(plan.price).replace(/,/g, ''))
-      const amountPaise = Math.round(numericPrice * 100)
-
       const orderRes = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: amountPaise,
           currency: 'INR',
-          receipt: `rcpt_plan_${Date.now()}`,
-          notes: {
-            purchaseType: 'plan',
-            plan: plan.name,
-            studentName: formData.name,
-            studentEmail: formData.email,
-            studentPhone: formData.phone
-          }
+          purchaseType: 'plan',
+          plan: plan.name
         })
       })
 
@@ -267,65 +264,39 @@ function PaymentForm({ plan, onBack, onSuccess }: { plan: any; onBack: () => voi
         throw new Error(orderData.error || 'Razorpay Test Mode is not configured. Order creation failed.')
       }
 
-      const Razorpay = (window as any).Razorpay
-      if (!Razorpay) {
-        throw new Error('Razorpay Checkout SDK is loading. Please try again.')
-      }
-
-      const options = {
+      openRazorpayCheckout({
         key: orderData.key,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: '2nd Inversion Musical School',
-        description: `Subscription Plan: ${plan.name}`,
-        order_id: orderData.id,
+        description: `Subscription plan: ${plan.name}`,
+        orderId: orderData.id,
         prefill: {
-          name: formData.name,
-          email: formData.email,
+          name: session?.user?.name || formData.name,
+          email: session?.user?.email || formData.email,
           contact: formData.phone
         },
-        theme: { color: '#4F46E5' },
-        handler: async function (response: any) {
+        color: '#4F46E5',
+        onSuccess: async (response) => {
           try {
-            const verifyRes = await fetch('/api/payment/verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                orderData: {
-                  amount: numericPrice,
-                  notes: {
-                    purchaseType: 'plan',
-                    plan: plan.name,
-                    studentName: formData.name,
-                    studentEmail: formData.email,
-                    studentPhone: formData.phone
-                  }
-                }
-              })
-            })
-            const verifyData = await verifyRes.json()
-            if (!verifyRes.ok || !verifyData.success) {
-              throw new Error(verifyData.error || 'Payment verification failed.')
-            }
+            await verifyCheckoutPayment(response)
             onSuccess()
+            window.location.href = `/payment/success?orderId=${encodeURIComponent(response.razorpay_order_id)}`
           } catch (vErr: any) {
-            console.error('Plan payment verification error:', vErr)
-            setErrorMsg(vErr.message || 'Payment verification failed.')
+            setErrorMsg(vErr.message || 'Payment verification failed. No course access was granted.')
             setIsProcessing(false)
           }
         },
-        modal: {
-          ondismiss: function () {
-            setIsProcessing(false)
-          }
+        onDismiss: () => {
+          reportCheckoutClosed(orderData.id, 'CANCELLED')
+          setIsProcessing(false)
+          window.location.href = '/payment/failed?reason=cancelled'
+        },
+        onFailed: () => {
+          reportCheckoutClosed(orderData.id, 'FAILED')
+          setErrorMsg('Your payment could not be completed. No course access was granted.')
+          setIsProcessing(false)
         }
-      }
-
-      const rzp = new Razorpay(options)
-      rzp.open()
+      })
     } catch (err: any) {
       console.error('Plan payment error:', err)
       setErrorMsg(err.message || 'Could not process plan payment request.')
@@ -427,7 +398,7 @@ function PaymentForm({ plan, onBack, onSuccess }: { plan: any; onBack: () => voi
           className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {isProcessing && <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-          {isProcessing ? 'Processing...' : `Proceed to Payment - ${plan.currency === 'INR' ? 'Rs.' : '$'}${plan.price}`}
+          {isProcessing ? 'Processing...' : authStatus === 'authenticated' ? `Pay ₹${plan.price} Securely` : 'Log in to Pay'}
         </button>
       </form>
     </div>

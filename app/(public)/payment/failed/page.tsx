@@ -10,7 +10,11 @@ function PaymentFailedContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const errorMessage = searchParams.get('error') || 'The transaction was cancelled or failed to verify.'
+  const reason = searchParams.get('reason')
+  const cancelled = reason === 'cancelled'
+  const errorMessage = cancelled
+    ? 'Payment was cancelled. No payment was completed and no course access was granted.'
+    : 'Your payment could not be completed. No course access was granted. Please try again.'
   const courseUrl = searchParams.get('courseUrl')
 
   const handleRetry = () => {
@@ -38,14 +42,8 @@ function PaymentFailedContent() {
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-3xl font-black text-[#0F1E4A] tracking-tight">Payment Failed</h1>
-            <p className="text-sm font-semibold text-red-500">Payment could not be verified.</p>
-            <p className="text-xs font-semibold text-slate-400">Your booking has not been confirmed.</p>
-          </div>
-
-          <div className="bg-red-50/50 border border-[#FFD6E8] rounded-[24px] p-5 text-left text-xs space-y-2">
-            <span className="font-bold text-red-600 uppercase tracking-wider block">Verification Error</span>
-            <p className="font-medium text-slate-600 leading-relaxed">{errorMessage}</p>
+            <h1 className="text-3xl font-black text-[#0F1E4A] tracking-tight">{cancelled ? 'Payment Cancelled' : 'Payment Failed'}</h1>
+            <p className="text-sm font-semibold text-slate-500">{errorMessage}</p>
           </div>
 
           <div className="space-y-3">

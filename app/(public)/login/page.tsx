@@ -104,7 +104,11 @@ export default function LoginPage() {
           rememberMe: formData.rememberMe
         }))
 
-        const targetRoute = (role === 'SUPER_ADMIN' || role === 'ADMIN') ? '/admin' : role === 'INSTRUCTOR' ? '/instructor' : '/student'
+        const requested = new URLSearchParams(window.location.search).get('callbackUrl')
+        const safeCallback = requested && requested.startsWith('/') && !requested.startsWith('//') && !requested.includes('://') && !requested.includes('\\')
+          ? requested
+          : null
+        const targetRoute = safeCallback || ((role === 'SUPER_ADMIN' || role === 'ADMIN') ? '/admin' : role === 'INSTRUCTOR' ? '/instructor' : '/student')
         console.log(`[AUTH] Redirecting to route: ${targetRoute}`)
 
         setTimeout(() => {
@@ -123,7 +127,11 @@ export default function LoginPage() {
     setIsLoading(true)
     setErrors({})
     try {
-      await signIn('google', { callbackUrl: '/student/dashboard' })
+      const requested = new URLSearchParams(window.location.search).get('callbackUrl')
+      const safeCallback = requested && requested.startsWith('/') && !requested.startsWith('//') && !requested.includes('://') && !requested.includes('\\')
+        ? requested
+        : '/student/dashboard'
+      await signIn('google', { callbackUrl: safeCallback })
     } catch (error) {
       console.error('Google Sign-In error:', error)
       setErrors({ email: 'Google Sign-In failed. Please try again later.' })
