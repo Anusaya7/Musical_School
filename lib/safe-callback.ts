@@ -1,3 +1,5 @@
+const CANONICAL_ORIGIN = "https://2ndinversion.com"
+
 const ALLOWED_APP_HOSTS = new Set([
   '2ndinversion.com',
   'www.2ndinversion.com',
@@ -41,4 +43,40 @@ export function safeRelativeCallback(url: string | null | undefined): string | n
   } catch {
     return null
   }
+}
+
+function allowedHost(value: string | null | undefined) {
+  if (!value) return null
+  const host = value.trim().toLowerCase().replace(/\/$/, "")
+  const hostname = host.split(":")[0]
+  if (!ALLOWED_APP_HOSTS.has(hostname)) return null
+  return host
+}
+
+/**
+ * The browser must stay on the host it called. Unique deployment hosts and
+ * any other origin fall back to the canonical production site.
+ */
+export function safeRequestOrigin(request: { url?: string; headers: Headers }) {
+  const forwarded = allowedHost(request.headers.get("x-forwarded-host")?.split(",")[0])
+  const hostHeader = allowedHost(request.headers.get("host"))
+  let urlHost: string | null = null
+  if (request.url) {
+    try {
+      urlHost = allowedHost(new URL(request.url).host)
+    } catch {
+      urlHost = null
+    }
+  }
+
+  const canonical = [hostHeader, forwarded, urlHost].find((host) => {
+    const hostname = host?.split(":")[0]
+    return hostname === "2ndinversion.com" || hostname === "www.2ndinversion.com"
+  })
+  const chosen = canonical || forwarded || hostHeader || urlHost
+  if (!chosen) return CANONICAL_ORIGIN
+
+  const hostname = chosen.split(":")[0]
+  const proto = hostname === "localhost" || hostname === "127.0.0.1" ? "http" : "https"
+  return `${proto}://${chosen}`
 }

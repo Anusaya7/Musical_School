@@ -2,6 +2,7 @@ import NextAuth from "next-auth"
 import authConfig from "./auth.config"
 import Credentials from "next-auth/providers/credentials"
 import { getUserByEmail, createUser, DbUser } from "@/lib/db"
+import { safeRelativeCallback, safeRequestOrigin } from "@/lib/safe-callback"
 import bcrypt from "bcryptjs"
 
 import Google from "next-auth/providers/google"
@@ -69,12 +70,18 @@ if (isGoogleConfigured) {
   )
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth, signIn, signOut } = NextAuth((req) => {
+  const origin = req ? safeRequestOrigin(req) : "https://2ndinversion.com"
+  return {
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "UY2xST5ck1IteInTQe/30uqeeGPrNIPx/dNYR0ZM2Ds=",
   ...authConfig,
   providers: serverProviders,
   callbacks: {
     ...authConfig.callbacks,
+    async redirect({ url }) {
+      const path = safeRelativeCallback(url) ?? "/"
+      return `${origin}${path}`
+    },
     async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
         const email = user.email?.toLowerCase()
@@ -97,6 +104,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return true
     }
+  }
   }
 })
 

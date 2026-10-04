@@ -52,8 +52,13 @@ export default {
     strategy: "jwt",
   },
   callbacks: {
-    async redirect({ url }) {
-      return safeRelativeCallback(url) ?? "/"
+    async redirect({ url, baseUrl }) {
+      const path = safeRelativeCallback(url) ?? "/"
+      try {
+        return `${new URL(baseUrl).origin}${path}`
+      } catch {
+        return `https://2ndinversion.com${path}`
+      }
     },
     async jwt({ token, user }) {
       if (user) {
