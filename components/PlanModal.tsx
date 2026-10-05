@@ -261,7 +261,7 @@ function PaymentForm({ plan, onBack, onSuccess }: { plan: any; onBack: () => voi
 
       const orderData = await orderRes.json()
       if (!orderRes.ok || !orderData.success) {
-        throw new Error(orderData.error || 'Razorpay Test Mode is not configured. Order creation failed.')
+        throw new Error(orderData.error || 'Razorpay is not configured. Order creation failed.')
       }
 
       openRazorpayCheckout({

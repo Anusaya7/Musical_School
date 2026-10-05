@@ -94,7 +94,7 @@ export async function createPaymentOrder(body: {
   const credentials = getRazorpayCredentials()
   const razorpay = getRazorpayClient()
   if (!credentials || !razorpay) {
-    throw new PaymentError('Razorpay Test Mode is not configured on the server.', 500)
+    throw new PaymentError('Razorpay is not configured on the server.', 500)
   }
 
   const purchaseType = body.purchaseType === 'booking' || body.purchaseType === 'plan' ? body.purchaseType : 'course'
