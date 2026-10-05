@@ -128,13 +128,22 @@ export default function LoginPage() {
     setIsLoading(true)
     setErrors({})
     try {
+      const providersRes = await fetch('/api/auth/providers')
+      const providers = await providersRes.json().catch(() => ({}))
+      if (!providers?.google) {
+        setErrors({
+          email: 'Google Sign-In is not configured on the server. Please use email login or ask the admin to add Google credentials on Vercel.'
+        })
+        setIsLoading(false)
+        return
+      }
+
       const requested = new URLSearchParams(window.location.search).get('callbackUrl')
       const safeCallback = safeRelativeCallback(requested) || '/student/dashboard'
       await signIn('google', { callbackUrl: safeCallback })
     } catch (error) {
       console.error('Google Sign-In error:', error)
       setErrors({ email: 'Google Sign-In failed. Please try again later.' })
-    } finally {
       setIsLoading(false)
     }
   }

@@ -2,19 +2,16 @@ import NextAuth from "next-auth"
 import authConfig from "./auth.config"
 import Credentials from "next-auth/providers/credentials"
 import { getUserByEmail, createUser, DbUser } from "@/lib/db"
+import { ensureProductionAuthUrls, getGoogleCredentials } from "@/lib/auth-env"
 import { safeRelativeCallback, safeRequestOrigin } from "@/lib/safe-callback"
 import bcrypt from "bcryptjs"
 
 import Google from "next-auth/providers/google"
 
-const googleId = process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID
-const googleSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET
+ensureProductionAuthUrls()
 
-const isGoogleConfigured = 
-  googleId && 
-  googleSecret && 
-  googleId !== "your_google_client_id" && 
-  googleSecret !== "your_google_client_secret"
+const google = getGoogleCredentials()
+const isGoogleConfigured = Boolean(google)
 
 const serverProviders: any[] = [
   Credentials({
@@ -61,13 +58,15 @@ const serverProviders: any[] = [
   })
 ]
 
-if (isGoogleConfigured) {
+if (google) {
   serverProviders.push(
     Google({
-      clientId: googleId,
-      clientSecret: googleSecret,
+      clientId: google.clientId,
+      clientSecret: google.clientSecret,
     })
   )
+} else {
+  console.warn("[AUTH] Google credentials missing on server. Google login disabled.")
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth((req) => {

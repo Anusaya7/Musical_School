@@ -1,16 +1,12 @@
 import type { NextAuthConfig } from "next-auth"
 import Google from "next-auth/providers/google"
 import Credentials from "next-auth/providers/credentials"
+import { ensureProductionAuthUrls, getGoogleCredentials } from "@/lib/auth-env"
 import { safeRelativeCallback } from "@/lib/safe-callback"
 
-const googleId = process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID
-const googleSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET
+ensureProductionAuthUrls()
 
-const isGoogleConfigured = 
-  googleId && 
-  googleSecret && 
-  googleId !== "your_google_client_id" && 
-  googleSecret !== "your_google_client_secret"
+const google = getGoogleCredentials()
 
 const providers: any[] = [
   Credentials({
@@ -25,11 +21,11 @@ const providers: any[] = [
   })
 ]
 
-if (isGoogleConfigured) {
+if (google) {
   providers.push(
     Google({
-      clientId: googleId,
-      clientSecret: googleSecret,
+      clientId: google.clientId,
+      clientSecret: google.clientSecret,
     })
   )
   console.log("[AUTH] Google authentication provider is enabled in config.")
@@ -37,8 +33,10 @@ if (isGoogleConfigured) {
   console.warn("[AUTH] Google authentication credentials missing. Google provider disabled in config.")
 }
 
-const useSecureCookies = process.env.NODE_ENV === "production" && 
-  Boolean(process.env.NEXTAUTH_URL?.startsWith("https://") && !process.env.NEXTAUTH_URL?.includes("localhost"))
+const useSecureCookies =
+  process.env.NODE_ENV === "production" ||
+  process.env.VERCEL_ENV === "production" ||
+  Boolean(process.env.AUTH_URL?.startsWith("https://") && !process.env.AUTH_URL?.includes("localhost"))
 
 export default {
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "UY2xST5ck1IteInTQe/30uqeeGPrNIPx/dNYR0ZM2Ds=",
