@@ -96,21 +96,13 @@ export async function POST(request: Request) {
   try {
     const ip = request.headers.get('x-forwarded-for') || '127.0.0.1'
     
-    // Verify required environment variables exist
-    const host = process.env.SMTP_HOST
-    const port = process.env.SMTP_PORT
-    const user = process.env.SMTP_USER
-    const pass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD
-    const from = process.env.SMTP_FROM
+    // Verify email provider is configured (Resend)
+    const resendKey = process.env.RESEND_API_KEY?.trim()
     const admin = process.env.ADMIN_EMAIL
 
-    if (!host || !port || !user || !pass || !from || !admin) {
+    if (!resendKey || !admin) {
       const missing = []
-      if (!host) missing.push('SMTP_HOST')
-      if (!port) missing.push('SMTP_PORT')
-      if (!user) missing.push('SMTP_USER')
-      if (!pass) missing.push('SMTP_PASS/SMTP_PASSWORD')
-      if (!from) missing.push('SMTP_FROM')
+      if (!resendKey) missing.push('RESEND_API_KEY')
       if (!admin) missing.push('ADMIN_EMAIL')
       return NextResponse.json({ 
         error: `Server Configuration Error: Missing required environment variables: ${missing.join(', ')}` 

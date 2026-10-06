@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         smtpConnectionVerified: false,
         message: connCheck.message,
-        info: 'Console fallback is active. Enter your SMTP_PASSWORD in .env.local to test live emails.'
+        info: 'Set RESEND_API_KEY in .env / Vercel to enable live emails.'
       })
     }
 
