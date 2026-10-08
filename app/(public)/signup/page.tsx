@@ -86,27 +86,6 @@ export default function SignupPage() {
     setErrors({})
 
     try {
-      // Simulate account registration
-      setTimeout(() => {
-        setIsLoading(false)
-        setShowVerificationModal(true)
-      }, 1500)
-    } catch (err) {
-      setErrors({ email: 'Registration failed. Try again.' })
-      setIsLoading(false)
-    }
-  }
-
-  const handleVerifyCode = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!verificationCode || verificationCode.length < 4) {
-      setVerificationError('Enter a valid verification code')
-      return
-    }
-    setIsVerifying(true)
-    setVerificationError('')
-
-    try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -116,41 +95,101 @@ export default function SignupPage() {
           password: formData.password
         })
       })
+      const data = await res.json().catch(() => ({}))
 
       if (!res.ok) {
-        const data = await res.json()
-        setVerificationError(data.error || 'Registration failed')
+        setErrors({ email: data.error || 'Registration failed. Try again.' })
+        setIsLoading(false)
+        return
+      }
+
+      if (data.emailSent === false) {
+        setErrors({
+          email: data.error || 'Account created, but the verification email could not be sent. Please try Resend Code or contact support.'
+        })
+        setShowVerificationModal(true)
+        setIsLoading(false)
+        return
+      }
+
+      setShowVerificationModal(true)
+    } catch (err) {
+      setErrors({ email: 'Registration failed. Try again.' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!verificationCode || verificationCode.length !== 6) {
+      setVerificationError('Enter a valid 6-digit verification code')
+      return
+    }
+    setIsVerifying(true)
+    setVerificationError('')
+
+    try {
+      const res = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          otp: verificationCode
+        })
+      })
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        setVerificationError(data.error || 'Invalid or expired code')
         setIsVerifying(false)
         return
       }
 
-      setIsVerifying(false)
       setVerifiedSuccess(true)
-      
-      // Log user in locally
-      const newUser = {
+      localStorage.setItem('user', JSON.stringify({
         email: formData.email,
         name: formData.name,
         role: 'STUDENT',
         isVerified: true
-      }
-      localStorage.setItem('user', JSON.stringify(newUser))
+      }))
 
       setTimeout(() => {
         setShowVerificationModal(false)
-        window.location.replace('/student/dashboard')
-      }, 1500)
+        window.location.replace('/login?verified=1')
+      }, 1200)
     } catch (err) {
-      setVerificationError('Verification failed. Invalid code.')
+      setVerificationError('Verification failed. Please try again.')
+    } finally {
       setIsVerifying(false)
     }
   }
 
   const [resendNotice, setResendNotice] = useState('')
+  const [isResending, setIsResending] = useState(false)
 
-  const handleResendCode = () => {
-    setResendNotice('A new 6-digit verification code has been sent to ' + formData.email)
-    setTimeout(() => setResendNotice(''), 4000)
+  const handleResendCode = async () => {
+    setIsResending(true)
+    setResendNotice('')
+    setVerificationError('')
+    try {
+      const res = await fetch('/api/auth/verify-email/resend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setVerificationError(data.error || 'Failed to resend code')
+        return
+      }
+      setResendNotice(data.message || `A new code was sent to ${formData.email}`)
+      setTimeout(() => setResendNotice(''), 5000)
+    } catch {
+      setVerificationError('Failed to resend code. Please try again.')
+    } finally {
+      setIsResending(false)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -394,9 +433,10 @@ export default function SignupPage() {
                     <button
                       type="button"
                       onClick={handleResendCode}
-                      className="text-xs font-semibold text-[#5EA8FF] hover:text-[#5EA8FF]/80 transition-colors"
+                      disabled={isResending}
+                      className="text-xs font-semibold text-[#5EA8FF] hover:text-[#5EA8FF]/80 transition-colors disabled:opacity-50"
                     >
-                      Resend Code
+                      {isResending ? 'Sending...' : 'Resend Code'}
                     </button>
                   </div>
                 </form>

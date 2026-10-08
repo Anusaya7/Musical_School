@@ -85,17 +85,21 @@ export async function POST(request: Request) {
         createdAt: new Date().toISOString()
       })
 
-      // 5. Send Verification Email to Student with OTP
+      // 5. Send Verification Email to Student with OTP (required)
+      let emailSent = false
       try {
         const studentHtml = getSignupVerificationEmail(name, otp)
         await sendSystemEmail(lowerEmail, 'Verify Your Email Address', studentHtml)
+        emailSent = true
 
-        // 6. Send Email Notification to Admin
+        // 6. Admin notify (non-blocking for signup)
         const adminHtml = getAdminNewStudentEmail(name, lowerEmail)
         const adminEmail = process.env.ADMIN_EMAIL || 'aamrule90@gmail.com'
-        await sendSystemEmail(adminEmail, `New Student Registered - ${name}`, adminHtml)
+        await sendSystemEmail(adminEmail, `New Student Registered - ${name}`, adminHtml).catch((err) => {
+          console.error('[AUTH-REGISTER] Admin email failed:', err)
+        })
       } catch (mailErr) {
-        console.error('[AUTH-REGISTER] Failed to send verification emails:', mailErr)
+        console.error('[AUTH-REGISTER] Failed to send verification email:', mailErr)
       }
 
       // 7. Send WhatsApp Notification to Admin
@@ -108,7 +112,21 @@ Status: Awaiting OTP Verification`)
         console.error('[AUTH-REGISTER] Failed to send WhatsApp notification:', waErr)
       }
 
-      return NextResponse.json({ success: true, message: 'Registration successful! Verification email sent.', user: { name, email: lowerEmail, role: 'STUDENT' } })
+      if (!emailSent) {
+        return NextResponse.json({
+          success: true,
+          emailSent: false,
+          error: 'Account created, but verification email failed to send. Use Resend Code on the next screen.',
+          user: { name, email: lowerEmail, role: 'STUDENT' }
+        })
+      }
+
+      return NextResponse.json({
+        success: true,
+        emailSent: true,
+        message: 'Registration successful! Verification email sent.',
+        user: { name, email: lowerEmail, role: 'STUDENT' }
+      })
     }
 
     return NextResponse.json({ error: 'Failed to register student' }, { status: 500 })
