@@ -20,10 +20,11 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const loggedIn = isAuthenticated || status === 'authenticated'
+  const role = (user?.role || '').toUpperCase()
   const portalHref =
-    user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN'
+    role === 'SUPER_ADMIN' || role === 'ADMIN'
       ? '/admin'
-      : user?.role === 'INSTRUCTOR'
+      : role === 'INSTRUCTOR'
         ? '/instructor'
         : '/student/dashboard'
 

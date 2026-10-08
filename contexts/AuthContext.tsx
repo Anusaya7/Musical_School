@@ -6,7 +6,7 @@ import { useSession, signOut } from 'next-auth/react'
 export interface User {
   email: string
   name: string
-  role: 'SUPER_ADMIN' | 'INSTRUCTOR' | 'STUDENT'
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'INSTRUCTOR' | 'STUDENT'
   firstName?: string
   lastName?: string
   phone?: string
