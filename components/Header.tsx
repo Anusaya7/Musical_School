@@ -72,32 +72,6 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const [role, setRole] = useState<string | null>(null)
-
-  useEffect(() => {
-    const checkRole = () => {
-      const savedUserStr = localStorage.getItem('user')
-      if (savedUserStr) {
-        try {
-          const user = JSON.parse(savedUserStr)
-          setRole(user.role?.toUpperCase() || null)
-        } catch (e) {
-          setRole(null)
-        }
-      } else {
-        setRole(null)
-      }
-    }
-    checkRole()
-
-    window.addEventListener('storage', checkRole)
-    window.addEventListener('user-login-changed', checkRole)
-    return () => {
-      window.removeEventListener('storage', checkRole)
-      window.removeEventListener('user-login-changed', checkRole)
-    }
-  }, [])
-
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 h-20 transition-all duration-300 ease-in-out ${isScrolled
         ? theme === 'dark'
