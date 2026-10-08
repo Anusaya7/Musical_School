@@ -11,7 +11,8 @@ export default function CheckoutPage() {
   const { items, total, itemCount, clearCart } = useCart()
   const router = useRouter()
   const { data: session, status } = useSession()
-  
+  const isExistingAccount = status === 'authenticated' && !!session?.user?.email
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -21,10 +22,11 @@ export default function CheckoutPage() {
     city: '',
     state: '',
     zipCode: '',
-    country: 'United States'
+    country: 'India'
   })
-  
+
   const [isProcessing, setIsProcessing] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -42,51 +44,22 @@ export default function CheckoutPage() {
     })
   }
 
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
   useEffect(() => {
     if (!session?.user) return
     const [firstName, ...rest] = (session.user.name || '').split(' ')
     setFormData(prev => ({
       ...prev,
-      firstName: prev.firstName || firstName || '',
-      lastName: prev.lastName || rest.join(' '),
+      firstName: firstName || prev.firstName || '',
+      lastName: rest.join(' ') || prev.lastName,
       email: session.user?.email || prev.email
     }))
   }, [session])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const startPayment = async (customerName: string, email: string, phone?: string) => {
+    setIsProcessing(true)
     setErrorMessage(null)
 
-    if (status !== 'authenticated') {
-      sessionStorage.setItem('postLoginRedirect', '/checkout')
-      router.push(`/login?callbackUrl=${encodeURIComponent('/checkout')}`)
-      return
-    }
-    
-    // Validate form
-    if (!formData.firstName || !formData.firstName.trim() || !formData.lastName || !formData.lastName.trim()) {
-      setErrorMessage('Please fill in your first and last name.')
-      return
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!formData.email || !emailRegex.test(formData.email)) {
-      setErrorMessage('Please enter a valid email address.')
-      return
-    }
-
-    const phoneClean = formData.phone.replace(/\D/g, '')
-    if (!formData.phone || phoneClean.length < 10) {
-      setErrorMessage('Please enter a valid phone number (at least 10 digits).')
-      return
-    }
-
-    setIsProcessing(true)
-
     try {
-      const customerName = `${formData.firstName} ${formData.lastName}`
       const courseIds = items.map(item => item.id)
 
       const orderRes = await fetch('/api/payment/create-order', {
@@ -96,7 +69,7 @@ export default function CheckoutPage() {
           currency: 'INR',
           purchaseType: 'course',
           courseIds,
-          booking: { phone: formData.phone }
+          booking: phone ? { phone } : undefined
         })
       })
 
@@ -123,8 +96,8 @@ export default function CheckoutPage() {
         orderId: orderData.id,
         prefill: {
           name: customerName,
-          email: session?.user?.email || formData.email,
-          contact: formData.phone
+          email,
+          contact: phone || undefined
         },
         color: '#2563EB',
         onSuccess: async (response) => {
@@ -150,7 +123,6 @@ export default function CheckoutPage() {
           router.push('/payment/failed?reason=failed')
         }
       })
-
     } catch (error: any) {
       console.error('Checkout error:', error)
       setErrorMessage(error.message || 'Checkout failed. Please try again.')
@@ -158,11 +130,52 @@ export default function CheckoutPage() {
     }
   }
 
+  const handleExistingAccountPay = async () => {
+    if (status !== 'authenticated') {
+      sessionStorage.setItem('postLoginRedirect', '/checkout')
+      router.push(`/login?callbackUrl=${encodeURIComponent('/checkout')}`)
+      return
+    }
+    const name = session?.user?.name || formData.firstName || 'Student'
+    const email = session?.user?.email || formData.email
+    await startPayment(name, email, formData.phone || undefined)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setErrorMessage(null)
+
+    if (status !== 'authenticated') {
+      sessionStorage.setItem('postLoginRedirect', '/checkout')
+      router.push(`/login?callbackUrl=${encodeURIComponent('/checkout')}`)
+      return
+    }
+
+    if (!formData.firstName?.trim() || !formData.lastName?.trim()) {
+      setErrorMessage('Please fill in your first and last name.')
+      return
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!formData.email || !emailRegex.test(formData.email)) {
+      setErrorMessage('Please enter a valid email address.')
+      return
+    }
+
+    const phoneClean = formData.phone.replace(/\D/g, '')
+    if (!formData.phone || phoneClean.length < 10) {
+      setErrorMessage('Please enter a valid phone number (at least 10 digits).')
+      return
+    }
+
+    const customerName = `${formData.firstName} ${formData.lastName}`
+    await startPayment(customerName, formData.email, formData.phone)
+  }
+
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        
         <main className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-3xl font-bold text-primary mb-4">No Courses in Cart</h1>
@@ -182,13 +195,12 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-4xl font-bold text-primary mb-8">Checkout</h1>
 
           <div className="grid lg:grid-cols-3 gap-8">
-            {/* Billing Information */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-2xl shadow-xl p-8">
                 {errorMessage && (
@@ -197,174 +209,216 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
+                {status === 'loading' ? (
+                  <p className="text-gray-500 text-center py-8">Checking your account...</p>
+                ) : isExistingAccount ? (
+                  <div className="space-y-6">
                     <div>
-                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                        First Name *
-                      </label>
-                      <input
-                        type="text"
-                        id="firstName"
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="First Name"
-                      />
+                      <h2 className="text-2xl font-bold text-gray-800 mb-2">Ready to purchase</h2>
+                      <p className="text-gray-600 text-sm">
+                        Your account is already registered. Continue to pay securely — no billing form needed.
+                      </p>
                     </div>
-                    
-                    <div>
-                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                        Last Name *
-                      </label>
-                      <input
-                        type="text"
-                        id="lastName"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="Last Name"
-                      />
-                    </div>
-                  </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                        Email Address *
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        readOnly={!!session?.user?.email}
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="you@example.com"
-                      />
+                    <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4 space-y-2 text-sm">
+                      <p><span className="font-semibold text-gray-700">Name:</span> {session?.user?.name || 'Student'}</p>
+                      <p><span className="font-semibold text-gray-700">Email:</span> {session?.user?.email}</p>
                     </div>
-                    
-                    <div>
-                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                        Phone Number *
-                      </label>
-                      <input
-                        type="tel"
-                        id="phone"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="+91 XXXXX XXXXX"
-                      />
-                    </div>
-                  </div>
 
-                  <div>
-                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-                      Street Address
-                    </label>
-                    <input
-                      type="text"
-                      id="address"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Kawade Nagar"
-                    />
-                  </div>
-
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
-                        City
-                      </label>
-                      <input
-                        type="text"
-                        id="city"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="Pune"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
-                        State
-                      </label>
-                      <input
-                        type="text"
-                        id="state"
-                        name="state"
-                        value={formData.state}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="CA"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-2">
-                        ZIP Code
-                      </label>
-                      <input
-                        type="text"
-                        id="zipCode"
-                        name="zipCode"
-                        value={formData.zipCode}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="12345"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
-                      Country
-                    </label>
-                    <select
-                      id="country"
-                      name="country"
-                      value={formData.country}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    <button
+                      type="button"
+                      onClick={handleExistingAccountPay}
+                      disabled={isProcessing}
+                      className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <option value="United States">United States</option>
-                      <option value="Canada">Canada</option>
-                      <option value="United Kingdom">United Kingdom</option>
-                      <option value="Australia">Australia</option>
-                      <option value="India">India</option>
-                    </select>
+                      {isProcessing ? 'Processing...' : `Pay ${formatPrice(total)} Securely`}
+                    </button>
                   </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-800 mb-2">Billing Information</h2>
+                      <p className="text-gray-600 text-sm mb-4">
+                        New to the school? Fill this form once, or{' '}
+                        <button
+                          type="button"
+                          className="text-primary font-semibold underline"
+                          onClick={() => {
+                            sessionStorage.setItem('postLoginRedirect', '/checkout')
+                            router.push(`/login?callbackUrl=${encodeURIComponent('/checkout')}`)
+                          }}
+                        >
+                          log in
+                        </button>{' '}
+                        if you already have an account.
+                      </p>
+                    </div>
 
-                  <button
-                    type="submit"
-                    disabled={isProcessing}
-                    className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isProcessing ? 'Processing...' : status === 'authenticated' ? `Pay ${formatPrice(total)} Securely` : 'Log in to Pay'}
-                  </button>
-                </form>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                          First Name *
+                        </label>
+                        <input
+                          type="text"
+                          id="firstName"
+                          name="firstName"
+                          value={formData.firstName}
+                          onChange={handleChange}
+                          required
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="First Name"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                          Last Name *
+                        </label>
+                        <input
+                          type="text"
+                          id="lastName"
+                          name="lastName"
+                          value={formData.lastName}
+                          onChange={handleChange}
+                          required
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="Last Name"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                          Email Address *
+                        </label>
+                        <input
+                          type="email"
+                          id="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          required
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="you@example.com"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                          Phone Number *
+                        </label>
+                        <input
+                          type="tel"
+                          id="phone"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleChange}
+                          required
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="+91 XXXXX XXXXX"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                        Street Address
+                      </label>
+                      <input
+                        type="text"
+                        id="address"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="Kawade Nagar"
+                      />
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div>
+                        <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+                          City
+                        </label>
+                        <input
+                          type="text"
+                          id="city"
+                          name="city"
+                          value={formData.city}
+                          onChange={handleChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="Pune"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
+                          State
+                        </label>
+                        <input
+                          type="text"
+                          id="state"
+                          name="state"
+                          value={formData.state}
+                          onChange={handleChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="Maharashtra"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-2">
+                          ZIP Code
+                        </label>
+                        <input
+                          type="text"
+                          id="zipCode"
+                          name="zipCode"
+                          value={formData.zipCode}
+                          onChange={handleChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="411061"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
+                        Country
+                      </label>
+                      <select
+                        id="country"
+                        name="country"
+                        value={formData.country}
+                        onChange={handleChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="India">India</option>
+                        <option value="United States">United States</option>
+                        <option value="Canada">Canada</option>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="Australia">Australia</option>
+                      </select>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isProcessing}
+                      className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isProcessing ? 'Processing...' : `Pay ${formatPrice(total)} Securely`}
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
 
-            {/* Order Summary */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-8">
                 <h2 className="text-2xl font-bold text-gray-800 mb-6">Order Summary</h2>
-                
-                {/* Course List */}
+
                 <div className="space-y-4 mb-6 max-h-64 overflow-y-auto">
                   {items.map((item) => (
                     <div key={item.id} className="flex items-center space-x-3">
@@ -382,18 +436,17 @@ export default function CheckoutPage() {
                   ))}
                 </div>
 
-                {/* Price Breakdown */}
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal ({itemCount} {itemCount === 1 ? 'course' : 'courses'})</span>
                     <span className="font-medium">{formatPrice(total)}</span>
                   </div>
-                  
+
                   <div className="flex justify-between text-gray-600">
                     <span>Platform Fee</span>
                     <span className="font-medium">{formatPrice(0)}</span>
                   </div>
-                  
+
                   <div className="border-t pt-3">
                     <div className="flex justify-between text-lg font-bold">
                       <span>Total</span>
@@ -402,19 +455,12 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Security Badge */}
                 <div className="text-center">
                   <div className="flex items-center justify-center space-x-2 text-sm text-gray-600 mb-4">
                     <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                     </svg>
                     <span>Secure Payment with Razorpay</span>
-                  </div>
-                  
-                  <div className="flex justify-center space-x-2">
-                    <img src="/api/placeholder/40/20" alt="Visa" className="h-8" />
-                    <img src="/api/placeholder/40/20" alt="Mastercard" className="h-8" />
-                    <img src="/api/placeholder/40/20" alt="Razorpay" className="h-8" />
                   </div>
                 </div>
               </div>
