@@ -33,7 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setMounted(true)
   }, [])
 
-  // Sync NextAuth session with local context state
+  // Sync NextAuth session with local context + localStorage (shared website + portal)
   useEffect(() => {
     if (!mounted) return
     if (status === 'authenticated' && session?.user) {
@@ -44,28 +44,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       setUser(dbUser)
       localStorage.setItem('user', JSON.stringify(dbUser))
+      window.dispatchEvent(new Event('user-login-changed'))
     } else if (status === 'unauthenticated') {
-      const savedUser = localStorage.getItem('user')
-      if (!savedUser) {
-        setUser(null)
-      }
+      setUser(null)
+      localStorage.removeItem('user')
+      window.dispatchEvent(new Event('user-login-changed'))
     }
   }, [session, status, mounted])
-
-  // Load user from localStorage on mount
-  useEffect(() => {
-    if (!mounted) return
-    const savedUser = localStorage.getItem('user')
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser)
-        setUser(userData)
-      } catch (error) {
-        console.error('Failed to load user from localStorage:', error)
-        localStorage.removeItem('user')
-      }
-    }
-  }, [mounted])
 
   const login = async (email: string, password: string, rememberMe: boolean = false): Promise<boolean> => {
     try {

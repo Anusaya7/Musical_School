@@ -183,6 +183,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
       batch: selectedBatch,
       slot: selectedTimeSlot,
     })
+    sessionStorage.setItem('postLoginRedirect', next)
     window.location.href = `/login?callbackUrl=${encodeURIComponent(next)}`
   }
 

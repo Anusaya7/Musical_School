@@ -60,6 +60,7 @@ export default function CheckoutPage() {
     setErrorMessage(null)
 
     if (status !== 'authenticated') {
+      sessionStorage.setItem('postLoginRedirect', '/checkout')
       router.push(`/login?callbackUrl=${encodeURIComponent('/checkout')}`)
       return
     }
@@ -101,6 +102,7 @@ export default function CheckoutPage() {
 
       const orderData = await orderRes.json()
       if (orderRes.status === 401) {
+        sessionStorage.setItem('postLoginRedirect', '/checkout')
         router.push(`/login?callbackUrl=${encodeURIComponent('/checkout')}`)
         setIsProcessing(false)
         return

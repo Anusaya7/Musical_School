@@ -156,7 +156,14 @@ export default function SignupPage() {
 
       setTimeout(() => {
         setShowVerificationModal(false)
-        window.location.replace('/login?verified=1')
+        const pending = sessionStorage.getItem('postLoginRedirect')
+        const callback = new URLSearchParams(window.location.search).get('callbackUrl')
+        const next = callback || pending
+        if (next) {
+          window.location.replace(`/login?verified=1&callbackUrl=${encodeURIComponent(next)}`)
+        } else {
+          window.location.replace('/login?verified=1')
+        }
       }, 1200)
     } catch (err) {
       setVerificationError('Verification failed. Please try again.')

@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useCart } from '@/contexts/CartContext'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { useSession } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import { Sun, Moon } from 'lucide-react';
 import Image from "next/image";
@@ -13,8 +15,17 @@ export default function Header() {
   const pathname = usePathname()
   const { itemCount } = useCart()
   const { theme, toggleTheme } = useTheme()
+  const { user, logout, isAuthenticated } = useAuth()
+  const { status } = useSession()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const loggedIn = isAuthenticated || status === 'authenticated'
+  const portalHref =
+    user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN'
+      ? '/admin'
+      : user?.role === 'INSTRUCTOR'
+        ? '/instructor'
+        : '/student/dashboard'
 
   const isActive = (path: string) => {
     if (path === '/') return pathname === '/'
@@ -206,26 +217,53 @@ export default function Header() {
               </Link>
             </div>
 
-            {/* Auth Buttons */}
+            {/* Auth Buttons / Session */}
             <div className="flex items-center gap-3 whitespace-nowrap">
-              <Link
-                href="/login"
-                prefetch={false}
-                className={`inline-flex items-center px-5 py-2 font-medium rounded-xl whitespace-nowrap transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px] ${theme === 'dark'
-                    ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
-                    : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
-                  }`}
-              >
-                Log In
-              </Link>
+              {loggedIn ? (
+                <>
+                  <Link
+                    href={portalHref}
+                    prefetch={false}
+                    className={`inline-flex items-center px-4 py-2 font-medium rounded-xl whitespace-nowrap transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
+                        ? 'text-purple-300 hover:bg-purple-900/50'
+                        : 'text-purple-700 hover:bg-purple-50'
+                      }`}
+                  >
+                    {user?.name ? user.name.split(' ')[0] : 'My Portal'}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => logout()}
+                    className={`inline-flex items-center px-4 py-2 font-medium rounded-xl whitespace-nowrap transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
+                        ? 'text-gray-300 hover:bg-purple-900/50'
+                        : 'text-gray-700 hover:bg-purple-50'
+                      }`}
+                  >
+                    Log Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    prefetch={false}
+                    className={`inline-flex items-center px-5 py-2 font-medium rounded-xl whitespace-nowrap transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px] ${theme === 'dark'
+                        ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
+                        : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
+                      }`}
+                  >
+                    Log In
+                  </Link>
 
-              <Link
-                href="/signup"
-                prefetch={false}
-                className="inline-flex items-center px-5 py-2 font-medium rounded-xl whitespace-nowrap transition-all duration-200 ease-in-out bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px]"
-              >
-                Sign Up
-              </Link>
+                  <Link
+                    href="/signup"
+                    prefetch={false}
+                    className="inline-flex items-center px-5 py-2 font-medium rounded-xl whitespace-nowrap transition-all duration-200 ease-in-out bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px]"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
           </nav>
 
@@ -294,15 +332,38 @@ export default function Header() {
               </div>
 
               <div className={`border-t ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} my-2 pt-2`}>
-                <Link href="/login" prefetch={false} onClick={() => setIsMobileMenuOpen(false)} className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
-                    ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
-                    : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
-                  }`}>
-                  Log In
-                </Link>
-                <Link href="/signup" prefetch={false} onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px]">
-                  Sign Up
-                </Link>
+                {loggedIn ? (
+                  <>
+                    <Link href={portalHref} prefetch={false} onClick={() => setIsMobileMenuOpen(false)} className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
+                        ? 'text-purple-300 hover:bg-purple-900/50'
+                        : 'text-purple-700 hover:bg-purple-50'
+                      }`}>
+                      {user?.name ? `${user.name.split(' ')[0]} · Portal` : 'My Portal'}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => { setIsMobileMenuOpen(false); logout() }}
+                      className={`block w-full text-left px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
+                          ? 'text-gray-300 hover:bg-purple-900/50'
+                          : 'text-gray-700 hover:bg-purple-50'
+                        }`}
+                    >
+                      Log Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" prefetch={false} onClick={() => setIsMobileMenuOpen(false)} className={`block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 min-h-[44px] ${theme === 'dark'
+                        ? 'text-gray-300 hover:bg-purple-900/50 hover:text-purple-300'
+                        : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600'
+                      }`}>
+                      Log In
+                    </Link>
+                    <Link href="/signup" prefetch={false} onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 font-medium rounded-xl transition-all duration-200 ease-in-out bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md hover:shadow-lg min-h-[44px]">
+                      Sign Up
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>

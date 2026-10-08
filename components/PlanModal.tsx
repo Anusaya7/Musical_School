@@ -243,7 +243,9 @@ function PaymentForm({ plan, onBack, onSuccess }: { plan: any; onBack: () => voi
     e.preventDefault()
     setErrorMsg(null)
     if (authStatus !== 'authenticated') {
-      window.location.href = `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`
+      const next = window.location.pathname + window.location.search
+      sessionStorage.setItem('postLoginRedirect', next)
+      window.location.href = `/login?callbackUrl=${encodeURIComponent(next)}`
       return
     }
     setIsProcessing(true)

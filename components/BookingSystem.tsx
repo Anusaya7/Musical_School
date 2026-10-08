@@ -61,6 +61,7 @@ export default function BookingSystem({ selectedClass }: BookingSystemProps) {
     e.preventDefault()
     setErrorMessage(null)
     if (authStatus !== 'authenticated') {
+      sessionStorage.setItem('postLoginRedirect', '/#booking')
       window.location.href = `/login?callbackUrl=${encodeURIComponent('/#booking')}`
       return
     }
