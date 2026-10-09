@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { getIndiaNowParts, localDateString } from '@/lib/booking-availability'
+import { getIndiaNowParts } from '@/lib/booking-availability'
 
 interface Holiday {
   id: string
@@ -265,10 +265,10 @@ export default function CalendarDatePicker({
               }`}
             >
               {day}
-              {/* Subtle underline indicator for current day */}
-              {today.getDate() === day &&
-                today.getMonth() === currentMonth &&
-                today.getFullYear() === currentYear &&
+              {/* Subtle underline indicator for current IST day */}
+              {indiaToday.day === day &&
+                indiaToday.month - 1 === currentMonth &&
+                indiaToday.year === currentYear &&
                 !isSelected && (
                   <span className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${activeStyle.bg}`}></span>
                 )}
