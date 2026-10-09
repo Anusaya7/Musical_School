@@ -157,6 +157,43 @@ export async function createPaymentOrder(body: {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !timeSlot || !batchTiming) {
         throw new PaymentError('Choose a class date, batch, and time slot before paying.')
       }
+
+      const { isSlotInPast } = await import('@/lib/booking-availability')
+      if (isSlotInPast(date, timeSlot)) {
+        throw new PaymentError('That time slot has already passed. Please choose a future slot.')
+      }
+
+      const courseIdForSlot = lineItems[0]?.courseId
+      const slotTaken = await prisma.booking.findFirst({
+        where: {
+          courseId: courseIdForSlot,
+          date,
+          timeSlot,
+          status: { in: ['Pending', 'Approved', 'Booked'] }
+        }
+      })
+      if (slotTaken) {
+        throw new PaymentError('This time slot is already booked by another student. Please choose another slot.')
+      }
+
+      // Also block slots held by an in-progress checkout (last 30 minutes)
+      const pendingPayments = await prisma.payment.findMany({
+        where: {
+          purchaseType: 'booking',
+          courseId: courseIdForSlot,
+          status: 'PENDING',
+          createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) }
+        },
+        select: { metadata: true }
+      })
+      const heldByCheckout = pendingPayments.some(row => {
+        const meta = safeMetadata(row.metadata)
+        return meta?.date === date && meta?.timeSlot === timeSlot
+      })
+      if (heldByCheckout) {
+        throw new PaymentError('This time slot is currently being booked by another student. Please choose another slot.')
+      }
+
       metadata = { date, timeSlot, batchTiming, instructor, phone }
     }
   }

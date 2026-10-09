@@ -5,6 +5,13 @@ import { useSession } from 'next-auth/react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { openRazorpayCheckout, reportCheckoutClosed, verifyCheckoutPayment } from '@/lib/razorpay-checkout'
 import { bookingReturnPath, readBookingSelection } from '@/lib/booking-selection'
+import {
+  batchHasFutureSlots,
+  defaultEveningSlots,
+  defaultMorningSlots,
+  filterFutureSlots,
+  isSlotInPast
+} from '@/lib/booking-availability'
 import { Calendar, Clock, User, Mail, X, CreditCard, Smartphone, Building, Star, CheckCircle2, Loader2 } from 'lucide-react'
 import CalendarDatePicker from '@/components/CalendarDatePicker'
 
@@ -160,6 +167,8 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
   const [holidays, setHolidays] = useState<Holiday[]>([])
   const [schedules, setSchedules] = useState<BatchSchedule[]>([])
   const [loading, setLoading] = useState(true)
+  const [bookedSlots, setBookedSlots] = useState<string[]>([])
+  const [availabilityLoading, setAvailabilityLoading] = useState(false)
 
   useEffect(() => {
     if (!session?.user) return
@@ -209,6 +218,59 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
 
     loadConfig()
   }, [showBookingModal])
+
+  // Load booked slots for selected date + course
+  useEffect(() => {
+    if (!showBookingModal || !selectedDate) {
+      setBookedSlots([])
+      return
+    }
+
+    let cancelled = false
+    async function loadAvailability() {
+      setAvailabilityLoading(true)
+      try {
+        const res = await fetch(
+          `/api/bookings/availability?date=${encodeURIComponent(selectedDate)}&courseId=${encodeURIComponent(course.id)}`
+        )
+        const data = await res.json().catch(() => ({}))
+        if (!cancelled && res.ok && Array.isArray(data.bookedSlots)) {
+          setBookedSlots(data.bookedSlots)
+        } else if (!cancelled) {
+          setBookedSlots([])
+        }
+      } catch {
+        if (!cancelled) setBookedSlots([])
+      } finally {
+        if (!cancelled) setAvailabilityLoading(false)
+      }
+    }
+
+    loadAvailability()
+    return () => {
+      cancelled = true
+    }
+  }, [showBookingModal, selectedDate, course.id])
+
+  // Clear batch/slot when today's morning becomes unavailable
+  useEffect(() => {
+    if (!selectedDate) return
+    if (selectedBatch === 'morning' && !batchHasFutureSlots(selectedDate, 'morning', schedules)) {
+      setSelectedBatch('')
+      setSelectedTimeSlot('')
+    }
+    if (selectedBatch === 'evening' && !batchHasFutureSlots(selectedDate, 'evening', schedules)) {
+      setSelectedBatch('')
+      setSelectedTimeSlot('')
+    }
+  }, [selectedDate, selectedBatch, schedules])
+
+  useEffect(() => {
+    if (!selectedDate || !selectedTimeSlot) return
+    if (isSlotInPast(selectedDate, selectedTimeSlot) || bookedSlots.includes(selectedTimeSlot)) {
+      setSelectedTimeSlot('')
+    }
+  }, [selectedDate, selectedTimeSlot, bookedSlots])
 
   // Determine theme styling based on course title
   const getThemeConfig = useCallback(() => {
@@ -267,20 +329,22 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
 
   const style = useMemo(() => getThemeConfig(), [getThemeConfig])
 
-  // Get active timeslots based on selected batch
+  // Get active timeslots based on selected batch (hide past times for today)
   const getActiveTimeSlots = () => {
-    if (!selectedBatch) return []
+    if (!selectedBatch || !selectedDate) return []
     const batch = schedules.find(s => s.id === selectedBatch)
-    if (batch) return batch.timeSlots
-
-    if (selectedBatch === 'morning') {
-      return ["04:00 AM", "05:00 AM", "06:00 AM", "07:00 AM", "08:00 AM", "09:00 AM", "10:00 AM", "11:00 AM", "12:00 PM"]
-    } else {
-      return ["03:00 PM", "04:00 PM", "05:00 PM", "06:00 PM", "07:00 PM", "08:00 PM", "09:00 PM"]
-    }
+    const raw =
+      batch?.timeSlots?.length
+        ? batch.timeSlots
+        : selectedBatch === 'morning'
+          ? defaultMorningSlots()
+          : defaultEveningSlots()
+    return filterFutureSlots(selectedDate, raw)
   }
 
   const activeTimeSlots = getActiveTimeSlots()
+  const showMorningBatch = selectedDate ? batchHasFutureSlots(selectedDate, 'morning', schedules) : false
+  const showEveningBatch = selectedDate ? batchHasFutureSlots(selectedDate, 'evening', schedules) : false
 
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -288,6 +352,14 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
     setFormError(null)
     if (!selectedDate || !selectedBatch || !selectedTimeSlot) {
       setFormError('Please select date, batch timing, and time slot')
+      return
+    }
+    if (isSlotInPast(selectedDate, selectedTimeSlot)) {
+      setFormError('That time slot has already passed. Please choose a future slot.')
+      return
+    }
+    if (bookedSlots.includes(selectedTimeSlot)) {
+      setFormError('This time slot is already booked. Please choose another slot.')
       return
     }
     setShowPayment(true)
@@ -394,6 +466,16 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
     }
     if (!course.price || course.price <= 0) {
       setFormError('Course tuition fee is invalid')
+      setIsBooking(false)
+      return
+    }
+    if (isSlotInPast(selectedDate, selectedTimeSlot)) {
+      setFormError('That time slot has already passed. Please choose a future slot.')
+      setIsBooking(false)
+      return
+    }
+    if (bookedSlots.includes(selectedTimeSlot)) {
+      setFormError('This time slot is already booked. Please choose another slot.')
       setIsBooking(false)
       return
     }
@@ -562,6 +644,7 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                         selectedDate={selectedDate}
                         onChange={(dateStr) => {
                           setSelectedDate(dateStr)
+                          setSelectedBatch('')
                           setSelectedTimeSlot('')
                         }}
                         holidays={holidays}
@@ -576,35 +659,45 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                         <label className="block text-sm font-bold text-slate-500">
                           2. Select Batch Timing
                         </label>
-                        <div className="grid grid-cols-2 gap-3">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedBatch('morning')
-                              setSelectedTimeSlot('')
-                            }}
-                            className={`btn-premium-base py-3 px-4 text-xs font-semibold ${
-                              selectedBatch === 'morning' ? style.selectedPill : style.unselectedPill
-                            }`}
-                          >
-                            <span className="block font-bold">Morning Batch</span>
-                            <span className="text-[10px] opacity-80">04:00 AM - 12:00 PM</span>
-                          </button>
-                          
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedBatch('evening')
-                              setSelectedTimeSlot('')
-                            }}
-                            className={`btn-premium-base py-3 px-4 text-xs font-semibold ${
-                              selectedBatch === 'evening' ? style.selectedPill : style.unselectedPill
-                            }`}
-                          >
-                            <span className="block font-bold">Evening Batch</span>
-                            <span className="text-[10px] opacity-80">03:00 PM - 09:00 PM</span>
-                          </button>
-                        </div>
+                        {!showMorningBatch && !showEveningBatch ? (
+                          <p className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                            No remaining batches for this date. Please choose another date.
+                          </p>
+                        ) : (
+                          <div className={`grid gap-3 ${showMorningBatch && showEveningBatch ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                            {showMorningBatch && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedBatch('morning')
+                                  setSelectedTimeSlot('')
+                                }}
+                                className={`btn-premium-base py-3 px-4 text-xs font-semibold ${
+                                  selectedBatch === 'morning' ? style.selectedPill : style.unselectedPill
+                                }`}
+                              >
+                                <span className="block font-bold">Morning Batch</span>
+                                <span className="text-[10px] opacity-80">04:00 AM - 12:00 PM</span>
+                              </button>
+                            )}
+
+                            {showEveningBatch && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedBatch('evening')
+                                  setSelectedTimeSlot('')
+                                }}
+                                className={`btn-premium-base py-3 px-4 text-xs font-semibold ${
+                                  selectedBatch === 'evening' ? style.selectedPill : style.unselectedPill
+                                }`}
+                              >
+                                <span className="block font-bold">Evening Batch</span>
+                                <span className="text-[10px] opacity-80">03:00 PM - 09:00 PM</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -613,21 +706,44 @@ export default function CourseBooking({ course, onBookingComplete }: CourseBooki
                       <div className="space-y-2.5">
                         <label className="block text-sm font-bold text-slate-500">
                           3. Select Hourly Time Slot
+                          {availabilityLoading && (
+                            <span className="ml-2 text-[10px] font-medium text-slate-400">Checking availability...</span>
+                          )}
                         </label>
-                        <div className="flex flex-wrap gap-2">
-                          {activeTimeSlots.map(slot => (
-                            <button
-                              key={slot}
-                              type="button"
-                              onClick={() => setSelectedTimeSlot(slot)}
-                              className={`btn-premium-base rounded-full !important py-2 px-4 text-xs font-semibold ${
-                                selectedTimeSlot === slot ? style.selectedPill : style.unselectedPill
-                              }`}
-                            >
-                              {slot}
-                            </button>
-                          ))}
-                        </div>
+                        {activeTimeSlots.length === 0 ? (
+                          <p className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                            No available time slots left in this batch for the selected date.
+                          </p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {activeTimeSlots.map(slot => {
+                              const isBooked = bookedSlots.includes(slot)
+                              const isSelected = selectedTimeSlot === slot
+                              return (
+                                <button
+                                  key={slot}
+                                  type="button"
+                                  disabled={isBooked}
+                                  onClick={() => {
+                                    if (isBooked) return
+                                    setSelectedTimeSlot(slot)
+                                  }}
+                                  title={isBooked ? 'Already booked' : undefined}
+                                  className={`btn-premium-base rounded-full !important py-2 px-4 text-xs font-semibold ${
+                                    isBooked
+                                      ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed line-through opacity-70'
+                                      : isSelected
+                                        ? style.selectedPill
+                                        : style.unselectedPill
+                                  }`}
+                                >
+                                  {slot}
+                                  {isBooked ? ' · Booked' : ''}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )}
                       </div>
                     )}
 

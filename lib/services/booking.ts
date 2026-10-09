@@ -49,18 +49,20 @@ export class BookingService {
     try {
       console.log(`[BookingService] Starting database transaction to create booking ${bookingId}`)
       const transactionResult = await prisma.$transaction(async (tx) => {
-        // Check for duplicate booking
-        const existing = await tx.booking.findFirst({
+        // Slot already taken by anyone (Pending / Approved / Booked)
+        const slotTaken = await tx.booking.findFirst({
           where: {
-            studentEmail: studentEmail.toLowerCase(),
             courseId,
             date,
             timeSlot,
             status: { in: ['Pending', 'Approved', 'Booked'] }
           }
         })
-        if (existing) {
-          throw new Error('Duplicate booking: You have already booked a class for this course at this date and time slot.')
+        if (slotTaken) {
+          if (slotTaken.studentEmail?.toLowerCase() === studentEmail.toLowerCase()) {
+            throw new Error('Duplicate booking: You have already booked this course at this date and time slot.')
+          }
+          throw new Error('This time slot is already booked. Please choose another slot.')
         }
 
         // 1. Create the booking record as Pending
