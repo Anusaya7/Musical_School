@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { getIndiaNowParts, localDateString } from '@/lib/booking-availability'
 
 interface Holiday {
   id: string
@@ -26,20 +27,21 @@ export default function CalendarDatePicker({
   accentColor = 'pink',
   theme = 'light'
 }: CalendarDatePickerProps) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  // School calendar uses India Standard Time (Asia/Kolkata)
+  const indiaToday = getIndiaNowParts()
+  const todayStr = indiaToday.date
 
-  // Current viewed month and year
-  const [currentMonth, setCurrentMonth] = useState(today.getMonth())
-  const [currentYear, setCurrentYear] = useState(today.getFullYear())
+  // Current viewed month and year (IST)
+  const [currentMonth, setCurrentMonth] = useState(indiaToday.month - 1)
+  const [currentYear, setCurrentYear] = useState(indiaToday.year)
 
   // Sync viewed month/year when a date is selected externally
   useEffect(() => {
-    if (selectedDate) {
-      const parsed = new Date(selectedDate)
-      if (!isNaN(parsed.getTime())) {
-        setCurrentMonth(parsed.getMonth())
-        setCurrentYear(parsed.getFullYear())
+    if (selectedDate && /^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {
+      const [y, m] = selectedDate.split('-').map(Number)
+      if (y && m) {
+        setCurrentMonth(m - 1)
+        setCurrentYear(y)
       }
     }
   }, [selectedDate])
@@ -111,19 +113,18 @@ export default function CalendarDatePicker({
     setCurrentMonth(month)
   }
 
-  // Generate years range (-5 to +5 years from today)
-  const startYear = today.getFullYear() - 2
+  // Generate years range around IST "today"
+  const startYear = indiaToday.year - 2
   const yearsRange = Array.from({ length: 8 }, (_, i) => startYear + i)
 
-  // Check if a date is a holiday or Monday or in the past
+  // Check if a date is a holiday or Monday or in the past (IST)
   const isDateDisabled = (day: number) => {
-    const checkDate = new Date(currentYear, currentMonth, day)
-    checkDate.setHours(0, 0, 0, 0)
-
-    // Disable past dates
-    if (checkDate < today) return true
-
     const checkDateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+
+    // Disable past dates in India time
+    if (checkDateStr < todayStr) return true
+
+    const checkDate = new Date(currentYear, currentMonth, day)
     const dayOfWeek = checkDate.getDay()
 
     // Default Monday holiday rule (day index 1)
